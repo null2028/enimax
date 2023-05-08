@@ -1355,14 +1355,16 @@ function addCustomRoom() {
     }));
 
 
-    let tempOngoing = createCat("room_-1", "Ongoing");
-    tempOngoing.id = "ongoingCat";
-    document.getElementById("categoriesCon").append(tempOngoing);
+    if (localStorage.getItem("offline") !== 'true') {
+        let tempOngoing = createCat("room_-1", "Ongoing");
+        tempOngoing.id = "ongoingCat";
+        document.getElementById("categoriesCon").append(tempOngoing);
 
-    document.getElementById("custom_rooms").append(createElement({
-        "class": `categoriesDataMain${(localStorage.getItem("currentCategory") === "room_-1") ? " active" : ""}${(isSnapSupported) ? " snappedCategoriesDataMain closed" : ""}`,
-        "id": `room_-1`
-    }));
+        document.getElementById("custom_rooms").append(createElement({
+            "class": `categoriesDataMain${(localStorage.getItem("currentCategory") === "room_-1") ? " active" : ""}${(isSnapSupported) ? " snappedCategoriesDataMain closed" : ""}`,
+            "id": `room_-1`
+        }));
+    }
 
     if (localStorage.getItem("discoverHide") !== "true" && localStorage.getItem("offline") !== 'true') {
         let tempDiscover = createCat("discoverCon", "Discover");
@@ -2115,20 +2117,33 @@ if (true) {
             }
 
             if (catMainDOM[i].getAttribute("data-empty") !== "false") {
-                constructErrorPage(
-                    catMainDOM[i],
-                    "So empty. Try searching things and adding it to the library!",
-                    {
-                        hasLink: true,
-                        hasReload: false,
-                        customConClass: "absolute",
-                        isError: false,
-                        linkClass: "search",
-                        clickEvent: () => {
-                            window.parent.postMessage({ "action": 500, data: "pages/search/index.html" }, "*");
+                if (offlineMode) {
+                    constructErrorPage(
+                        catMainDOM[i],
+                        "So empty. Try adding shows to this category!",
+                        {
+                            hasLink: false,
+                            hasReload: false,
+                            customConClass: "absolute",
+                            isError: false,
                         }
-                    }
-                )
+                    );
+                } else {
+                    constructErrorPage(
+                        catMainDOM[i],
+                        "So empty. Try searching things and adding it to the library!",
+                        {
+                            hasLink: true,
+                            hasReload: false,
+                            customConClass: "absolute",
+                            isError: false,
+                            linkClass: "search",
+                            clickEvent: () => {
+                                window.parent.postMessage({ "action": 500, data: "pages/search/index.html" }, "*");
+                            }
+                        }
+                    );
+                }
             }
 
             catMainDOM[i].append(createElement({
