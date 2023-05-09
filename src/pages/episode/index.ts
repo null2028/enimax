@@ -70,6 +70,7 @@ let scrollDownTopDOM = document.getElementById("scrollDownTop");
 let scrollSnapFunc: undefined | Function;
 let showMainName = null;
 let showImage = null;
+let displayTimeout: any;
 // @ts-ignore
 let pullTabArray = [];
 let webviewLink = "";
@@ -536,7 +537,8 @@ function ini() {
                                     temp.style.width = activeCatDOM.offsetWidth.toString();
                                 }
 
-                                setTimeout(() => {
+                                clearTimeout(displayTimeout);
+                                displayTimeout = setTimeout(() => {
                                     let foundCurrentCon = false;
                                     for (let i = 0; i < tempCatDOM.length; i++) {
                                         const dataCon = document.getElementById(tempCatDOM[i].getAttribute("data-id"));
@@ -556,6 +558,10 @@ function ini() {
                                                 dataCon.classList.add("closed");
                                             }
                                         }
+                                    }
+
+                                    if (shouldScroll === false && !downloaded && scrollToDOM && localStorage.getItem("scrollBool") !== "false") {
+                                        scrollToDOM.scrollIntoView();
                                     }
                                 }, 250);
                             });
@@ -791,6 +797,7 @@ function ini() {
 
                     if (trr == currentLink) {
                         scrollToDOM = tempDiv;
+                        console.log(scrollToDOM);
                         tempDiv.style.backgroundColor = "rgba(255,255,255,1)";
                         tempDiv.classList.add("episodesSelected");
                     }
@@ -871,13 +878,14 @@ function ini() {
 
             try {
 
+                if (!downloaded && scrollToDOM && localStorage.getItem("scrollBool") !== "false") {
+                    scrollToDOM.scrollIntoView();
+                }
+
                 if (scrollSnapFunc) {
                     scrollSnapFunc(false);
                 }
 
-                if (!downloaded && scrollToDOM && localStorage.getItem("scrollBool") !== "false") {
-                    scrollToDOM.scrollIntoView();
-                }
 
             } catch (err) {
                 console.error(err);

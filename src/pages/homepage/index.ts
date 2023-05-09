@@ -19,7 +19,7 @@ let downloadedFolders: any = {};
 // @ts-ignore
 let pullTabArray: Array<pullToRefresh> = [];
 let flaggedShow: Array<flaggedShows> = [];
-
+let homeDisplayTimeout: any;
 let errDOM: HTMLElement = document.getElementById("errorCon");
 let firstLoad = true;
 let states: string = "";
@@ -1009,7 +1009,8 @@ function cusRoomScroll(forced = false) {
                     temp.style.width = activeCatDOM.offsetWidth.toString();
                 }
 
-                setTimeout(() => {
+                clearTimeout(homeDisplayTimeout);
+                homeDisplayTimeout = setTimeout(() => {
                     let foundCurrentCon = false;
                     for (let i = 0; i < tempCatDOM.length; i++) {
                         const dataCon = document.getElementById(tempCatDOM[i].getAttribute("data-id"));

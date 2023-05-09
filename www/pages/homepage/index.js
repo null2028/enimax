@@ -16,6 +16,7 @@ let downloadedFolders = {};
 // @ts-ignore
 let pullTabArray = [];
 let flaggedShow = [];
+let homeDisplayTimeout;
 let errDOM = document.getElementById("errorCon");
 let firstLoad = true;
 let states = "";
@@ -800,7 +801,8 @@ function cusRoomScroll(forced = false) {
                     temp.style.height = activeCatDOM.offsetHeight.toString();
                     temp.style.width = activeCatDOM.offsetWidth.toString();
                 }
-                setTimeout(() => {
+                clearTimeout(homeDisplayTimeout);
+                homeDisplayTimeout = setTimeout(() => {
                     var _a;
                     let foundCurrentCon = false;
                     for (let i = 0; i < tempCatDOM.length; i++) {
