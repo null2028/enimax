@@ -34,6 +34,8 @@ const sourceCardsDOM = document.getElementById("sourceCards");
 const extensionList = window.parent.returnExtensionList();
 // @ts-ignore
 const extensionNames = window.parent.returnExtensionNames();
+// @ts-ignore
+const extensionDisabled = window.parent.returnExtensionDisabled();
 iniChoiceDOM(130);
 let stateAction = {
     access: () => {
@@ -85,13 +87,17 @@ async function populateDownloadedArray() {
 async function testIt(idx = -1) {
     let searchQuery = "odd";
     let errored = false;
+    const searchQueries = ["odd taxi", "", "friends", "odd taxi", "petezahhutt", "odd taxi", "friends", "odd taxi"];
     for (let i = 0; i < extensionList.length; i++) {
+        if (extensionDisabled[i]) {
+            continue;
+        }
         if (idx != -1 && i != idx) {
             continue;
         }
         let searchResult, episodeResult, playerResult;
         try {
-            searchResult = (await extensionList[i].searchApi((i == 2) ? "friends" : searchQuery)).data;
+            searchResult = (await extensionList[i].searchApi(searchQueries[i])).data;
         }
         catch (err) {
             errored = true;
@@ -128,46 +134,16 @@ async function testIt(idx = -1) {
     }
 }
 async function testKey() {
-    try {
-        alert(await window.parent.extractKey(4));
-    }
-    catch (err) {
-        alert("Fmovies failed");
-    }
-    try {
-        alert(await window.parent.extractKey(6));
-    }
-    catch (err) {
-        alert("zoro failed");
-    }
-    // return;
-    try {
-        let links = ["main-2022-10-11-14-00-01.js"];
-        for (let link of links) {
-            try {
-                alert(await window.parent.extractKey(4, "http://10.0.0.203/dump/e4/" + link));
-            }
-            catch (err) {
-                console.error(err);
-                alert(link + "failed");
-            }
-        }
-    }
-    catch (err) {
-        console.error(err);
-        alert("fmovies failed");
-    }
-    return;
 }
 if (localStorage.getItem("devmode") === "true") {
     document.getElementById("testExtensions").style.display = "block";
     for (let elem of document.getElementsByClassName("testExt")) {
-        elem.style.display = "block";
-        elem.onclick = function () {
-            testIt(parseInt(this.getAttribute("data-exId")));
-        };
+        // (elem as HTMLElement).style.display = "block";
+        // (elem as HTMLElement).onclick = function () {
+        //     testIt(parseInt((this as HTMLElement).getAttribute("data-exId")));
+        // }
     }
-    document.getElementById("testKey").style.display = "block";
+    // document.getElementById("testKey").style.display = "block";
     document.getElementById("testExtensions").onclick = function () {
         testIt();
     };
