@@ -6,7 +6,7 @@
 <link rel="icon" type="image/png" sizes="16x16" href="assets/images/16.png">
 <meta name="theme-color" content="#4b4bc2">
 <meta http-equiv="Content-Security-Policy"
-    content="script-src 'self' https://enimax-anime.github.io/key-extractor/index.js 'unsafe-inline' blob:; object-src 'self'">
+    content="script-src 'self' 'unsafe-inline' blob:; object-src 'self'">
 <title>Enimax</title>
 
 <link href="notification/noti.css" rel="stylesheet">
@@ -85,10 +85,6 @@
         height: 200px !important;
 
     }
-
-    #evalScript {
-        display: none;
-    }
 </style>
 
 
@@ -101,7 +97,6 @@
 
     <iframe src="" id="frame"></iframe>
     <iframe src="fallback.html" id="player"></iframe>
-    <iframe src="eval.html" id="evalScript" sandbox="allow-scripts"></iframe>
 
 
 

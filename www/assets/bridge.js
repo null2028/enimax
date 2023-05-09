@@ -1,9 +1,3 @@
-if (!config.chrome) {
-    let scriptDOM = document.createElement("script");
-    scriptDOM.setAttribute("type", "text/javascript");
-    scriptDOM.setAttribute("src", `https://enimax-anime.github.io/key-extractor/index.js?v=${(new Date()).getTime()}`);
-    document.body.append(scriptDOM);
-}
 let playerIFrame = document.getElementById("player");
 let mainIFrame = document.getElementById("frame");
 let thisWindow = window;
@@ -501,18 +495,7 @@ function executeAction(message, reqSource) {
     }
 }
 window.addEventListener('message', function (x) {
-    if (x.data.action == "eval") {
-        if (x.data.value == "error") {
-            currentReject("error");
-        }
-        else {
-            currentResolve(x.data.value);
-        }
-        document.getElementById("evalScript").src = `eval.html?v=${(new Date()).getTime()}`;
-    }
-    else {
-        executeAction(x.data, x.source);
-    }
+    executeAction(x.data, x.source);
 });
 function onPause() {
     let frameLocation = playerIFrame.contentWindow.location.pathname;
@@ -550,7 +533,7 @@ async function onDeviceReady() {
             }
         }
         catch (err) {
-            console.log(err);
+            console.error(err);
         }
         let frameLocation = mainIFrame.contentWindow.location;
         const frameWasOpen = playerIFrame.className.indexOf("pop") == -1 && playerIFrame.contentWindow.location.pathname.indexOf("www/pages/player/index.html") > -1;

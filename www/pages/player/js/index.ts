@@ -817,9 +817,7 @@ function loadSubs(sourceName: string) {
 		let check = true;
 		for (var i = 0; i < vidInstance.vid.textTracks.length; i++) {
 			if (vidInstance.vid.textTracks[i].label == localStorage.getItem(`${engine}-${sourceName}-subtitle`) && check) {
-				console.log("e");
 				let subDOM: Selectables = DMenu.selections[`subtitle-${i}`];
-				console.log(subDOM);
 
 				if (subDOM) {
 					subDOM.select();
@@ -932,7 +930,6 @@ function chooseQual(config: sourceConfig) {
 						return;
 					}
 
-					console.log(data);
 					const errorFatal = data.fatal;
 					if (data.details === Hls.ErrorDetails.FRAG_LOAD_ERROR ||
 						data.details === Hls.ErrorDetails.FRAG_LOAD_TIMEOUT ||
@@ -945,7 +942,6 @@ function chooseQual(config: sourceConfig) {
 							hls.startLoad();
 						}
 					} else if (data.details === Hls.ErrorDetails.BUFFER_STALLED_ERROR) {
-						console.log(lastFragError, lastFragDuration, vidInstance.vid.currentTime);
 						if ((Math.abs(lastFragError - vidInstance.vid.currentTime) < 0.3) && fragErrorCount < 10) {
 							vidInstance.vid.currentTime = lastFragError + lastFragDuration + 0.3;
 							fragErrorCount++;
@@ -1260,7 +1256,7 @@ window.onmessage = async function (message: MessageEvent) {
 				extensionList[engine].getVideoTitle(window.location.search).then((title: string) => {
 					document.getElementById("titleCon").innerText = title;
 				}).catch((err: Error) => {
-					console.log(err);
+					console.error(err);
 					document.getElementById("titleCon").innerText = "";
 				});
 			} catch (err) {

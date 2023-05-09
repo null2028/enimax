@@ -90,7 +90,7 @@ var fmovies: extension = {
                     }
                 }
             } catch (err) {
-                console.log(err);
+                console.error(err);
             }
 
             return { "status": 200, "data": { "seasons": seasonInfo, "meta": metaData } };
@@ -205,7 +205,6 @@ var fmovies: extension = {
                     let allReponses = await Promise.allSettled([Promise.all(allAwaits), Promise.all(metaDataPromises)]);
                     if (allReponses[0].status === "fulfilled") {
                         values = allReponses[0].value;
-                        console.log(values);
                     } else {
                         throw Error("Could not get the seasons. Try again.");
                     }
@@ -554,7 +553,6 @@ var fmovies: extension = {
     fixTitle: function (title: string) {
         try {
             const tempTitle = title.split("-");
-            console.log(tempTitle, title)
             if (tempTitle.length > 2) {
                 tempTitle.pop();
                 if (title[title.length - 1] == "-") {

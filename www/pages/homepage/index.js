@@ -1261,7 +1261,6 @@ if (true) {
             window.parent
                 .apiCall("POST", { "username": username, "action": 4 }, get_userinfo_callback, [])
                 .then(() => {
-                console.log("Success.");
             })
                 .catch((err) => {
                 const errorCon = document.getElementById("custom_rooms");
@@ -1489,8 +1488,7 @@ if (true) {
                 currentExtension = extensionList[engine];
             }
             catch (err) {
-                console.error(err);
-                console.error(data[i]);
+                console.warn(err);
             }
             let tempDivEx = createElement({ "class": "card_title_extension", "attributes": {}, "listeners": {}, "innerText": currentExtensionName });
             let tempDiv3 = document.createElement("div");
@@ -1795,7 +1793,6 @@ document.getElementById("opSlider").oninput = function () {
     window.parent.postMessage({ "action": "updateOpacity", data: elem.value }, "*");
 };
 window.addEventListener("popstate", function (event) {
-    console.log(states);
     try {
         stateAction[states]();
     }

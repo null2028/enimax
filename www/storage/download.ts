@@ -407,7 +407,6 @@ class DownloadVid {
 
 
     async makeRequest(uri: string, typeFunc: TypeFunc, headers?): Promise<string> {
-        console.log(uri, headers);
         return new Promise(function (resolve, reject) {
             if (headers) {
                 const options = {

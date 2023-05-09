@@ -79,7 +79,7 @@ var zoro: extension = {
                     response.genres.push(genreAnchor.innerText);
                 }
             } catch (err) {
-                console.log(err);
+                console.error(err);
             }
 
             let thumbnails = {};

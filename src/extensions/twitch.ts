@@ -181,7 +181,6 @@ var twitch: extension = {
                     "method": "POST",
                     "body": data
                 }).then((x) => x.json()).then((resData) => {
-                    console.log(resData);
                     if (isVod) {
                         resolve(resData.data.videoPlaybackAccessToken);
                     } else {

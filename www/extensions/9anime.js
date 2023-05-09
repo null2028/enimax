@@ -63,7 +63,7 @@ var nineAnime = {
                 }
             }
             catch (err) {
-                console.log(err);
+                console.error(err);
             }
             let episodes = [];
             let IDVRF = await this.getVRF(nineAnimeID, "ajax-episode-list");

@@ -43,50 +43,21 @@ String.prototype["onlyOnce"] = function (substring: string) {
 
 function extractKey(id: number, url = null, useCached = false): Promise<string> {
     return (new Promise(async function (resolve, reject) {
-        if (config.chrome || useCached) {
-            try {
-                let gitHTML = (await MakeFetch(`https://github.com/enimax-anime/key/blob/e${id}/key.txt`)) as unknown as modifiedString;
-                let key = gitHTML.substringAfter('"blob-code blob-code-inner js-file-line">').substringBefore("</td>");
-                if (!key) {
-                    key = gitHTML.substringAfter('"rawBlob":"').substringBefore("\"");
-                }
-
-                if (!key) {
-                    key = (await MakeFetch(`https://raw.githubusercontent.com/enimax-anime/key/e${id}/key.txt`)) as unknown as modifiedString;
-                }
-                resolve(key);
-            } catch (err) {
-                reject(err);
-            }
-        } else {
-            let scr;
-            if (url == null) {
-                if (id == 6) {
-                    scr = (await MakeFetch(`https://rabbitstream.net/js/player/prod/e6-player.min.js?v=${(new Date()).getTime()}`));
-                } else {
-                    scr = (await MakeFetch(`https://rabbitstream.net/js/player/prod/e4-player.min.js?v=${(new Date()).getTime()}`));
-                }
-            } else {
-                scr = (await MakeFetch(url));
+        try {
+            let gitHTML = (await MakeFetch(`https://github.com/enimax-anime/key/blob/e${id}/key.txt`)) as unknown as modifiedString;
+            let key = gitHTML.substringAfter('"blob-code blob-code-inner js-file-line">').substringBefore("</td>");
+            if (!key) {
+                key = gitHTML.substringAfter('"rawBlob":"').substringBefore("\"");
             }
 
-            // @ts-ignore
-            scr = extractKeyComp(id, scr);
-            if (scr[1]) {
-                resolve(scr[0]);
-            } else {
-                currentResolve = resolve;
-                currentReject = reject;
-
-                setTimeout(function () {
-                    reject(new Error("timeout"));
-                }, 3000);
-
-                (document.getElementById("evalScript") as HTMLIFrameElement).contentWindow.postMessage(scr[0], "*");
+            if (!key) {
+                key = (await MakeFetch(`https://raw.githubusercontent.com/enimax-anime/key/e${id}/key.txt`)) as unknown as modifiedString;
             }
+            resolve(key);
+        } catch (err) {
+            reject(err);
         }
     }));
-
 }
 
 async function MakeFetch(url: string, options = {}): Promise<string> {
@@ -215,7 +186,6 @@ function getWebviewHTML(url = "https://www.zoro.to", hidden = false, timeout: nu
         });
 
         inappRef.addEventListener('message', (result: string) => {
-            console.log(result);
             inappRef.close();
             resolve(result);
         });
@@ -249,7 +219,6 @@ async function MakeFetchZoro(url: string, options = {}): Promise<string> {
 }
 
 function removeDOM(domElem: HTMLElement) {
-    console.log("Removing", domElem);
     try {
         domElem.innerHTML = "";
         domElem.remove();

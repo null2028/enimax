@@ -36,48 +36,19 @@ String.prototype["onlyOnce"] = function (substring) {
 };
 function extractKey(id, url = null, useCached = false) {
     return (new Promise(async function (resolve, reject) {
-        if (config.chrome || useCached) {
-            try {
-                let gitHTML = (await MakeFetch(`https://github.com/enimax-anime/key/blob/e${id}/key.txt`));
-                let key = gitHTML.substringAfter('"blob-code blob-code-inner js-file-line">').substringBefore("</td>");
-                if (!key) {
-                    key = gitHTML.substringAfter('"rawBlob":"').substringBefore("\"");
-                }
-                if (!key) {
-                    key = (await MakeFetch(`https://raw.githubusercontent.com/enimax-anime/key/e${id}/key.txt`));
-                }
-                resolve(key);
+        try {
+            let gitHTML = (await MakeFetch(`https://github.com/enimax-anime/key/blob/e${id}/key.txt`));
+            let key = gitHTML.substringAfter('"blob-code blob-code-inner js-file-line">').substringBefore("</td>");
+            if (!key) {
+                key = gitHTML.substringAfter('"rawBlob":"').substringBefore("\"");
             }
-            catch (err) {
-                reject(err);
+            if (!key) {
+                key = (await MakeFetch(`https://raw.githubusercontent.com/enimax-anime/key/e${id}/key.txt`));
             }
+            resolve(key);
         }
-        else {
-            let scr;
-            if (url == null) {
-                if (id == 6) {
-                    scr = (await MakeFetch(`https://rabbitstream.net/js/player/prod/e6-player.min.js?v=${(new Date()).getTime()}`));
-                }
-                else {
-                    scr = (await MakeFetch(`https://rabbitstream.net/js/player/prod/e4-player.min.js?v=${(new Date()).getTime()}`));
-                }
-            }
-            else {
-                scr = (await MakeFetch(url));
-            }
-            // @ts-ignore
-            scr = extractKeyComp(id, scr);
-            if (scr[1]) {
-                resolve(scr[0]);
-            }
-            else {
-                currentResolve = resolve;
-                currentReject = reject;
-                setTimeout(function () {
-                    reject(new Error("timeout"));
-                }, 3000);
-                document.getElementById("evalScript").contentWindow.postMessage(scr[0], "*");
-            }
+        catch (err) {
+            reject(err);
         }
     }));
 }
@@ -178,7 +149,6 @@ function getWebviewHTML(url = "https://www.zoro.to", hidden = false, timeout = 1
             reject(new Error("Error"));
         });
         inappRef.addEventListener('message', (result) => {
-            console.log(result);
             inappRef.close();
             resolve(result);
         });
@@ -208,7 +178,6 @@ async function MakeFetchZoro(url, options = {}) {
     });
 }
 function removeDOM(domElem) {
-    console.log("Removing", domElem);
     try {
         domElem.innerHTML = "";
         domElem.remove();
@@ -847,7 +816,7 @@ var fmovies = {
                 }
             }
             catch (err) {
-                console.log(err);
+                console.error(err);
             }
             return { "status": 200, "data": { "seasons": seasonInfo, "meta": metaData } };
         }
@@ -945,7 +914,6 @@ var fmovies = {
                     let allReponses = await Promise.allSettled([Promise.all(allAwaits), Promise.all(metaDataPromises)]);
                     if (allReponses[0].status === "fulfilled") {
                         values = allReponses[0].value;
-                        console.log(values);
                     }
                     else {
                         throw Error("Could not get the seasons. Try again.");
@@ -1237,7 +1205,6 @@ var fmovies = {
     fixTitle: function (title) {
         try {
             const tempTitle = title.split("-");
-            console.log(tempTitle, title);
             if (tempTitle.length > 2) {
                 tempTitle.pop();
                 if (title[title.length - 1] == "-") {
@@ -1326,7 +1293,7 @@ var zoro = {
                 }
             }
             catch (err) {
-                console.log(err);
+                console.error(err);
             }
             let thumbnails = {};
             let promises = [];
@@ -1813,7 +1780,6 @@ var twitch = {
                     "method": "POST",
                     "body": data
                 }).then((x) => x.json()).then((resData) => {
-                    console.log(resData);
                     if (isVod) {
                         resolve(resData.data.videoPlaybackAccessToken);
                     }
@@ -1959,7 +1925,7 @@ var nineAnime = {
                 }
             }
             catch (err) {
-                console.log(err);
+                console.error(err);
             }
             let episodes = [];
             let IDVRF = await this.getVRF(nineAnimeID, "ajax-episode-list");
@@ -2457,7 +2423,7 @@ var fmoviesto = {
                 }
             }
             catch (err) {
-                console.log(err);
+                console.error(err);
             }
             let episodes = [];
             const uid = infoDOM.querySelector("#watch").getAttribute("data-id");
@@ -2580,7 +2546,6 @@ var fmoviesto = {
             try {
                 const serverString = JSON.parse(currentEpisode.getAttribute("data-ep"));
                 for (const serverId in serverString) {
-                    console.log(servers, serverId);
                     epsiodeServers.push({
                         type: servers[serverId],
                         id: serverString[serverId],
@@ -2588,7 +2553,7 @@ var fmoviesto = {
                 }
             }
             catch (err) {
-                console.log(err);
+                console.error(err);
                 throw new Error('Episode not found');
             }
             try {

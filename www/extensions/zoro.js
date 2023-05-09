@@ -68,7 +68,7 @@ var zoro = {
                 }
             }
             catch (err) {
-                console.log(err);
+                console.error(err);
             }
             let thumbnails = {};
             let promises = [];

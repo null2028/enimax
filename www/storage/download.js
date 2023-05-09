@@ -274,7 +274,6 @@ class DownloadVid {
         });
     }
     async makeRequest(uri, typeFunc, headers) {
-        console.log(uri, headers);
         return new Promise(function (resolve, reject) {
             if (headers) {
                 const options = {

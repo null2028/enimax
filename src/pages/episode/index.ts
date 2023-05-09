@@ -797,7 +797,6 @@ function ini() {
 
                     if (trr == currentLink) {
                         scrollToDOM = tempDiv;
-                        console.log(scrollToDOM);
                         tempDiv.style.backgroundColor = "rgba(255,255,255,1)";
                         tempDiv.classList.add("episodesSelected");
                     }

@@ -84,7 +84,7 @@ var fmoviesto: extension = {
                     }
                 }
             } catch (err) {
-                console.log(err);
+                console.error(err);
             }
 
             let episodes = [];
@@ -235,14 +235,13 @@ var fmoviesto: extension = {
             try {
                 const serverString: { [key: string]: string } = JSON.parse(currentEpisode.getAttribute("data-ep"));
                 for (const serverId in serverString) {
-                    console.log(servers, serverId);
                     epsiodeServers.push({
                         type: servers[serverId],
                         id: serverString[serverId],
                     });
                 }
             } catch (err) {
-                console.log(err);
+                console.error(err);
                 throw new Error('Episode not found');
             }
 

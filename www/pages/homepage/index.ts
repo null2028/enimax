@@ -1633,7 +1633,6 @@ if (true) {
             (<cordovaWindow>window.parent)
                 .apiCall("POST", { "username": username, "action": 4 }, get_userinfo_callback, [])
                 .then(() => {
-                    console.log("Success.");
                 })
                 .catch((err: Error) => {
                     const errorCon = document.getElementById("custom_rooms");
@@ -1907,8 +1906,7 @@ if (true) {
                 currentExtensionName = extensionNames[engine];
                 currentExtension = extensionList[engine];
             } catch (err) {
-                console.error(err);
-                console.error(data[i]);
+                console.warn(err);
             }
 
             let tempDivEx = createElement({ "class": "card_title_extension", "attributes": {}, "listeners": {}, "innerText": currentExtensionName });
@@ -2296,7 +2294,6 @@ document.getElementById("opSlider").oninput = function () {
 };
 
 window.addEventListener("popstate", function (event) {
-    console.log(states);
     try {
         stateAction[states]();
     } catch (err) {

@@ -1,10 +1,3 @@
-if (!config.chrome) {
-    let scriptDOM = document.createElement("script");
-    scriptDOM.setAttribute("type", "text/javascript");
-    scriptDOM.setAttribute("src", `https://enimax-anime.github.io/key-extractor/index.js?v=${(new Date()).getTime()}`);
-    document.body.append(scriptDOM);
-}
-
 let playerIFrame = document.getElementById("player") as HTMLIFrameElement;
 let mainIFrame = document.getElementById("frame") as HTMLIFrameElement;
 let thisWindow = (window as unknown as cordovaWindow);
@@ -601,16 +594,7 @@ function executeAction(message: MessageAction, reqSource: Window) {
 }
 
 window.addEventListener('message', function (x) {
-    if (x.data.action == "eval") {
-        if (x.data.value == "error") {
-            currentReject("error");
-        } else {
-            currentResolve(x.data.value);
-        }
-        (document.getElementById("evalScript") as HTMLIFrameElement).src = `eval.html?v=${(new Date()).getTime()}`;
-    } else {
-        executeAction(x.data, x.source as WindowProxy);
-    }
+    executeAction(x.data, x.source as WindowProxy);
 });
 
 
@@ -631,7 +615,7 @@ function onResume() {
 }
 
 
-function back(){
+function back() {
     backFunction();
 }
 
@@ -660,7 +644,7 @@ async function onDeviceReady() {
                 return;
             }
         } catch (err) {
-            console.log(err);
+            console.error(err);
         }
 
         let frameLocation = mainIFrame.contentWindow.location;
@@ -708,7 +692,7 @@ async function onDeviceReady() {
         window.location.href = "login.html";
     }
 
-    document.addEventListener("backbutton", () => {backFunction()}, false);
+    document.addEventListener("backbutton", () => { backFunction() }, false);
     document.addEventListener("pause", onPause, false);
     document.addEventListener("resume", onResume, false);
 

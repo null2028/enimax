@@ -72,7 +72,7 @@ var fmoviesto = {
                 }
             }
             catch (err) {
-                console.log(err);
+                console.error(err);
             }
             let episodes = [];
             const uid = infoDOM.querySelector("#watch").getAttribute("data-id");
@@ -195,7 +195,6 @@ var fmoviesto = {
             try {
                 const serverString = JSON.parse(currentEpisode.getAttribute("data-ep"));
                 for (const serverId in serverString) {
-                    console.log(servers, serverId);
                     epsiodeServers.push({
                         type: servers[serverId],
                         id: serverString[serverId],
@@ -203,7 +202,7 @@ var fmoviesto = {
                 }
             }
             catch (err) {
-                console.log(err);
+                console.error(err);
                 throw new Error('Episode not found');
             }
             try {

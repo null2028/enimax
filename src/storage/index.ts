@@ -1054,7 +1054,7 @@ if (true) {
             }
 
         } catch (error) {
-            console.log(error);
+            console.error(error);
             return { "status": 500, "errorCode": 10000, "message": "Database error." };
         }
 
