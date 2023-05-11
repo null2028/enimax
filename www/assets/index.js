@@ -347,6 +347,7 @@ async function fetchMapping(id) {
 }
 function makeCardCon(con, nodes, edges) {
     var _a;
+    let didAdd = false;
     try {
         const relationsCross = makeCross("fixed");
         con.append(relationsCross);
@@ -354,6 +355,7 @@ function makeCardCon(con, nodes, edges) {
             if (((_a = nodes[i]) === null || _a === void 0 ? void 0 : _a.type) !== "ANIME") {
                 continue;
             }
+            didAdd = true;
             const card = makeCard({
                 id: nodes[i].id,
                 image: nodes[i].coverImage.extraLarge,
@@ -368,6 +370,9 @@ function makeCardCon(con, nodes, edges) {
     }
     catch (err) {
         console.error(err);
+    }
+    finally {
+        return didAdd;
     }
 }
 function openCon(con, display = "block") {

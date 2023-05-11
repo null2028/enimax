@@ -311,15 +311,19 @@ function ini() {
                         }
                     }
                     if (((_b = metaData === null || metaData === void 0 ? void 0 : metaData.relations) === null || _b === void 0 ? void 0 : _b.nodes.length) > 0) {
-                        document.getElementById("relations").style.display = "inline-block";
                         const nodes = metaData.relations.nodes;
                         const edges = metaData.relations.edges;
-                        makeCardCon(relationsDOM, nodes, edges);
+                        const didAdd = makeCardCon(relationsDOM, nodes, edges);
+                        if (didAdd) {
+                            document.getElementById("relations").style.display = "inline-block";
+                        }
                     }
                     if (((_c = metaData === null || metaData === void 0 ? void 0 : metaData.recommendations) === null || _c === void 0 ? void 0 : _c.edges.length) > 0) {
-                        document.getElementById("recommendations").style.display = "inline-block";
                         const nodes = metaData.recommendations.edges.map((edge) => edge.node.mediaRecommendation);
-                        makeCardCon(recomDOM, nodes);
+                        const didAdd = makeCardCon(recomDOM, nodes);
+                        if (didAdd) {
+                            document.getElementById("recommendations").style.display = "inline-block";
+                        }
                     }
                     if (addedCover) {
                         imageDOM.style.display = "none";

@@ -415,6 +415,9 @@ async function fetchMapping(id: string) {
 }
 
 function makeCardCon(con: HTMLElement, nodes: any, edges?: any) {
+
+    let didAdd = false;
+
     try {
         const relationsCross = makeCross("fixed");
 
@@ -424,6 +427,8 @@ function makeCardCon(con: HTMLElement, nodes: any, edges?: any) {
             if (nodes[i]?.type !== "ANIME") {
                 continue;
             }
+
+            didAdd = true;
 
             const card = makeCard({
                 id: nodes[i].id,
@@ -441,6 +446,8 @@ function makeCardCon(con: HTMLElement, nodes: any, edges?: any) {
         }
     } catch (err) {
         console.error(err);
+    } finally{
+        return didAdd;
     }
 }
 

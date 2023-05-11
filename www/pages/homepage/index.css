@@ -340,8 +340,9 @@ input[type="color"]::-webkit-color-swatch {
 
 .s_card_next_ep {
     display: inline-block;
-    background: black;
+    background: #262626;
     color: white;
+    border: 2px solid white;
     padding: 3px 8px;
     margin-left: 5px;
     border-radius: 0 8px 8px 10px;

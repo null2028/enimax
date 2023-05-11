@@ -377,16 +377,20 @@ function ini() {
                     }
 
                     if (metaData?.relations?.nodes.length > 0) {
-                        document.getElementById("relations").style.display = "inline-block";
                         const nodes = metaData.relations.nodes;
                         const edges = metaData.relations.edges;
-                        makeCardCon(relationsDOM, nodes, edges);
+                        const didAdd = makeCardCon(relationsDOM, nodes, edges);
+                        if(didAdd){
+                            document.getElementById("relations").style.display = "inline-block";
+                        }
                     }
 
                     if (metaData?.recommendations?.edges.length > 0) {
-                        document.getElementById("recommendations").style.display = "inline-block";
                         const nodes = metaData.recommendations.edges.map((edge: any) => edge.node.mediaRecommendation);
-                        makeCardCon(recomDOM, nodes);
+                        const didAdd = makeCardCon(recomDOM, nodes);
+                        if(didAdd){
+                            document.getElementById("recommendations").style.display = "inline-block";
+                        }
                     }
 
                     if (addedCover) {

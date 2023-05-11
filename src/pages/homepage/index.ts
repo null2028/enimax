@@ -1774,7 +1774,7 @@ if (true) {
                 // (show.dom.querySelector(".card_menu") as HTMLElement).style.bottom = "50px"; 
                 const labelExtension = show.dom.querySelector(".card_title_extension") as HTMLElement;
                 const extensionName = labelExtension.innerText;
-                const nextEp = (window.parent as cordovaWindow).secondsToHuman(nextEpData[`anime${id}`].nextAiringEpisode.timeUntilAiring);
+                const nextEp = (window.parent as cordovaWindow).secondsToHuman(nextEpData[`anime${id}`].nextAiringEpisode.timeUntilAiring, true);
 
                 labelExtension.style.padding = "inherit";
                 labelExtension.innerHTML = "";

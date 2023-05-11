@@ -157,7 +157,6 @@ var nineAnime = {
                 catch (err) {
                     console.warn("Could not find the title");
                 }
-                console.log(title);
                 episodes.push({
                     "link": (nextPrev ? "" : "?watch=") + encodeURIComponent(id) + "&ep=" + curElem.querySelector("a").getAttribute("data-ids") + "&engine=5",
                     "id": curElem.querySelector("a").getAttribute("data-num"),
