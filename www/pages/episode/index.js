@@ -886,11 +886,16 @@ addToLibrary.onclick = function () {
                 "img": showImage,
                 "url": location.search
             }, () => {
+                var _a;
+                let firstEpURL = (_a = document.querySelector(".episodesCon")) === null || _a === void 0 ? void 0 : _a.getAttribute("data-url");
+                if (!firstEpURL) {
+                    firstEpURL = "?watch=null";
+                }
                 window.parent.apiCall("POST", {
                     "username": "",
                     "action": 2,
                     "name": showMainName,
-                    "cur": document.querySelector(".episodesCon").getAttribute("data-url"),
+                    "cur": firstEpURL,
                     "ep": 1
                 }, (response) => {
                     addToLibrary.classList.remove("isWaiting");

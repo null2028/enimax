@@ -1059,12 +1059,18 @@ addToLibrary.onclick = function () {
                 "url": location.search
             }, () => {
 
+                let firstEpURL = document.querySelector(".episodesCon")?.getAttribute("data-url");
+
+                if(!firstEpURL){
+                    firstEpURL = "?watch=null";
+                }
+
                 (<cordovaWindow>window.parent).apiCall("POST",
                     {
                         "username": "",
                         "action": 2,
                         "name": showMainName,
-                        "cur": document.querySelector(".episodesCon").getAttribute("data-url"),
+                        "cur": firstEpURL,
                         "ep": 1
                     }, (response) => {
                         addToLibrary.classList.remove("isWaiting");
