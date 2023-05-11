@@ -338,6 +338,18 @@ input[type="color"]::-webkit-color-swatch {
 
 }
 
+.s_card_next_ep {
+    display: inline-block;
+    background: black;
+    color: white;
+    padding: 3px 8px;
+    margin-left: 5px;
+    border-radius: 0 8px 8px 10px;
+    font-weight: 500;
+    font-size: 11px;
+    pointer-events: all !important;
+}
+
 .card_title_extension {
     pointer-events: none;
     display: inline-block;
@@ -406,7 +418,7 @@ input[type="color"]::-webkit-color-swatch {
     backdrop-filter: blur(2px);
 }
 
-.bannerMainContent{
+.bannerMainContent {
     max-width: 500px;
 }
 
@@ -441,7 +453,7 @@ input[type="color"]::-webkit-color-swatch {
     overflow: hidden;
 }
 
-.bannerDescription.open{
+.bannerDescription.open {
     -webkit-line-clamp: unset;
 }
 

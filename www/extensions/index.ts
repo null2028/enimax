@@ -363,9 +363,8 @@ const anilistQueries = {
                 }`
 };
 
-async function anilistAPI(type: "info" | "trending", variables = {}) {
+async function anilistAPI(query: string, variables = {}) {
 
-    const query = anilistQueries[type];
     const url = 'https://graphql.anilist.co',
         options = {
             method: 'POST',
@@ -385,15 +384,92 @@ async function anilistAPI(type: "info" | "trending", variables = {}) {
 async function getAnilistInfo(type: anilistType, id: string) {
     const anilistID = JSON.parse(await MakeFetch(`https://raw.githubusercontent.com/MALSync/MAL-Sync-Backup/master/data/pages/${type}/${id}.json`)).aniId;
 
-    return (await anilistAPI("info", { id: anilistID })).data.Media;
+    return (await anilistAPI(anilistQueries.info, { id: anilistID })).data.Media;
 }
 
 async function getAnilistTrending(type: "current" | "next") {
 
-    return (await anilistAPI("trending", {
+    return (await anilistAPI(anilistQueries.trending, {
         page: 1,
         perPage: 25,
         season: getCurrentSeason(type),
         seasonYear: getCurrentYear(type)
     })).data.Page.media;
+}
+
+function secondsToHuman(seconds: number) {
+    const d = Math.floor(seconds / (3600 * 24));
+    const h = Math.floor(seconds % (3600 * 24) / 3600);
+    const m = Math.floor(seconds % 3600 / 60);
+    const s = Math.floor(seconds % 60);
+
+    const dDisplay = d > 0 ? d + (d == 1 ? " day, " : " days ") : "";
+    const hDisplay = h > 0 ? h + (h == 1 ? " hour, " : " hours ") : "";
+    const mDisplay = m > 0 ? m + (m == 1 ? " minute, " : " minutes ") : "";
+    const sDisplay = s > 0 ? s + (s == 1 ? " second" : " seconds") : "";
+
+    if (dDisplay) {
+        return dDisplay;
+    }
+
+    if (hDisplay) {
+        return hDisplay;
+    }
+
+    if (mDisplay) {
+        return mDisplay;
+    }
+
+    if (sDisplay) {
+        return sDisplay;
+    }
+
+}
+
+function batchConstructor(ids: Array<string>) {
+    let subQueries = "";
+    const batchReqs = [];
+    let count = 0;
+    for (let i = 0; i < ids.length; i++) {
+        const id = parseInt(ids[i]);
+        if (isNaN(id)) {
+            continue;
+        }
+
+        count++;
+        subQueries += `anime${id}: Page(page: 1, perPage: 1) {
+                            media(type: ANIME, id: ${id}) {
+                                nextAiringEpisode { airingAt timeUntilAiring episode }
+                            }
+                        }`;
+        if (count >= 82 || i == ids.length - 1) {
+            batchReqs.push(`query{
+                ${subQueries}
+            }`);
+            count = 0;
+            subQueries = "";
+        }
+    }
+
+    return batchReqs;
+}
+
+async function sendBatchReqs(ids: Array<string>) {
+    const queries = batchConstructor(ids);
+    const promises = [];
+
+    for (const query of queries) {
+        promises.push(anilistAPI(query));
+    }
+
+    const responses = await Promise.all(promises);
+    const result = {};
+
+    for(let i = 0; i < responses.length; i++){
+        for(const id in responses[i].data){
+            result[id] = responses[i]?.data[id].media[0];
+        }
+    }
+
+    return result;
 }

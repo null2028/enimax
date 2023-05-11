@@ -315,8 +315,7 @@ const anilistQueries = {
                     }
                 }`
 };
-async function anilistAPI(type, variables = {}) {
-    const query = anilistQueries[type];
+async function anilistAPI(query, variables = {}) {
     const url = 'https://graphql.anilist.co', options = {
         method: 'POST',
         headers: {
@@ -332,15 +331,78 @@ async function anilistAPI(type, variables = {}) {
 }
 async function getAnilistInfo(type, id) {
     const anilistID = JSON.parse(await MakeFetch(`https://raw.githubusercontent.com/MALSync/MAL-Sync-Backup/master/data/pages/${type}/${id}.json`)).aniId;
-    return (await anilistAPI("info", { id: anilistID })).data.Media;
+    return (await anilistAPI(anilistQueries.info, { id: anilistID })).data.Media;
 }
 async function getAnilistTrending(type) {
-    return (await anilistAPI("trending", {
+    return (await anilistAPI(anilistQueries.trending, {
         page: 1,
         perPage: 25,
         season: getCurrentSeason(type),
         seasonYear: getCurrentYear(type)
     })).data.Page.media;
+}
+function secondsToHuman(seconds) {
+    const d = Math.floor(seconds / (3600 * 24));
+    const h = Math.floor(seconds % (3600 * 24) / 3600);
+    const m = Math.floor(seconds % 3600 / 60);
+    const s = Math.floor(seconds % 60);
+    const dDisplay = d > 0 ? d + (d == 1 ? " day, " : " days ") : "";
+    const hDisplay = h > 0 ? h + (h == 1 ? " hour, " : " hours ") : "";
+    const mDisplay = m > 0 ? m + (m == 1 ? " minute, " : " minutes ") : "";
+    const sDisplay = s > 0 ? s + (s == 1 ? " second" : " seconds") : "";
+    if (dDisplay) {
+        return dDisplay;
+    }
+    if (hDisplay) {
+        return hDisplay;
+    }
+    if (mDisplay) {
+        return mDisplay;
+    }
+    if (sDisplay) {
+        return sDisplay;
+    }
+}
+function batchConstructor(ids) {
+    let subQueries = "";
+    const batchReqs = [];
+    let count = 0;
+    for (let i = 0; i < ids.length; i++) {
+        const id = parseInt(ids[i]);
+        if (isNaN(id)) {
+            continue;
+        }
+        count++;
+        subQueries += `anime${id}: Page(page: 1, perPage: 1) {
+                            media(type: ANIME, id: ${id}) {
+                                nextAiringEpisode { airingAt timeUntilAiring episode }
+                            }
+                        }`;
+        if (count >= 82 || i == ids.length - 1) {
+            batchReqs.push(`query{
+                ${subQueries}
+            }`);
+            count = 0;
+            subQueries = "";
+        }
+    }
+    return batchReqs;
+}
+async function sendBatchReqs(ids) {
+    var _a;
+    const queries = batchConstructor(ids);
+    const promises = [];
+    for (const query of queries) {
+        promises.push(anilistAPI(query));
+    }
+    const responses = await Promise.all(promises);
+    const result = {};
+    for (let i = 0; i < responses.length; i++) {
+        for (const id in responses[i].data) {
+            result[id] = (_a = responses[i]) === null || _a === void 0 ? void 0 : _a.data[id].media[0];
+        }
+    }
+    return result;
 }
 
 var wco = {
@@ -1250,7 +1312,73 @@ var zoro = {
             removeDOM(dom);
         }
     },
-    getAnimeInfo: async function (url, idToFind = null) {
+    getAnimeInfo: async function (url) {
+        const settled = "allSettled" in Promise;
+        const id = (new URLSearchParams(`?watch=${url}`)).get("watch").split("-").pop();
+        let response = {
+            "name": "",
+            "image": "",
+            "description": "",
+            "episodes": [],
+            "mainName": ""
+        };
+        try {
+            if (settled) {
+                let anilistID;
+                try {
+                    anilistID = JSON.parse(await MakeFetch(`https://raw.githubusercontent.com/MALSync/MAL-Sync-Backup/master/data/pages/Zoro/${id}.json`)).aniId;
+                }
+                catch (err) {
+                    // anilistID will be undefined
+                }
+                if (anilistID) {
+                    const promises = [
+                        this.getAnimeInfoInter(url),
+                        MakeFetchTimeout(`https://api.enime.moe/mapping/anilist/${anilistID}`, {}, 2000)
+                    ];
+                    const promiseResponses = await Promise.allSettled(promises);
+                    if (promiseResponses[0].status === "fulfilled") {
+                        response = promiseResponses[0].value;
+                        if (promiseResponses[1].status === "fulfilled") {
+                            try {
+                                const metaData = JSON.parse(promiseResponses[1].value).episodes;
+                                const metaDataMap = {};
+                                for (let i = 0; i < metaData.length; i++) {
+                                    metaDataMap[metaData[i].number] = metaData[i];
+                                }
+                                for (let i = 0; i < response.episodes.length; i++) {
+                                    const currentEp = metaDataMap[response.episodes[i].id];
+                                    const currentResponseEp = response.episodes[i];
+                                    currentResponseEp.description = currentEp === null || currentEp === void 0 ? void 0 : currentEp.description;
+                                    currentResponseEp.thumbnail = currentEp === null || currentEp === void 0 ? void 0 : currentEp.image;
+                                    currentResponseEp.date = new Date(currentEp === null || currentEp === void 0 ? void 0 : currentEp.airedAt);
+                                    currentResponseEp.title += ` - ${currentEp === null || currentEp === void 0 ? void 0 : currentEp.title}`;
+                                }
+                            }
+                            catch (err) {
+                                console.error(err);
+                            }
+                        }
+                        return response;
+                    }
+                    else {
+                        throw promiseResponses[0].reason;
+                    }
+                }
+                else {
+                    return await this.getAnimeInfoInter(url);
+                }
+            }
+            else {
+                return await this.getAnimeInfoInter(url);
+            }
+        }
+        catch (err) {
+            console.error(err);
+            throw err;
+        }
+    },
+    getAnimeInfoInter: async function (url) {
         url = url.split("&engine")[0];
         const rawURL = `https://zoro.to/${url}`;
         const animeDOM = document.createElement("div");
@@ -1266,19 +1394,9 @@ var zoro = {
                 "mainName": ""
             };
             let animeHTML = await MakeFetchZoro(`https://zoro.to/${url}`, {});
-            let malID = null;
-            let settled = "allSettled" in Promise;
-            try {
-                let tempID = parseInt(animeHTML.split(`"mal_id":"`)[1]);
-                if (!isNaN(tempID)) {
-                    malID = tempID;
-                }
-            }
-            catch (err) {
-            }
             animeDOM.innerHTML = DOMPurify.sanitize(animeHTML);
-            let name = url;
-            let nameSplit = name.replace("?watch=", "").split("&ep=")[0].split("-");
+            let name = (new URLSearchParams(`?watch=${url}`)).get("watch");
+            const nameSplit = name.split("-");
             nameSplit.pop();
             name = nameSplit.join("-");
             response.mainName = name;
@@ -1295,76 +1413,17 @@ var zoro = {
             catch (err) {
                 console.error(err);
             }
-            let thumbnails = {};
-            let promises = [];
-            let episodeHTML;
-            let check = false;
-            if (malID !== null) {
-                try {
-                    let thumbnailsTemp = [];
-                    if (settled) {
-                        promises.push(MakeFetchTimeout(`https://api.enime.moe/mapping/mal/${malID}`, {}, 2000));
-                        promises.push(MakeFetchZoro(`https://zoro.to/ajax/v2/episode/list/${id}`, {}));
-                        let responses = await Promise.allSettled(promises);
-                        try {
-                            if (responses[0].status === "fulfilled") {
-                                thumbnailsTemp = JSON.parse(responses[0].value).episodes;
-                            }
-                        }
-                        catch (err) {
-                        }
-                        if (responses[1].status === "fulfilled") {
-                            episodeHTML = responses[1].value;
-                            check = true;
-                        }
-                    }
-                    else {
-                        let metaData = await MakeFetchTimeout(`https://api.enime.moe/mapping/mal/${malID}`, {}, 2000);
-                        thumbnailsTemp = JSON.parse(metaData).episodes;
-                    }
-                    for (let i = 0; i < thumbnailsTemp.length; i++) {
-                        thumbnails[thumbnailsTemp[i].number] = thumbnailsTemp[i];
-                    }
-                }
-                catch (err) {
-                    console.error(err);
-                }
-            }
-            if (!check) {
-                episodeHTML = await MakeFetchZoro(`https://zoro.to/ajax/v2/episode/list/${id}`, {});
-            }
-            episodeHTML = JSON.parse(episodeHTML).html;
+            let episodeHTML = JSON.parse(await MakeFetchZoro(`https://zoro.to/ajax/v2/episode/list/${id}`, {})).html;
             dom.innerHTML = DOMPurify.sanitize(episodeHTML);
             let episodeListDOM = dom.querySelectorAll('.ep-item');
             let data = [];
             for (var i = 0; i < episodeListDOM.length; i++) {
                 let tempEp = {
                     "link": episodeListDOM[i].getAttribute("href").replace("/watch/", "?watch=").replace("?ep=", "&ep=") + "&engine=3",
-                    "id": episodeListDOM[i].getAttribute("data-id"),
+                    "id": episodeListDOM[i].getAttribute("data-number"),
+                    "sourceID": episodeListDOM[i].getAttribute("data-id"),
                     "title": "Episode " + episodeListDOM[i].getAttribute("data-number"),
                 };
-                if (idToFind !== null && parseInt(episodeListDOM[i].getAttribute("data-id")) == idToFind) {
-                    try {
-                        let epIndex = parseFloat(episodeListDOM[i].getAttribute("data-number"));
-                        if (epIndex in thumbnails) {
-                            response.name = thumbnails[epIndex].title;
-                        }
-                    }
-                    catch (err) {
-                        console.error(err);
-                    }
-                    return response;
-                }
-                try {
-                    let epIndex = parseFloat(episodeListDOM[i].getAttribute("data-number"));
-                    if (epIndex in thumbnails) {
-                        tempEp.thumbnail = thumbnails[epIndex].image;
-                        tempEp.title = "Episode " + epIndex + " - " + thumbnails[epIndex].title;
-                        tempEp.description = thumbnails[epIndex].description;
-                    }
-                }
-                catch (err) {
-                }
                 data.push(tempEp);
             }
             response.episodes = data;
@@ -1472,7 +1531,14 @@ var zoro = {
     getVideoTitle: async function (url) {
         let showURL = new URLSearchParams(url);
         try {
-            return (await this.getAnimeInfo(showURL.get("watch"), showURL.get("ep"))).name;
+            const response = await this.getAnimeInfo(showURL.get("watch"));
+            const ep = showURL.get("ep");
+            for (let i = 0; i < response.episodes.length; i++) {
+                if (response.episodes[i].sourceID === ep) {
+                    return response.episodes[i].title;
+                }
+            }
+            return "";
         }
         catch (err) {
             return "";
@@ -1892,7 +1958,73 @@ var nineAnime = {
             removeDOM(searchDOM);
         }
     },
-    getAnimeInfo: async function (url, nextPrev = false) {
+    getAnimeInfo: async function (url) {
+        const settled = "allSettled" in Promise;
+        const id = (new URLSearchParams(`?watch=${url}`)).get("watch").split(".").pop();
+        let response = {
+            "name": "",
+            "image": "",
+            "description": "",
+            "episodes": [],
+            "mainName": ""
+        };
+        try {
+            if (settled) {
+                let anilistID;
+                try {
+                    anilistID = JSON.parse(await MakeFetch(`https://raw.githubusercontent.com/MALSync/MAL-Sync-Backup/master/data/pages/9anime/${id}.json`)).aniId;
+                }
+                catch (err) {
+                    // anilistID will be undefined
+                }
+                if (anilistID) {
+                    const promises = [
+                        this.getAnimeInfoInter(url),
+                        MakeFetchTimeout(`https://api.enime.moe/mapping/anilist/${anilistID}`, {}, 2000)
+                    ];
+                    const promiseResponses = await Promise.allSettled(promises);
+                    if (promiseResponses[0].status === "fulfilled") {
+                        response = promiseResponses[0].value;
+                        if (promiseResponses[1].status === "fulfilled") {
+                            try {
+                                const metaData = JSON.parse(promiseResponses[1].value).episodes;
+                                const metaDataMap = {};
+                                for (let i = 0; i < metaData.length; i++) {
+                                    metaDataMap[metaData[i].number] = metaData[i];
+                                }
+                                for (let i = 0; i < response.episodes.length; i++) {
+                                    const currentEp = metaDataMap[response.episodes[i].id];
+                                    const currentResponseEp = response.episodes[i];
+                                    currentResponseEp.description = currentEp === null || currentEp === void 0 ? void 0 : currentEp.description;
+                                    currentResponseEp.thumbnail = currentEp === null || currentEp === void 0 ? void 0 : currentEp.image;
+                                    currentResponseEp.date = new Date(currentEp === null || currentEp === void 0 ? void 0 : currentEp.airedAt);
+                                    currentResponseEp.title = `Episode ${currentResponseEp.id} - ${currentEp === null || currentEp === void 0 ? void 0 : currentEp.title}`;
+                                }
+                            }
+                            catch (err) {
+                                console.error(err);
+                            }
+                        }
+                        return response;
+                    }
+                    else {
+                        throw promiseResponses[0].reason;
+                    }
+                }
+                else {
+                    return await this.getAnimeInfoInter(url);
+                }
+            }
+            else {
+                return await this.getAnimeInfoInter(url);
+            }
+        }
+        catch (err) {
+            console.error(err);
+            throw err;
+        }
+    },
+    getAnimeInfoInter: async function (url, nextPrev = false) {
         url = url.split("&engine")[0];
         const response = {
             "name": "",
@@ -1955,7 +2087,7 @@ var nineAnime = {
                 }
                 episodes.push({
                     "link": (nextPrev ? "" : "?watch=") + encodeURIComponent(id) + "&ep=" + curElem.querySelector("a").getAttribute("data-ids") + "&engine=5",
-                    "id": curElem.querySelector("a").getAttribute("data-ids"),
+                    "id": curElem.querySelector("a").getAttribute("data-num"),
                     "title": nextPrev ? title : `Episode ${curElem.querySelector("a").getAttribute("data-num")} - ${title}`
                 });
             }
@@ -2104,7 +2236,7 @@ var nineAnime = {
             let settledSupported = "allSettled" in Promise;
             let epList = [];
             if (settledSupported) {
-                promises.unshift(this.getAnimeInfo(`?watch=/${searchParams.get("watch")}`, true));
+                promises.unshift(this.getAnimeInfoInter(`?watch=/${searchParams.get("watch")}`, true));
                 const promiseResult = await Promise.allSettled(promises);
                 if (promiseResult[0].status === "fulfilled") {
                     epList = promiseResult[0].value.episodes;
@@ -2113,7 +2245,7 @@ var nineAnime = {
             else {
                 try {
                     await Promise.all(promises);
-                    epList = (await this.getAnimeInfo(`?watch=/${searchParams.get("watch")}`, true)).episodes;
+                    epList = (await this.getAnimeInfoInter(`?watch=/${searchParams.get("watch")}`, true)).episodes;
                 }
                 catch (err) {
                     console.error(err);
@@ -2903,7 +3035,73 @@ var gogo = {
             removeDOM(dom);
         }
     },
-    getAnimeInfo: async function (url, idToFind = null) {
+    getAnimeInfo: async function (url) {
+        const settled = "allSettled" in Promise;
+        const id = (new URLSearchParams(`?watch=${url}`)).get("watch").replace("category/", "");
+        let response = {
+            "name": "",
+            "image": "",
+            "description": "",
+            "episodes": [],
+            "mainName": ""
+        };
+        try {
+            if (settled) {
+                let anilistID;
+                try {
+                    anilistID = JSON.parse(await MakeFetch(`https://raw.githubusercontent.com/MALSync/MAL-Sync-Backup/master/data/pages/Gogoanime/${id}.json`)).aniId;
+                }
+                catch (err) {
+                    // anilistID will be undefined
+                }
+                if (anilistID) {
+                    const promises = [
+                        this.getAnimeInfoInter(url),
+                        MakeFetchTimeout(`https://api.enime.moe/mapping/anilist/${anilistID}`, {}, 2000)
+                    ];
+                    const promiseResponses = await Promise.allSettled(promises);
+                    if (promiseResponses[0].status === "fulfilled") {
+                        response = promiseResponses[0].value;
+                        if (promiseResponses[1].status === "fulfilled") {
+                            try {
+                                const metaData = JSON.parse(promiseResponses[1].value).episodes;
+                                const metaDataMap = {};
+                                for (let i = 0; i < metaData.length; i++) {
+                                    metaDataMap[metaData[i].number] = metaData[i];
+                                }
+                                for (let i = 0; i < response.episodes.length; i++) {
+                                    const currentEp = metaDataMap[response.episodes[i].id];
+                                    const currentResponseEp = response.episodes[i];
+                                    currentResponseEp.description = currentEp === null || currentEp === void 0 ? void 0 : currentEp.description;
+                                    currentResponseEp.thumbnail = currentEp === null || currentEp === void 0 ? void 0 : currentEp.image;
+                                    currentResponseEp.date = new Date(currentEp === null || currentEp === void 0 ? void 0 : currentEp.airedAt);
+                                    currentResponseEp.title += ` - ${currentEp === null || currentEp === void 0 ? void 0 : currentEp.title}`;
+                                }
+                            }
+                            catch (err) {
+                                console.error(err);
+                            }
+                        }
+                        return response;
+                    }
+                    else {
+                        throw promiseResponses[0].reason;
+                    }
+                }
+                else {
+                    return await this.getAnimeInfoInter(url);
+                }
+            }
+            else {
+                return await this.getAnimeInfoInter(url);
+            }
+        }
+        catch (err) {
+            console.error(err);
+            throw err;
+        }
+    },
+    getAnimeInfoInter: async function (url) {
         url = url.split("&engine")[0];
         const rawURL = `${this.baseURL}/${url}`;
         const animeDOM = document.createElement("div");
@@ -2940,7 +3138,8 @@ var gogo = {
                 }
                 epData.unshift({
                     title: `Episode ${epNum}`,
-                    link: `?watch=${id}&ep=${epNum}&engine=7`
+                    link: `?watch=${id}&ep=${epNum}&engine=7`,
+                    id: epNum.toString(),
                 });
             }
             response.episodes = epData;
@@ -3087,6 +3286,6 @@ catch (err) {
 // @ts-ignore
 const extensionList = [wco, animixplay, fmovies, zoro, twitch, nineAnime, fmoviesto, gogo];
 // @ts-ignore
-const extensionNames = ["WCOforever", "Animixplay", "FlixHQ", "Zoro", "Twitch", "9anime", "Fmovies.to", "Gogoanime"];
+const extensionNames = ["WCOforever", "Animixplay", "FlixHQ", "Zoro", "Twitch", "9anime", "Fmovies.to", "Gogo"];
 // @ts-ignore
 const extensionDisabled = [false, true, false, false, false, false, false];

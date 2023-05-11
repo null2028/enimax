@@ -135,6 +135,8 @@ interface cordovaWindow extends Window {
     getAnilistTrending: Function,
     listDir: Function,
     back: Function,
+    sendBatchReqs: Function,
+    secondsToHuman: Function,
     removeDirectory: Function,
     extractKey: Function,
     saveAsImport: Function,

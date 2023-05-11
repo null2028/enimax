@@ -1371,6 +1371,43 @@ if (true) {
     function helpUpdateLib() {
         alert("Outlines the shows that have new unwatched episodes. This is automatically updated twice a day, but you can manually do it by clicking on \"Update Library\". This may take tens of seconds.");
     }
+    async function updateNextEp(flaggedShow) {
+        var _a, _b;
+        const anilistIDs = [];
+        for (const show of flaggedShow) {
+            const id = (new URLSearchParams(show.showURL)).get("aniID");
+            anilistIDs.push(id);
+        }
+        const nextEpData = await window.parent.sendBatchReqs(anilistIDs);
+        for (const show of flaggedShow) {
+            const id = (new URLSearchParams(show.showURL)).get("aniID");
+            if (`anime${id}` in nextEpData && ((_b = (_a = nextEpData[`anime${id}`]) === null || _a === void 0 ? void 0 : _a.nextAiringEpisode) === null || _b === void 0 ? void 0 : _b.timeUntilAiring)) {
+                // (show.dom.querySelector(".s_card_play") as HTMLElement).style.bottom = "50px"; 
+                // (show.dom.querySelector(".card_menu") as HTMLElement).style.bottom = "50px"; 
+                const labelExtension = show.dom.querySelector(".card_title_extension");
+                const extensionName = labelExtension.innerText;
+                const nextEp = window.parent.secondsToHuman(nextEpData[`anime${id}`].nextAiringEpisode.timeUntilAiring);
+                labelExtension.style.padding = "inherit";
+                labelExtension.innerHTML = "";
+                labelExtension.appendChild(createElement({
+                    innerText: extensionName,
+                    style: {
+                        paddingLeft: "10px",
+                        display: "inline-block"
+                    }
+                }));
+                labelExtension.appendChild(createElement({
+                    innerText: nextEp,
+                    class: "s_card_next_ep",
+                    listeners: {
+                        click: function () {
+                            alert("When the next episode will air.");
+                        }
+                    }
+                }));
+            }
+        }
+    }
     async function get_userinfo_callback(response) {
         flaggedShow = [];
         document.getElementById("room_dis_child").innerHTML = "";
@@ -1675,6 +1712,7 @@ if (true) {
         if (!firstLoad) {
             populateDiscover();
         }
+        updateNextEp(flaggedShow);
     }
     var ini_api = api;
     if (config.local || localStorage.getItem("offline") === 'true') {

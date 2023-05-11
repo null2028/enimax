@@ -334,35 +334,6 @@ function ini() {
                 totalCats = 0;
             } else {
 
-                function secondsToHuman(seconds: number) {
-                    const d = Math.floor(seconds / (3600 * 24));
-                    const h = Math.floor(seconds % (3600 * 24) / 3600);
-                    const m = Math.floor(seconds % 3600 / 60);
-                    const s = Math.floor(seconds % 60);
-
-                    const dDisplay = d > 0 ? d + (d == 1 ? " day, " : " days ") : "";
-                    const hDisplay = h > 0 ? h + (h == 1 ? " hour, " : " hours ") : "";
-                    const mDisplay = m > 0 ? m + (m == 1 ? " minute, " : " minutes ") : "";
-                    const sDisplay = s > 0 ? s + (s == 1 ? " second" : " seconds") : "";
-
-                    if (dDisplay) {
-                        return dDisplay;
-                    }
-
-                    if (hDisplay) {
-                        return hDisplay;
-                    }
-
-                    if (mDisplay) {
-                        return mDisplay;
-                    }
-
-                    if (sDisplay) {
-                        return sDisplay;
-                    }
-
-                }
-
                 try {
                     const timeDOM = document.getElementById("metaTime");
                     const statusDOM = document.getElementById("metaStatus");
@@ -378,7 +349,7 @@ function ini() {
 
                     if (metaData.nextAiringEpisode) {
                         nextDOM.style.display = "inline-block";
-                        nextDOM.textContent = `Episode ${metaData.nextAiringEpisode.episode} in ${secondsToHuman(metaData.nextAiringEpisode.timeUntilAiring)}`;
+                        nextDOM.textContent = `Episode ${metaData.nextAiringEpisode.episode} in ${(window.parent as cordovaWindow).secondsToHuman(metaData.nextAiringEpisode.timeUntilAiring)}`;
                     }
 
                     if (metaData.season || metaData.seasonYear) {
@@ -430,6 +401,11 @@ function ini() {
                     anilistDOM.onclick = function () {
                         openWebview(`https://anilist.co/anime/${metaData.id}`);
                     };
+
+                    const search = new URLSearchParams(location.search);
+                    if (!search.has("aniID")) {
+                        (<cordovaWindow>window.parent).apiCall("POST", { "username": username, "action": 14, "name": data.mainName, "url": `${location.search}&aniID=${metaData.id}` }, () => { });
+                    }
 
                     malDOM.style.display = "inline-block";
                     anilistDOM.style.display = "inline-block";
