@@ -144,7 +144,7 @@ var nineAnime: extension = {
                 console.error(err);
             }
 
-            let episodes = [];
+            let episodes: Array<extensionInfoEpisode> = [];
 
             let IDVRF = await this.getVRF(nineAnimeID, "ajax-episode-list");
 
@@ -174,9 +174,11 @@ var nineAnime: extension = {
                 } catch (err) {
                     console.warn("Could not find the title");
                 }
+                
                 episodes.push({
                     "link": (nextPrev ? "" : "?watch=") + encodeURIComponent(id) + "&ep=" + curElem.querySelector("a").getAttribute("data-ids") + "&engine=5",
                     "id": curElem.querySelector("a").getAttribute("data-num"),
+                    "sourceID": curElem.querySelector("a").getAttribute("data-ids"),
                     "title": nextPrev ? title : `Episode ${curElem.querySelector("a").getAttribute("data-num")} - ${title}`
                 });
             }
@@ -360,7 +362,7 @@ var nineAnime: extension = {
                     response.next = epList[i].link;
                     break;
                 }
-                if (epList[i].id == sourceEp) {
+                if (epList[i].sourceID == sourceEp) {
                     check = true;
                     response.title = epList[i].title;
                 }

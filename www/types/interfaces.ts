@@ -248,6 +248,7 @@ interface extensionInfoEpisode {
     link: string,
     title: string,
     id?: string,
+    sourceID?: string,
     thumbnail?: string,
     description?: string,
     date?: Date
