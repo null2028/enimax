@@ -403,9 +403,9 @@ function secondsToHuman(seconds: number, abbreviated: boolean = false) {
     const m = Math.floor(seconds % 3600 / 60);
     const s = Math.floor(seconds % 60);
 
-    const dDisplay = d > 0 ? d + (abbreviated ? "D" : (d == 1 ? " day, " : " days ")) : "";
-    const hDisplay = h > 0 ? h + (abbreviated ? "H" : (h == 1 ? " hour, " : " hours ")) : "";
-    const mDisplay = m > 0 ? m + (abbreviated ? "M" : (m == 1 ? " minute, " : " minutes ")) : "";
+    const dDisplay = d > 0 ? d + (abbreviated ? "D" : (d == 1 ? " day" : " days ")) : "";
+    const hDisplay = h > 0 ? h + (abbreviated ? "H" : (h == 1 ? " hour" : " hours ")) : "";
+    const mDisplay = m > 0 ? m + (abbreviated ? "M" : (m == 1 ? " minute" : " minutes ")) : "";
     const sDisplay = s > 0 ? s + (abbreviated ? "s" : (s == 1 ? " second" : " seconds")) : "";
 
     if (dDisplay) {
