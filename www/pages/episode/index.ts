@@ -107,7 +107,7 @@ function collapseDesc() {
     }
 }
 
-document.getElementById("showDescription").addEventListener("click", collapseDesc);
+document.getElementById("imageDesc").addEventListener("click", collapseDesc);
 document.getElementById("descReadMore").addEventListener("click", collapseDesc);
 
 document.getElementById("dottedMenu").addEventListener("click", function () {
@@ -163,6 +163,23 @@ window.onmessage = function (x) {
 
 };
 
+async function updateShow(params: { [key: string]: any }, currentEngine: extension) {
+    try {
+        const search = new URLSearchParams(location.search);
+        console.log(search, search.has("aniID"));
+        if (!search.has("aniID")) {
+            const metaData = await currentEngine.getMetaData(new URLSearchParams(location.search));
+            if (metaData.id) {
+                window.history.replaceState({}, "", `${location.search}&aniID=${metaData.id}`);
+                params.url = location.search;
+            }
+        }
+    } catch (err) {
+        console.error(err);
+    } finally {
+        await (<cordovaWindow>window.parent).apiCall("POST", params, () => { });
+    }
+}
 
 function sendNoti(notiConfig: any) {
     return new notification(document.getElementById("noti_con"), {
@@ -380,7 +397,7 @@ function ini() {
                         const nodes = metaData.relations.nodes;
                         const edges = metaData.relations.edges;
                         const didAdd = makeCardCon(relationsDOM, nodes, edges);
-                        if(didAdd){
+                        if (didAdd) {
                             document.getElementById("relations").style.display = "inline-block";
                         }
                     }
@@ -388,7 +405,7 @@ function ini() {
                     if (metaData?.recommendations?.edges.length > 0) {
                         const nodes = metaData.recommendations.edges.map((edge: any) => edge.node.mediaRecommendation);
                         const didAdd = makeCardCon(recomDOM, nodes);
-                        if(didAdd){
+                        if (didAdd) {
                             document.getElementById("recommendations").style.display = "inline-block";
                         }
                     }
@@ -905,13 +922,13 @@ function ini() {
                 data.image = "https://raw.githubusercontent.com/enimax-anime/enimax/main/www/assets/images/placeholder.jpg";
             }
 
-            (<cordovaWindow>window.parent).apiCall("POST", {
+            updateShow({
                 "username": username,
                 "action": 5,
                 "name": data.mainName,
                 "img": data.image,
                 "url": location.search
-            }, () => { });
+            }, currentEngine);
 
             (<cordovaWindow>window.parent).apiCall("POST", {
                 "username": username,

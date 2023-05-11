@@ -83,7 +83,7 @@ function collapseDesc() {
         descDOM.style.maxHeight = "240px";
     }
 }
-document.getElementById("showDescription").addEventListener("click", collapseDesc);
+document.getElementById("imageDesc").addEventListener("click", collapseDesc);
 document.getElementById("descReadMore").addEventListener("click", collapseDesc);
 document.getElementById("dottedMenu").addEventListener("click", function () {
     let settingDOM = document.getElementById("settingsCon");
@@ -132,6 +132,25 @@ window.onmessage = function (x) {
         ini();
     }
 };
+async function updateShow(params, currentEngine) {
+    try {
+        const search = new URLSearchParams(location.search);
+        console.log(search, search.has("aniID"));
+        if (!search.has("aniID")) {
+            const metaData = await currentEngine.getMetaData(new URLSearchParams(location.search));
+            if (metaData.id) {
+                window.history.replaceState({}, "", `${location.search}&aniID=${metaData.id}`);
+                params.url = location.search;
+            }
+        }
+    }
+    catch (err) {
+        console.error(err);
+    }
+    finally {
+        await window.parent.apiCall("POST", params, () => { });
+    }
+}
 function sendNoti(notiConfig) {
     return new notification(document.getElementById("noti_con"), {
         "perm": notiConfig[0],
@@ -754,13 +773,13 @@ function ini() {
             if (!("image" in data) || data.image == undefined || data.image == null || data.image == "") {
                 data.image = "https://raw.githubusercontent.com/enimax-anime/enimax/main/www/assets/images/placeholder.jpg";
             }
-            window.parent.apiCall("POST", {
+            updateShow({
                 "username": username,
                 "action": 5,
                 "name": data.mainName,
                 "img": data.image,
                 "url": location.search
-            }, () => { });
+            }, currentEngine);
             window.parent.apiCall("POST", {
                 "username": username,
                 "action": 2,
