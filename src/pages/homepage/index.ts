@@ -730,7 +730,7 @@ document.getElementById("reset").addEventListener("click", function () {
 
 
 function changeServer() {
-    window.parent.postMessage({ "action": 26, data: "settings.html" }, "*");
+    window.parent.postMessage({ "action": 26, data: "/pages/settings/index.html" }, "*");
 
 }
 
