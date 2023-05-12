@@ -3,8 +3,6 @@ if (localVal != "true" && localVal != "false") {
     localStorage.setItem("local", "true");
     config.local = true;
 }
-let currentResolve;
-let currentReject;
 let wcoRef;
 let fmoviesBaseURL = !localStorage.getItem("fmoviesBaseURL") ? "fmovies.ink" : localStorage.getItem("fmoviesBaseURL");
 
