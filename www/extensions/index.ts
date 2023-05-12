@@ -433,6 +433,11 @@ function batchConstructor(ids: Array<string>) {
     for (let i = 0; i < ids.length; i++) {
         const id = parseInt(ids[i]);
         if (isNaN(id)) {
+            if (i == ids.length - 1) {
+                batchReqs.push(`query{
+                    ${subQueries}
+                }`);
+            }
             continue;
         }
 
@@ -465,8 +470,8 @@ async function sendBatchReqs(ids: Array<string>) {
     const responses = await Promise.all(promises);
     const result = {};
 
-    for(let i = 0; i < responses.length; i++){
-        for(const id in responses[i].data){
+    for (let i = 0; i < responses.length; i++) {
+        for (const id in responses[i].data) {
             result[id] = responses[i]?.data[id].media[0];
         }
     }

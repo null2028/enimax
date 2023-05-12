@@ -370,6 +370,11 @@ function batchConstructor(ids) {
     for (let i = 0; i < ids.length; i++) {
         const id = parseInt(ids[i]);
         if (isNaN(id)) {
+            if (i == ids.length - 1) {
+                batchReqs.push(`query{
+                    ${subQueries}
+                }`);
+            }
             continue;
         }
         count++;
