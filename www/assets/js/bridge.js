@@ -1,53 +1,46 @@
-let playerIFrame = document.getElementById("player") as HTMLIFrameElement;
-let mainIFrame = document.getElementById("frame") as HTMLIFrameElement;
-let thisWindow = (window as unknown as cordovaWindow);
+let playerIFrame = document.getElementById("player");
+let mainIFrame = document.getElementById("frame");
+let thisWindow = window;
 var socket;
-let frameHistory: Array<string> = [];
+let frameHistory = [];
 var token;
 let seekCheck = true;
-let backFunction: Function;
-
+let backFunction;
 function returnExtensionList() {
     return extensionList;
 }
-
 function returnExtensionDisabled() {
     return extensionDisabled;
 }
-
 function returnExtensionNames() {
     return extensionNames;
 }
-
 function setGradient() {
     let bgGradient = parseInt(localStorage.getItem("themegradient"));
     if (bgGradient) {
         document.documentElement.style.setProperty('--theme-gradient', backgroundGradients[bgGradient]);
-    } else {
+    }
+    else {
         document.documentElement.style.setProperty('--theme-gradient', backgroundGradients[0]);
-
     }
 }
-
-function updateGradient(index: string) {
+function updateGradient(index) {
     localStorage.setItem("themegradient", index);
     setGradient();
 }
-
 function setOpacity() {
     let bgOpacity = parseFloat(localStorage.getItem("bgOpacity"));
     if (bgOpacity == 0 || bgOpacity) {
         document.getElementById("bgOpacity").style.backgroundColor = `rgba(0,0,0, ${bgOpacity})`;
-    } else {
+    }
+    else {
         document.getElementById("bgOpacity").style.backgroundColor = `rgba(0,0,0,0.6)`;
     }
 }
-
-function updateOpacity(value: string) {
+function updateOpacity(value) {
     localStorage.setItem("bgOpacity", value);
     setOpacity();
 }
-
 // todo
 // @ts-ignore
 function updateImage() {
@@ -55,223 +48,160 @@ function updateImage() {
         let backgroundBlur = parseInt(localStorage.getItem("backgroundBlur"));
         document.getElementById("bgGrad").style.filter = `blur(${isNaN(backgroundBlur) ? 0 : backgroundBlur}px)`;
         document.getElementById("bgGrad").style.backgroundImage = `url("${thisWindow.cordova.file.externalDataDirectory}background.png?v=${(new Date()).getTime()}")`;
-    } else {
+    }
+    else {
         document.getElementById("bgGrad").style.backgroundImage = `var(--theme-gradient)`;
         document.getElementById("bgGrad").style.filter = `none`;
         setGradient();
     }
 }
-
 function updateBackgroundBlur() {
     if (localStorage.getItem("useImageBack") === "true") {
         let backgroundBlur = parseInt(localStorage.getItem("backgroundBlur"));
         document.getElementById("bgGrad").style.filter = `blur(${isNaN(backgroundBlur) ? 0 : backgroundBlur}px)`;
-    } else {
+    }
+    else {
         document.getElementById("bgGrad").style.filter = `none`;
     }
 }
-
 function findLastNotEpisode() {
     let isSearch = false;
     let searchParams = "";
-
     for (let i = frameHistory.length - 1; i >= 0; i--) {
         const url = frameHistory[i];
         if (!url.includes("pages/episode/index.html")) {
             if (url.includes("pages/search/index.html")) {
                 isSearch = true;
-
                 try {
                     searchParams = (new URL(url)).search;
-                } catch (err) {
+                }
+                catch (err) {
                     console.warn(err);
                 }
             }
             break;
         }
     }
-
     return [isSearch, searchParams];
 }
-
-function setURL(url: string) {
+function setURL(url) {
     const isHome = url.includes("pages/homepage/index.html");
-
     if (isHome) {
         frameHistory = [];
     }
-
     mainIFrame.style.opacity = "0";
+    mainIFrame.style.transform = "scale(0.99)";
     setTimeout(function () {
         mainIFrame.contentWindow.location = url;
         setTimeout(function () {
             mainIFrame.style.opacity = "1";
+            mainIFrame.style.transform = "scale(1)";
         }, 200);
     }, 200);
 }
-
-
-function saveAsImport(arrayInt: ArrayBuffer) {
+function saveAsImport(arrayInt) {
     try {
         let blob = new Blob([arrayInt]);
         db.close(async function () {
-            thisWindow.resolveLocalFileSystemURL(`${thisWindow.cordova.file.applicationStorageDirectory}${"databases"}`, function (fileSystem: DirectoryEntry) {
-
-                fileSystem.getFile("data4.db", { create: true, exclusive: false }, function (file: FileEntry) {
-
+            thisWindow.resolveLocalFileSystemURL(`${thisWindow.cordova.file.applicationStorageDirectory}${"databases"}`, function (fileSystem) {
+                fileSystem.getFile("data4.db", { create: true, exclusive: false }, function (file) {
                     file.createWriter(function (fileWriter) {
-
                         fileWriter.onwriteend = function (e) {
                             alert("Done!");
                             window.location.reload();
-
                         };
-
                         fileWriter.onerror = function (e) {
                             alert("Couldn't write to the file - 2.");
                             window.location.reload();
-
                         };
-
-
                         fileWriter.write(blob);
-
-                    }, (err: Error) => {
+                    }, (err) => {
                         alert("Couldn't write to the file.");
                         window.location.reload();
-
                     });
-
-
-                }, function (error: Error) {
+                }, function (error) {
                     alert("Error opening the database file.");
-
                     window.location.reload();
-
-
-
                 });
-
-            }, function (error: Error) {
+            }, function (error) {
                 alert("Error opening the database folder.");
                 window.location.reload();
-
             });
-        }, function (error: Error) {
+        }, function (error) {
             alert("Error closing the database.");
             window.location.reload();
-
         });
-    } catch (err) {
+    }
+    catch (err) {
         alert("Error getting the database variable.");
         window.location.reload();
-
     }
-
 }
-
-function saveImage(arrayInt: ArrayBuffer) {
+function saveImage(arrayInt) {
     let blob = new Blob([arrayInt]);
-    thisWindow.resolveLocalFileSystemURL(`${thisWindow.cordova.file.externalDataDirectory}`, function (fileSystem: DirectoryEntry) {
-
-        fileSystem.getFile("background.png", { create: true, exclusive: false }, function (file: FileEntry) {
-
-            file.createWriter(function (fileWriter: FileWriter) {
-
+    thisWindow.resolveLocalFileSystemURL(`${thisWindow.cordova.file.externalDataDirectory}`, function (fileSystem) {
+        fileSystem.getFile("background.png", { create: true, exclusive: false }, function (file) {
+            file.createWriter(function (fileWriter) {
                 fileWriter.onwriteend = function (e) {
                     thisWindow.updateImage();
                     alert("Done!");
-
                 };
-
                 fileWriter.onerror = function (e) {
                     alert("Couldn't write to the file - 2.");
-
                 };
-
-
                 fileWriter.write(blob);
-
             }, (err) => {
                 alert("Couldn't write to the file.");
-
             });
-
-
         }, function (x) {
             alert("Error opening the database file.");
-
         });
-
-    }, function (error: Error) {
+    }, function (error) {
         alert("Error opening the database folder.");
-
     });
 }
-
-function listDir(path: string) {
-
+function listDir(path) {
     return (new Promise((resolve, reject) => {
-        thisWindow.resolveLocalFileSystemURL(`${thisWindow.cordova.file.externalDataDirectory}${path}`,
-            function (fileSystem: DirectoryEntry) {
-                var reader = fileSystem.createReader();
-                reader.readEntries(
-                    function (entries) {
-                        resolve(entries);
-                    },
-                    function (err) {
-                        reject(err);
-
-                    }
-                );
-            }, function (err: Error) {
+        thisWindow.resolveLocalFileSystemURL(`${thisWindow.cordova.file.externalDataDirectory}${path}`, function (fileSystem) {
+            var reader = fileSystem.createReader();
+            reader.readEntries(function (entries) {
+                resolve(entries);
+            }, function (err) {
                 reject(err);
-            }
-        );
+            });
+        }, function (err) {
+            reject(err);
+        });
     }));
-
 }
-
-async function saveAs(fileSys: DirectoryEntry, fileName: string, blob: Blob) {
+async function saveAs(fileSys, fileName, blob) {
     fileSys.getFile(fileName, { create: true, exclusive: false }, function (file) {
-
         file.createWriter(function (fileWriter) {
-
             fileWriter.onerror = function (e) {
                 console.error(e);
             };
-
             fileWriter.write(blob);
-
         }, (err) => {
             console.error(err);
         });
-
     }, function (x) {
         console.error(x);
     });
 }
-
-
-let downloadQueueInstance: downloadQueue;
-
-function returnDownloadQueue(): downloadQueue {
+let downloadQueueInstance;
+function returnDownloadQueue() {
     return downloadQueueInstance;
 }
-
 let notiCount = 0;
 mainIFrame.onload = function () {
     mainIFrame.style.opacity = "1";
-
     if (frameHistory.length === 0) {
         frameHistory.push(mainIFrame.contentWindow.location.href);
     }
     else if (frameHistory[frameHistory.length - 1] != mainIFrame.contentWindow.location.href) {
         frameHistory.push(mainIFrame.contentWindow.location.href);
-
     }
 };
-
 // todo
 // @ts-ignore
 function sendNoti(x) {
@@ -282,57 +212,52 @@ function sendNoti(x) {
         "notiData": x[3]
     });
 }
-
-async function MakeCusReq(url: string, options: RequestOption) {
+async function MakeCusReq(url, options) {
     return new Promise(function (resolve, reject) {
-        (thisWindow.cordova.plugin.http as HTTP).sendRequest(url, options, function (response) {
+        thisWindow.cordova.plugin.http.sendRequest(url, options, function (response) {
             resolve(response.data);
         }, function (response) {
             reject(response.error);
         });
     });
 }
-
 // @ts-ignore
 // todo
-async function MakeFetch(url: string, options = {}): Promise<string> {
+async function MakeFetch(url, options = {}) {
     return new Promise(function (resolve, reject) {
-        fetch(url, options).then(response => response.text()).then((response: string) => {
+        fetch(url, options).then(response => response.text()).then((response) => {
             resolve(response);
         }).catch(function (err) {
             reject(new Error(`${err.message}: ${url}`));
         });
     });
 }
-
 if (config.chrome) {
     playerIFrame.onload = function () {
-        if ((playerIFrame as HTMLIFrameElement).contentWindow.location.href.includes("www/fallback.html")) {
+        if (playerIFrame.contentWindow.location.href.includes("www/fallback.html")) {
             playerIFrame.style.display = "none";
             mainIFrame.style.height = "100%";
             mainIFrame.style.display = "block";
         }
     };
 }
-
-
 function updateTheme() {
     try {
         document.querySelector(`meta[name="theme-color"]`).setAttribute("content", localStorage.getItem("themecolor"));
-    } catch (err) {
+    }
+    catch (err) {
         console.error(err);
     }
 }
-
-function makeLocalRequest(method: string, url: string): Promise<string> {
+function makeLocalRequest(method, url) {
     return new Promise(function (resolve, reject) {
         var xhr = new XMLHttpRequest();
         xhr.open(method, url);
-
         xhr.onload = function () {
             if (xhr.status >= 200 && xhr.status < 300) {
                 resolve(xhr.response);
-            } else {
+            }
+            else {
                 reject({
                     status: xhr.status,
                     statusText: xhr.statusText
@@ -348,28 +273,24 @@ function makeLocalRequest(method: string, url: string): Promise<string> {
         xhr.send();
     });
 }
-
-function removeDirectory(url: string) {
+function removeDirectory(url) {
     return new Promise(function (resolve, reject) {
-        thisWindow.resolveLocalFileSystemURL(thisWindow.cordova.file.externalDataDirectory, function (fs: DirectoryEntry) {
-            fs.getDirectory(url, { create: false, exclusive: false }, function (directory: DirectoryEntry) {
+        thisWindow.resolveLocalFileSystemURL(thisWindow.cordova.file.externalDataDirectory, function (fs) {
+            fs.getDirectory(url, { create: false, exclusive: false }, function (directory) {
                 directory.removeRecursively(function () {
                     resolve("done");
-                },
-                    function (err: Error) {
-                        reject(err);
-                    });
-            }, function (err: Error) {
+                }, function (err) {
+                    reject(err);
+                });
+            }, function (err) {
                 reject(err);
-            })
-        }, function (err: Error) {
+            });
+        }, function (err) {
             reject(err);
         });
     });
 }
-
-function executeAction(message: MessageAction, reqSource: Window) {
-
+function executeAction(message, reqSource) {
     if (message.action == 1) {
         screen.orientation.lock(message.data).then(() => { }).catch(() => { });
     }
@@ -377,16 +298,17 @@ function executeAction(message: MessageAction, reqSource: Window) {
         window.location = message.data;
     }
     else if (message.action == 5) {
-
         let currentEngine;
         let temp3 = message.data.split("&engine=");
         if (temp3.length == 1) {
             currentEngine = wco;
-        } else {
+        }
+        else {
             currentEngine = parseInt(temp3[1]);
             if (currentEngine == 0) {
                 currentEngine = extensionList[0];
-            } else {
+            }
+            else {
                 currentEngine = extensionList[currentEngine];
             }
         }
@@ -399,7 +321,6 @@ function executeAction(message: MessageAction, reqSource: Window) {
             console.error(err);
             reqSource.postMessage(err, "*");
         });
-
     }
     else if (message.action == 11) {
         // @ts-ignore
@@ -424,7 +345,6 @@ function executeAction(message: MessageAction, reqSource: Window) {
         mainIFrame.style.height = "100%";
         mainIFrame.style.display = "none";
         playerIFrame.style.display = "block";
-
     }
     else if (message.action == 16) {
         if (!config.chrome) {
@@ -434,10 +354,10 @@ function executeAction(message: MessageAction, reqSource: Window) {
     }
     else if (message.action == 20) {
         let toSend;
-
         if (config.chrome) {
             toSend = "";
-        } else {
+        }
+        else {
             toSend = thisWindow.cordova.plugin.http.getCookieString(config.remoteWOport);
         }
         reqSource.postMessage({
@@ -446,13 +366,7 @@ function executeAction(message: MessageAction, reqSource: Window) {
         }, "*");
     }
     else if (message.action == 403) {
-        downloadQueueInstance.add(
-            message.data,
-            message.anime,
-            message.mainUrl,
-            message.title,
-            downloadQueueInstance
-        );
+        downloadQueueInstance.add(message.data, message.anime, message.mainUrl, message.title, downloadQueueInstance);
     }
     else if (message.action == 21) {
         window.location.href = "pages/login/index.html";
@@ -483,14 +397,11 @@ function executeAction(message: MessageAction, reqSource: Window) {
     }
     else if (message.action == 12) {
         if (!config.chrome) {
-
             let showName = message.nameShow.split("-");
-
             for (let i = 0; i < showName.length; i++) {
                 let temp = showName[i];
                 temp = temp.charAt(0).toUpperCase() + temp.slice(1);
                 showName[i] = temp;
-
             }
             seekCheck = true;
             message.nameShow = showName.join(" ");
@@ -498,8 +409,8 @@ function executeAction(message: MessageAction, reqSource: Window) {
                 track: message.nameShow,
                 artist: "Episode " + message.episode,
                 cover: 'assets/images/anime.png',
-                isPlaying: true,							// optional, default : true
-                dismissable: true,							// optional, default : false
+                isPlaying: true,
+                dismissable: true,
                 hasPrev: message.prev,
                 hasNext: message.next,
                 hasClose: true,
@@ -510,18 +421,14 @@ function executeAction(message: MessageAction, reqSource: Window) {
                 closeIcon: 'media_close',
                 notificationIcon: 'notification'
             };
-
             if (config.beta) {
                 controlOption["hasScrubbing"] = true;
                 controlOption["duration"] = message.duration ? message.duration * 1000 : 0;
                 controlOption["elapsed"] = message.elapsed ? message.elapsed : 0;
             }
-
             // @ts-ignore
             MusicControls.create(controlOption, () => { }, () => { });
-
             function events(action) {
-
                 const message = JSON.parse(action).message;
                 switch (message) {
                     case 'music-controls-next':
@@ -568,43 +475,36 @@ function executeAction(message: MessageAction, reqSource: Window) {
                         break;
                 }
             }
-
             // @ts-ignore
             MusicControls.subscribe(events);
-
             // @ts-ignore
             MusicControls.listen();
-
             // @ts-ignore
             MusicControls.updateIsPlaying(true);
         }
     }
     else if (message.action == 4) {
-
         if (config.chrome && playerIFrame.contentWindow.location.href.includes("/www/fallback.html")) {
             playerIFrame.contentWindow.location = ("pages/player/index.html" + message.data);
-        } else if (config.chrome) {
+        }
+        else if (config.chrome) {
             playerIFrame.contentWindow.location.replace("pages/player/index.html" + message.data);
         }
-
         if (!config.chrome) {
             let checkLock = 0;
-
             setTimeout(function () {
                 if (checkLock == 0) {
                     playerIFrame.contentWindow.location.replace("pages/player/index.html" + message.data);
                 }
             }, 100);
-
             screen.orientation.lock("landscape")
                 .then(() => { })
                 .catch(() => { })
                 .finally(function () {
-                    checkLock = 1;
-                    (playerIFrame as HTMLIFrameElement).contentWindow.location.replace("pages/player/index.html" + message.data);
-                });
+                checkLock = 1;
+                playerIFrame.contentWindow.location.replace("pages/player/index.html" + message.data);
+            });
         }
-
         mainIFrame.style.display = "none";
         mainIFrame.style.height = "100%";
         playerIFrame.style.display = "block";
@@ -620,64 +520,49 @@ function executeAction(message: MessageAction, reqSource: Window) {
         updateImage();
     }
 }
-
 window.addEventListener('message', function (x) {
-    executeAction(x.data, x.source as WindowProxy);
+    executeAction(x.data, x.source);
 });
-
-
 function onPause() {
     let frameLocation = playerIFrame.contentWindow.location.pathname;
-
     if (frameLocation.includes("pages/player")) {
         playerIFrame.contentWindow.postMessage({ action: "pip" }, "*");
     }
 }
-
 function onResume() {
     let frameLocation = playerIFrame.contentWindow.location.pathname;
-
     if (frameLocation.includes("pages/player")) {
         playerIFrame.contentWindow.postMessage({ action: "pipout" }, "*");
     }
 }
-
-
 function back() {
     backFunction();
 }
-
 async function onDeviceReady() {
-
     await SQLInit();
     await SQLInitDownloaded();
-
     updateImage();
     updateBackgroundBlur();
-
     thisWindow.cordova.plugins.backgroundMode.on('activate', function () {
         thisWindow.cordova.plugins.backgroundMode.disableWebViewOptimizations();
         thisWindow.cordova.plugins.backgroundMode.disableBatteryOptimizations();
     });
-
     // @ts-ignore
     token = thisWindow.cordova.plugin.http.getCookieString(config.remoteWOport);
     downloadQueueInstance = new downloadQueue();
     mainIFrame.src = "pages/homepage/index.html";
-
     backFunction = function onBackKeyDown() {
         try {
             // @ts-ignore
             if (playerIFrame.contentWindow.isLocked() === true) {
                 return;
             }
-        } catch (err) {
+        }
+        catch (err) {
             console.error(err);
         }
-
         let frameLocation = mainIFrame.contentWindow.location;
-
-        const frameWasOpen = playerIFrame.className.indexOf("pop") == -1 && (playerIFrame as HTMLIFrameElement).contentWindow.location.pathname.indexOf("www/pages/player/index.html") > -1;
+        const frameWasOpen = playerIFrame.className.indexOf("pop") == -1 && playerIFrame.contentWindow.location.pathname.indexOf("www/pages/player/index.html") > -1;
         const homePageOpen = frameLocation.pathname.indexOf("www/pages/homepage/index.html") > -1;
         if (homePageOpen || frameWasOpen) {
             playerIFrame.contentWindow.location.replace("fallback.html");
@@ -685,53 +570,45 @@ async function onDeviceReady() {
             playerIFrame.style.display = "none";
             mainIFrame.style.display = "block";
             mainIFrame.style.height = "100%";
-
             if (frameWasOpen) {
                 if (homePageOpen) {
-                    (mainIFrame as HTMLIFrameElement).contentWindow.location.reload();
+                    mainIFrame.contentWindow.location.reload();
                 }
-            } else {
+            }
+            else {
                 if (frameLocation.pathname.indexOf("www/pages/homepage/index.html") > -1) {
-
                     if (frameLocation.search.includes("action=")) {
                         history.back();
-                    } else if (!(playerIFrame as HTMLIFrameElement).contentWindow.location.pathname.includes("www/pages/player/index.html")) {
+                    }
+                    else if (!playerIFrame.contentWindow.location.pathname.includes("www/pages/player/index.html")) {
                         // @ts-ignore
                         navigator.app.exitApp();
                     }
                 }
             }
-
-
             // @ts-ignore
             MusicControls.destroy(() => { }, () => { });
-
             screen.orientation.lock("any").then(() => { }).catch(() => { });
-        } else {
+        }
+        else {
             if (frameHistory.length > 1) {
                 frameHistory.pop();
                 setURL(frameHistory[frameHistory.length - 1]);
             }
         }
-    }
-
+    };
     if (thisWindow.cordova.plugin.http.getCookieString(config.remoteWOport).indexOf("connect.sid") == -1
         && config.local == false && localStorage.getItem("offline") === 'false') {
         window.location.href = "pages/login/index.html";
     }
-
-    document.addEventListener("backbutton", () => { backFunction() }, false);
+    document.addEventListener("backbutton", () => { backFunction(); }, false);
     document.addEventListener("pause", onPause, false);
     document.addEventListener("resume", onResume, false);
-
 }
-
 document.addEventListener("deviceready", onDeviceReady, false);
-
 if (config.chrome) {
-    (mainIFrame as HTMLIFrameElement).src = "pages/homepage/index.html";
+    mainIFrame.src = "pages/homepage/index.html";
 }
-
 updateTheme();
 setGradient();
 setOpacity();
