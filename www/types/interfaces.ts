@@ -30,6 +30,7 @@ interface createElementConfig {
     id?: string,
     innerText?: string,
     innerHTML?: string,
+    children?: createElementConfig[]
     listeners?: { [key: string]: Function }
 }
 

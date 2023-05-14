@@ -6,7 +6,7 @@ function createElement(config) {
     else {
         temp = document.createElement("div");
     }
-    let attributes = config.attributes;
+    const attributes = config.attributes;
     for (let value in attributes) {
         temp.setAttribute(value, attributes[value]);
     }
@@ -25,11 +25,16 @@ function createElement(config) {
     if ("innerHTML" in config) {
         temp.innerHTML = config.innerHTML;
     }
-    let listeners = config.listeners;
-    for (let value in listeners) {
+    const listeners = config.listeners;
+    for (const value in listeners) {
         temp.addEventListener(value, function () {
             listeners[value].bind(this)();
         });
+    }
+    if (config.children) {
+        for (const child of config.children) {
+            temp.append(createElement(child));
+        }
     }
     return temp;
 }

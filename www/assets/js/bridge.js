@@ -90,12 +90,10 @@ function setURL(url) {
         frameHistory = [];
     }
     mainIFrame.style.opacity = "0";
-    mainIFrame.style.transform = "scale(0.99)";
     setTimeout(function () {
         mainIFrame.contentWindow.location = url;
         setTimeout(function () {
             mainIFrame.style.opacity = "1";
-            mainIFrame.style.transform = "scale(1)";
         }, 200);
     }, 200);
 }

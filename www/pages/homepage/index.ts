@@ -102,7 +102,7 @@ async function testIt(idx = -1): Promise<void> {
 
     for (let i = 0; i < extensionList.length; i++) {
 
-        if(extensionDisabled[i]){
+        if (extensionDisabled[i]) {
             continue;
         }
 
@@ -155,13 +155,7 @@ async function testKey(): Promise<void> {
 
 if (localStorage.getItem("devmode") === "true") {
     document.getElementById("testExtensions").style.display = "block";
-    for (let elem of document.getElementsByClassName("testExt")) {
-        // (elem as HTMLElement).style.display = "block";
-        // (elem as HTMLElement).onclick = function () {
-        //     testIt(parseInt((this as HTMLElement).getAttribute("data-exId")));
-        // }
-    }
-    // document.getElementById("testKey").style.display = "block";
+
     document.getElementById("testExtensions").onclick = function () {
         testIt();
     }
@@ -1379,21 +1373,15 @@ function addCustomRoom() {
 
 
     for (var i = 0; i < rooms2.length; i += 2) {
-
-
-
         let roomID = `room_${rooms2[i + 1]}`;
         let tempDiv = createElement({
             "class": `categoriesDataMain${(localStorage.getItem("currentCategory") === roomID) ? " active" : ""}${(isSnapSupported) ? " snappedCategoriesDataMain closed" : ""}`,
             "id": roomID
         });
 
-
         let tempDiv2 = createCat(roomID, rooms2[i]);
-
         document.getElementById("categoriesCon").append(tempDiv2);
         document.getElementById("custom_rooms").append(tempDiv);
-
     }
 
 
@@ -1401,9 +1389,8 @@ function addCustomRoom() {
         document.getElementById("room_recently").classList.add("active");
         document.getElementById("recentlyCat").classList.add("activeCat");
     }
+
     try {
-
-
         document.querySelector(".categories.activeCat").scrollIntoView();
         let activeCatDOM = document.querySelector(".categories.activeCat") as HTMLElement;
         let temp = document.getElementById("catActiveMain") as HTMLElement;
@@ -1416,7 +1403,7 @@ function addCustomRoom() {
             }
         });
     } catch (err) {
-
+        console.warn(err);
     }
 }
 
@@ -1425,9 +1412,6 @@ function addCustomRoom() {
 function getUserInfo() {
     ini_api.get_userinfo();
 }
-
-
-
 
 function fix_title(title: string) {
     try {
@@ -1459,9 +1443,6 @@ function sendNoti(x) {
         "notiData": x[3]
     });
 }
-
-
-
 
 if (true) {
     var a = document.getElementsByClassName("card_con") as HTMLCollectionOf<HTMLElement>;
@@ -1760,16 +1741,16 @@ if (true) {
 
     async function updateNextEp(flaggedShow: Array<flaggedShows>) {
         const anilistIDs = [];
-        
-        for(const show of flaggedShow){
+
+        for (const show of flaggedShow) {
             const id = (new URLSearchParams(show.showURL)).get("aniID");
             anilistIDs.push(id);
         }
 
         const nextEpData = await (window.parent as cordovaWindow).sendBatchReqs(anilistIDs);
-        for(const show of flaggedShow){
+        for (const show of flaggedShow) {
             const id = (new URLSearchParams(show.showURL)).get("aniID");
-            if(`anime${id}` in nextEpData && nextEpData[`anime${id}`]?.nextAiringEpisode?.timeUntilAiring){
+            if (`anime${id}` in nextEpData && nextEpData[`anime${id}`]?.nextAiringEpisode?.timeUntilAiring) {
                 // (show.dom.querySelector(".s_card_play") as HTMLElement).style.bottom = "50px"; 
                 // (show.dom.querySelector(".card_menu") as HTMLElement).style.bottom = "50px"; 
                 const labelExtension = show.dom.querySelector(".card_title_extension") as HTMLElement;
@@ -1789,8 +1770,8 @@ if (true) {
                 labelExtension.appendChild(createElement({
                     innerText: nextEp,
                     class: "s_card_next_ep",
-                    listeners:{
-                        click: function(){
+                    listeners: {
+                        click: function () {
                             alert("When the next episode will air.");
                         }
                     }
@@ -1838,42 +1819,38 @@ if (true) {
         let extensionList = (<cordovaWindow>window.parent).returnExtensionList();
 
         if (!offlineMode) {
-            let updateLibCon = createElement({
-                "style": {
-                    "width": "100%",
-                    "bottomMargin": "10px",
-                    "textAlign": "center"
-                }
-            });
-
-            let updateLibButton = createElement({
-                "id": "updateLib",
-                "innerText": "Update Library"
-            });
-
-            let updateLibInfo = createElement({
-                "id": "infoBut",
-            });
-
-            updateLibInfo.onclick = function () {
-                helpUpdateLib();
-            };
-
-            updateLibButton.onclick = function () {
-                updateNewEp();
-            }
-
-            updateLibCon.append(updateLibButton);
-            updateLibCon.append(updateLibInfo);
-
             document.getElementById('room_-1').append(
-                updateLibCon
+                createElement({
+                    "style": {
+                        "width": "100%",
+                        "bottomMargin": "10px",
+                        "textAlign": "center"
+                    },
+                    children: [
+                        {
+                            "id": "updateLib",
+                            "innerText": "Update Library",
+                            "listeners": {
+                                "click": function () {
+                                    updateNewEp();
+                                }
+                            }
+                        },
+                        {
+                            "id": "infoBut",
+                            "listeners": {
+                                "click": function () {
+                                    helpUpdateLib();
+                                }
+                            }
+                        }
+                    ]
+                })
             );
         }
 
         for (var i = 0; i < data.length; i++) {
             let domToAppend;
-            let findUnwatched = false;
             if (offlineMode) {
                 if (data[i][0] in downloadedFolders) {
                     delete downloadedFolders[data[i][0]];
@@ -1887,24 +1864,6 @@ if (true) {
             }
 
             domToAppend.setAttribute("data-empty", "false");
-
-            if (parseInt(data[i][4]) == -1) {
-                findUnwatched = true;
-            }
-
-            let tempDiv = createElement({ "class": "s_card", "attributes": {}, "listeners": {} });
-
-            tempDiv.append(createElement({
-                element: "img",
-                class: "cardImage",
-                attributes: {
-                    "src": img_url(data[i][2]),
-                    "loading": "lazy",
-                }
-            }));
-
-            let tempDiv1 = createElement({ "class": "s_card_bg", "attributes": {}, "listeners": {} });
-            let tempDiv2 = createElement({ "class": "s_card_title", "attributes": {}, "listeners": {} });
 
             let currentExtensionName = "null";
             let currentExtension = null;
@@ -1923,133 +1882,148 @@ if (true) {
                 console.warn(err);
             }
 
-            let tempDivEx = createElement({ "class": "card_title_extension", "attributes": {}, "listeners": {}, "innerText": currentExtensionName });
+
+            const cardCon = createElement({
+                "class": "s_card",
+                "children": [
+                    {
+                        element: "img",
+                        class: "cardImage",
+                        attributes: {
+                            "src": img_url(data[i][2]),
+                            "loading": "lazy",
+                        }
+                    },
+                    {
+                        "class": "s_card_bg",
+                        "children": [
+                            {
+                                "class": "s_card_title",
+                                "children": [
+                                    {
+                                        "class": "s_card_title_main",
+                                        "innerText": (currentExtension && "fixTitle" in currentExtension) ? fix_title(currentExtension.fixTitle(data[i][0])) : fix_title(data[i][0]),
+                                        "attributes": {
+                                            "data-href": data[i][5],
+                                            "data-current": data[i][3],
+                                            "data-mainname": data[i][0]
+                                        },
+                                        "listeners": {
+                                            "click": function () {
+                                                localStorage.setItem("currentLink", (this as HTMLElement).getAttribute("data-current"));
+                                                window.parent.postMessage({ "action": 500, data: "pages/episode/index.html" + (this as HTMLElement).getAttribute("data-href") }, "*");
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "class": "card_ep",
+                                        "innerText": `Episode ${data[i][1]}`
+                                    }
+                                ]
+                            },
+                            {
+                                "class": "s_card_delete", "attributes": {
+                                    "data-showname": data[i][0]
+
+                                }, "listeners": {
+                                    "click": function () {
+                                        ini_api.delete_card(this.getAttribute("data-showname"), this);
+                                    }
+                                }
+                            },
+                            {
+                                "class": "s_card_play", "attributes": {
+                                    "data-href": data[i][3],
+                                    "data-mainname": data[i][0]
+                                }, "listeners": {
+                                    "click": function () {
+                                        localStorage.setItem("mainName", this.getAttribute("data-mainname"));
+                                        window.parent.postMessage({ "action": 4, "data": this.getAttribute("data-href") }, "*");
+                                    }
+                                }, "element": "div"
+                            },
+                            {
+                                "class": "card_menu",
+                                "children": [
+                                    {
+                                        "class": "card_menu_item card_menu_icon_add", "attributes": {}, "listeners": {
+                                            "click": function () {
+                                                open_menu(this);
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "class": "card_menu_item card_menu_icon_delete", "attributes": {
+                                            "data-showname": data[i][0]
+                                        }, "listeners": {
+                                            "click": function () {
+                                                ini_api.delete_card(this.getAttribute("data-showname"), this);
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "class": "card_menu_item card_menu_icon_image", "attributes": {
+                                            "data-bg1": data[i][2],
+                                            "data-main-link": data[i][5],
+                                            "data-showname": data[i][0]
+                                        }, "listeners": {
+                                            "click": function () {
+                                                ini_api.change_image_card(this.getAttribute("data-showname"), this);
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "class": "card_menu_item card_menu_icon_watched", "attributes": {
+                                            "data-showname": data[i][0]
+                                        }, "listeners": {
+                                            "click": function () {
+                                                watched_card(this);
+                                            }
+                                        }
+                                    }
+                                ]
+                            },
+                            {
+                                "class": "card_title_extension",
+                                "innerText": currentExtensionName
+                            }
+                        ]
+                    }
+                ]
+            });
 
 
-            let tempDiv3 = document.createElement("div");
-            tempDiv3.className = "s_card_title_main";
-            tempDiv3.textContent = (currentExtension && "fixTitle" in currentExtension) ? fix_title(currentExtension.fixTitle(data[i][0])) : fix_title(data[i][0]);
-            tempDiv3.setAttribute("data-href", data[i][5]);
-            tempDiv3.setAttribute("data-current", data[i][3]);
-            tempDiv3.setAttribute("data-mainname", data[i][0]);
-
-            if (findUnwatched) {
+            if (parseInt(data[i][4]) == -1) {
                 flaggedShow.push({
                     "showURL": data[i][5],
                     "currentEp": data[i][3],
-                    "dom": tempDiv,
+                    "dom": cardCon,
                     "name": data[i][0]
                 });
             }
 
-            tempDiv3.onclick = function () {
-                localStorage.setItem("currentLink", (this as HTMLElement).getAttribute("data-current"));
-                window.parent.postMessage({ "action": 500, data: "pages/episode/index.html" + (this as HTMLElement).getAttribute("data-href") }, "*");
-
-            };
-
-            let tempDiv4 = createElement({ "class": "card_ep", "attributes": {}, "listeners": {}, "innerText": `Episode ${data[i][1]}` });
-            let tempDiv5 = createElement({
-                "class": "s_card_delete", "attributes": {
-                    "data-showname": data[i][0]
-
-                }, "listeners": {
-                    "click": function () {
-                        ini_api.delete_card(this.getAttribute("data-showname"), this);
-                    }
-                }
-            });
-
-            let tempDiv6 = createElement({
-                "class": "s_card_play", "attributes": {
-                    "data-href": data[i][3],
-                    "data-mainname": data[i][0]
-                }, "listeners": {
-                    "click": function () {
-                        localStorage.setItem("mainName", this.getAttribute("data-mainname"));
-                        window.parent.postMessage({ "action": 4, "data": this.getAttribute("data-href") }, "*");
-                    }
-                }, "element": "div"
-            });
-
-            let tempDiv7 = createElement({ "class": "card_menu", "attributes": {}, "listeners": {} });
-
-            let tempDiv8 = createElement({
-                "class": "card_menu_item card_menu_icon_add", "attributes": {}, "listeners": {
-                    "click": function () {
-                        open_menu(this);
-                    }
-                }
-            });
-
-            let tempDiv9 = createElement({
-                "class": "card_menu_item card_menu_icon_delete", "attributes": {
-                    "data-showname": data[i][0]
-                }, "listeners": {
-                    "click": function () {
-                        ini_api.delete_card(this.getAttribute("data-showname"), this);
-                    }
-                }
-            });
-
-            let tempDiv10 = createElement({
-                "class": "card_menu_item card_menu_icon_image", "attributes": {
-                    "data-bg1": data[i][2],
-                    "data-main-link": data[i][5],
-                    "data-showname": data[i][0]
-                }, "listeners": {
-                    "click": function () {
-                        ini_api.change_image_card(this.getAttribute("data-showname"), this);
-                    }
-                }
-            });
-
-            let tempDiv11 = createElement({
-                "class": "card_menu_item card_menu_icon_watched", "attributes": {
-                    "data-showname": data[i][0]
-                }, "listeners": {
-                    "click": function () {
-                        watched_card(this);
-                    }
-                }
-            });
-
-            tempDiv7.append(tempDiv8);
-            tempDiv7.append(tempDiv9);
-            tempDiv7.append(tempDiv10);
-            tempDiv7.append(tempDiv11);
-
-            tempDiv2.append(tempDiv3);
-            tempDiv2.append(tempDiv4);
-
-            tempDiv1.append(tempDiv2);
-            tempDiv1.append(tempDiv5);
-            tempDiv1.append(tempDiv6);
-            tempDiv1.append(tempDiv7);
-            tempDiv1.append(tempDivEx);
-            tempDiv.append(tempDiv1);
 
             try {
                 if (data[i].length >= 7 && JSON.parse(data[i][6])[1] > 0) {
-                    let progData = JSON.parse(data[i][6]);
-                    let tempProgDiv = createElement({
+                    const progData = JSON.parse(data[i][6]);
+                    cardCon.querySelector(".s_card_bg").append(createElement({
                         "class": "episodesProgressCon",
-                    });
-
-                    tempProgDiv.append(createElement({
-                        "class": "episodesProgress",
-                        "style": {
-                            "width": `${100 * (parseInt(progData[0]) / parseInt(progData[1]))}%`
-                        }
+                        "children": [
+                            {
+                                "class": "episodesProgress",
+                                "style": {
+                                    "width": `${100 * (parseInt(progData[0]) / parseInt(progData[1]))}%`
+                                }
+                            }
+                        ]
                     }));
-
-                    tempDiv1.append(tempProgDiv);
 
                 }
             } catch (err) {
-
+                console.warn(err);
             }
-            domToAppend.append(tempDiv);
+
+            domToAppend.append(cardCon);
 
         }
 
@@ -2057,68 +2031,75 @@ if (true) {
 
         last_order = getCurrentOrder();
 
-        if (permNoti != null) {
-            if (permNoti.noti) {
-                permNoti.noti.remove();
-
-            }
+        if (permNoti != null && permNoti.noti) {
+            permNoti.noti.remove();
         }
 
         if (offlineMode) {
-            for (let showname in downloadedFolders) {
+            for (const showname in downloadedFolders) {
                 if (showname == "socialsharing-downloads") {
                     continue;
                 }
 
-                let domToAppend = document.getElementById('room_recently');
+                const domToAppend = document.getElementById('room_recently');
+                domToAppend.setAttribute("data-empty", "false");
 
-                let tempDiv = createElement({ "class": "s_card", "attributes": {}, "listeners": {} });
-                tempDiv.style.backgroundImage = `url("../../assets/images/placeholder.jpg")`;
-
-                let tempDiv1 = createElement({ "class": "s_card_bg", "attributes": {}, "listeners": {} });
-                let tempDiv2 = createElement({ "class": "s_card_title", "attributes": {}, "listeners": {} });
-
-
-                let tempDiv3 = document.createElement("div");
-                tempDiv3.className = "s_card_title_main";
-                tempDiv3.textContent = fix_title(showname);
-                tempDiv3.setAttribute("data-href", "?watch=/" + showname);
-
-                let tempDiv7 = createElement({ "class": "card_menu", "attributes": {}, "listeners": {} });
-
-                let tempDiv9 = createElement({
-                    "class": "card_menu_item card_menu_icon_delete", "attributes": {
-                        "data-showname": showname
-                    },
-                    "listeners": {
-                        "click": async function () {
-                            try {
-                                await (<cordovaWindow>window.parent).removeDirectory(`${showname}`);
-                                tempDiv.remove();
-                            } catch (err) {
-                                alert("Could not delete the files. You have to manually delete it by going to the show's page.");
-                            }
-                        }
+                const cardImage = createElement({
+                    "class": "s_card",
+                    "style": {
+                        "backgroundImage": `url("../../assets/images/placeholder.jpg")`
                     }
                 });
 
-                tempDiv3.onclick = function () {
-                    window.parent.postMessage({ "action": 500, data: "pages/episode/index.html" + (this as HTMLElement).getAttribute("data-href") }, "*");
-                };
+
+                const cardContent = createElement({
+                    "class": "s_card_bg",
+                    "children": [
+                        {
+                            "class": "s_card_title",
+                            "children": [
+                                {
+                                    "class": "s_card_title_main",
+                                    "innerText": fix_title(showname),
+                                    "attributes": {
+                                        "data-href": "?watch=/" + showname
+                                    },
+                                    "listeners": {
+                                        "click": function () {
+                                            window.parent.postMessage({ "action": 500, data: "pages/episode/index.html" + (this as HTMLElement).getAttribute("data-href") }, "*");
+                                        }
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "class": "card_menu",
+                            "children": [
+                                {
+                                    "class": "card_menu_item card_menu_icon_delete", "attributes": {
+                                        "data-showname": showname
+                                    },
+                                    "listeners": {
+                                        "click": async function () {
+                                            try {
+                                                if (confirm("Are you sure you want to delete this show?")) {
+                                                    await (<cordovaWindow>window.parent).removeDirectory(`${showname}`);
+                                                    cardImage.remove();
+                                                }
+                                            } catch (err) {
+                                                alert("Could not delete the files. You have to manually delete it by going to the show's page.");
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    ]
+                });
 
 
-
-
-                tempDiv2.append(tempDiv3);
-
-                tempDiv1.append(tempDiv2);
-                tempDiv7.append(tempDiv9);
-
-                tempDiv1.append(tempDiv7);
-
-                tempDiv.append(tempDiv1);
-
-                domToAppend.append(tempDiv);
+                cardImage.append(cardContent);
+                domToAppend.append(cardImage);
             }
         }
 
@@ -2240,20 +2221,6 @@ if (true) {
 
 }
 
-
-
-
-
-function changeEngine() {
-    let val = localStorage.getItem("currentEngine");
-    if (val == null || val == "1") {
-        localStorage.setItem("currentEngine", "0");
-
-    } else {
-        localStorage.setItem("currentEngine", '1');
-
-    }
-}
 
 for (let element of document.getElementsByClassName("menuItem")) {
     element.addEventListener("click", () => { toggleMenu() });

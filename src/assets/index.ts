@@ -2,25 +2,20 @@ function createElement(config: createElementConfig): HTMLElement {
     let temp: HTMLElement;
     if ("element" in config) {
         temp = document.createElement(config.element!);
-
     } else {
         temp = document.createElement("div");
-
     }
 
-    let attributes = config.attributes;
+    const attributes = config.attributes;
 
     for (let value in attributes) {
         temp.setAttribute(value, attributes[value]);
     }
 
-
-
     for (let value in config.style) {
 
         temp.style[value] = config.style[value];
     }
-
 
     if ("id" in config) {
         temp.id = config.id!;
@@ -38,12 +33,18 @@ function createElement(config: createElementConfig): HTMLElement {
         temp.innerHTML = config.innerHTML!;
     }
 
-    let listeners = config.listeners;
+    const listeners = config.listeners;
 
-    for (let value in listeners) {
+    for (const value in listeners) {
         temp.addEventListener(value, function () {
             listeners[value].bind(this)();
         });
+    }
+
+    if (config.children) {
+        for (const child of config.children) {
+            temp.append(createElement(child));
+        }
     }
 
     return temp;
@@ -446,7 +447,7 @@ function makeCardCon(con: HTMLElement, nodes: any, edges?: any) {
         }
     } catch (err) {
         console.error(err);
-    } finally{
+    } finally {
         return didAdd;
     }
 }
