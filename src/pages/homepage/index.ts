@@ -1611,9 +1611,8 @@ if (true) {
     }
 
     function change_url_callback(x, z) {
-
         x.setAttribute("data-main-link", z.data.url);
-        x.parentElement.parentElement.getElementsByClassName("s_card_title_main")[0].href = z.data.url
+        x.parentElement.parentElement.getElementsByClassName("s_card_title_main")[0].setAttribute("data-href", z.data.url);
 
     }
     function delete_card_callback(x) {

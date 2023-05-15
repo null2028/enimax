@@ -1247,8 +1247,9 @@ if (true) {
         x.parentElement.parentElement.parentElement.style.backgroundImage = "url('" + z.data.image + "')";
     }
     function change_url_callback(x, z) {
+        console;
         x.setAttribute("data-main-link", z.data.url);
-        x.parentElement.parentElement.getElementsByClassName("s_card_title_main")[0].href = z.data.url;
+        x.parentElement.parentElement.getElementsByClassName("s_card_title_main")[0].setAttribute("data-href", z.data.url);
     }
     function delete_card_callback(x) {
         x.parentElement.parentElement.parentElement.remove();
