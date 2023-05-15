@@ -144,6 +144,7 @@ interface cordovaWindow extends Window {
     saveImage: Function,
     plugins: any,
     updateImage: Function,
+    getMetaByAniID: Function,
     setFmoviesBase: Function,
     findLastNotEpisode: Function,
     updateBackgroundBlur: Function,

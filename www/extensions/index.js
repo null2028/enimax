@@ -331,6 +331,9 @@ async function getAnilistInfo(type, id) {
     const anilistID = JSON.parse(await MakeFetch(`https://raw.githubusercontent.com/MALSync/MAL-Sync-Backup/master/data/pages/${type}/${id}.json`)).aniId;
     return (await anilistAPI(anilistQueries.info, { id: anilistID })).data.Media;
 }
+async function getMetaByAniID(anilistID) {
+    return (await anilistAPI(anilistQueries.info, { id: anilistID })).data.Media;
+}
 async function getAnilistTrending(type) {
     return (await anilistAPI(anilistQueries.trending, {
         page: 1,

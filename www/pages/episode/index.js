@@ -316,7 +316,14 @@ function ini() {
                     const anilistDOM = document.getElementById("metaAnilist");
                     const relationsDOM = relationsCon;
                     const recomDOM = recomCon;
-                    const metaData = await currentEngine.getMetaData(new URLSearchParams(location.search));
+                    const search = new URLSearchParams(location.search);
+                    let metaData;
+                    if (!search.has("aniID")) {
+                        metaData = await currentEngine.getMetaData(new URLSearchParams(location.search));
+                    }
+                    else {
+                        metaData = await window.parent.getMetaByAniID(search.get("aniID"));
+                    }
                     let addedCover = false;
                     if (metaData.nextAiringEpisode) {
                         nextDOM.style.display = "inline-block";
@@ -369,7 +376,6 @@ function ini() {
                     anilistDOM.onclick = function () {
                         openWebview(`https://anilist.co/anime/${metaData.id}`);
                     };
-                    const search = new URLSearchParams(location.search);
                     if (!search.has("aniID")) {
                         window.parent.apiCall("POST", { "username": username, "action": 14, "name": data.mainName, "url": `${location.search}&aniID=${metaData.id}` }, () => { });
                     }

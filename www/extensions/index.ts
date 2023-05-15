@@ -385,6 +385,10 @@ async function getAnilistInfo(type: anilistType, id: string) {
     return (await anilistAPI(anilistQueries.info, { id: anilistID })).data.Media;
 }
 
+async function getMetaByAniID(anilistID: string) {
+    return (await anilistAPI(anilistQueries.info, { id: anilistID })).data.Media;
+}
+
 async function getAnilistTrending(type: "current" | "next") {
 
     return (await anilistAPI(anilistQueries.trending, {
