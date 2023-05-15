@@ -149,6 +149,5 @@ if (searchQuery) {
 let conElem = document.getElementById("con_11");
 new menuPull(conElem, () => {
     window.parent.postMessage({ "action": 500, data: "pages/homepage/index.html" }, "*");
-    conElem.style.opacity = "1";
-    conElem.style.transform = `translateX(0px)`;
+    conElem.style.transform = `translateX(100px)`;
 }, document.getElementById("mainConSearch"));
