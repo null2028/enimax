@@ -1541,7 +1541,13 @@ var zoro = {
             const ep = showURL.get("ep");
             for (let i = 0; i < response.episodes.length; i++) {
                 if (response.episodes[i].sourceID === ep) {
-                    return response.episodes[i].title;
+                    const titleTemp = response.episodes[i].title.split("-");
+                    titleTemp.shift();
+                    const title = titleTemp.join("-");
+                    if (title) {
+                        return title === null || title === void 0 ? void 0 : title.trim();
+                    }
+                    return "";
                 }
             }
             return "";
