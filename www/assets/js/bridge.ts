@@ -25,7 +25,6 @@ function setGradient() {
         document.documentElement.style.setProperty('--theme-gradient', backgroundGradients[bgGradient]);
     } else {
         document.documentElement.style.setProperty('--theme-gradient', backgroundGradients[0]);
-
     }
 }
 
@@ -102,10 +101,12 @@ function setURL(url: string) {
     }
 
     mainIFrame.style.opacity = "0";
+    mainIFrame.style.transform = "translate(10px)";
     setTimeout(function () {
         mainIFrame.contentWindow.location = url;
         setTimeout(function () {
             mainIFrame.style.opacity = "1";
+            mainIFrame.style.transform = "translate(0px)";
         }, 200);
     }, 200);
 }

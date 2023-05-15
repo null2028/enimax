@@ -92,6 +92,8 @@ class vid {
 		this.back = document.querySelector("#back");
 		this.epCon = document.querySelector("#epCon");
 		this.bar = document.querySelector("#bar");
+
+		
 		this.locked = false;
 		this.downTown = 0;
 		this.seekMode = false;
@@ -644,16 +646,17 @@ class vid {
 				this.current.innerText = this.timeToString(temp);
 
 				this.updateTimeout();
-			} else if (this.check != 100 && (Math.abs(this.iniX - coords.screenX) > 50) || ((this.iniY - coords.screenY) < -50)) {
+			} else if (this.check != 99 && this.check != 100 && ((Math.abs(this.iniX - coords.screenX) > 50) || ((this.iniY - coords.screenY) < -50))) {
 				this.canSeekNow = false;
 				clearTimeout(this.seekTimeout);
 				this.downTown = -this.iniY + coords.screenY;
 				this.check = 99;
-				document.getElementById('con').style.transform = `translateY(${Math.max(Math.min(-this.iniY + coords.screenY, 100), 0)}px)`;
+				document.getElementById('con').style.transform = `translateY(${Math.max(Math.min(-this.iniY + coords.screenY - 50, 150), 0)}px)`;
 
 			} else if (this.check == 99) {
-				this.downTown = -this.iniY + coords.screenY;
-				document.getElementById('con').style.transform = `translateY(${Math.max(Math.min(-this.iniY + coords.screenY, 100), 0)}px)`;
+				this.downTown = -this.iniY + coords.screenY - 50;
+				const yOffset = Math.max(Math.min(-this.iniY + coords.screenY - 50, 100), 0);
+				document.getElementById('con').style.transform = `translateY(${yOffset}px)`;
 
 			} else if (this.check != 100 && this.check != 99 && (this.iniY - coords.screenY) > 50) {
 				this.check = 100;
@@ -748,7 +751,6 @@ class vid {
 
 		if (this.check == 100) {
 			if (this.downTown > 130) {
-
 				const event: videoOpenSettingsEvent = new CustomEvent("videoOpenSettings", {
 					detail: {
 						translate: -1

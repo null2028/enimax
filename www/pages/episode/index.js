@@ -383,14 +383,22 @@ function ini() {
                 epCon.append(catCon);
                 epCon.append(catDataCon);
                 new menuPull(epCon, () => {
-                    con.style.opacity = "1";
-                    con.style.transform = `translateX(0px)`;
-                    goBack();
-                }, null, con);
+                    con.style.transitionDuration = "200ms";
+                    window.requestAnimationFrame(function () {
+                        window.requestAnimationFrame(function () {
+                            con.style.transform = `translateX(100px)`;
+                            goBack();
+                        });
+                    });
+                }, document.getElementById("custom_rooms"), con);
                 new menuPull(document.querySelector(".infoCon"), () => {
-                    con.style.opacity = "1";
-                    con.style.transform = `translateX(0px)`;
-                    goBack();
+                    con.style.transitionDuration = "200ms";
+                    window.requestAnimationFrame(function () {
+                        window.requestAnimationFrame(function () {
+                            con.style.transform = `translateX(100px)`;
+                            goBack();
+                        });
+                    });
                 }, null, con);
             }
             if (data.genres) {
