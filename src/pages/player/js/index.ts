@@ -1256,7 +1256,6 @@ window.onmessage = async function (message: MessageEvent) {
 
 		if ("title" in currentVidData) {
 			if(engine === 4){
-				console.log("Is not live. Settings shouldReplace to true");
 				shouldReplace = true;
 			}
 
