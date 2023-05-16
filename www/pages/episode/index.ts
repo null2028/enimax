@@ -512,7 +512,7 @@ function ini() {
 
                 catCon.append(createCat(`room_${partitions * i}`, pageName, 1));
                 catDataCons.push(createElement({
-                    "class": `categoriesDataMain snappedCategoriesDataMain closed`,
+                    "class": `categoriesDataMain snappedCategoriesDataMain`,
                     style: {
                         "min-width": "100%"
                     },
