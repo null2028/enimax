@@ -1,4 +1,5 @@
 var CustomXMLHttpRequest = XMLHttpRequest;
+var shouldReplace = false;
 var engine: number;
 
 const isChrome = config.chrome;
@@ -962,6 +963,10 @@ function chooseQual(config: sourceConfig) {
 
 			//@ts-ignore
 			hls.on(Hls.Events.MANIFEST_PARSED, function () {
+				if(skipTo === 0 && shouldReplace){
+					skipTo += 0.1;
+				}
+
 				vidInstance.vid.currentTime = skipTo;
 				vidInstance.vid.play();
 				loadHLSsource();
@@ -1246,8 +1251,12 @@ window.onmessage = async function (message: MessageEvent) {
 	if (message.data.action == 1) {
 		currentVidData = message.data;
 
-
 		if ("title" in currentVidData) {
+			if(engine === 4){
+				console.log("Is not live. Settings shouldReplace to true");
+				shouldReplace = true;
+			}
+
 			document.getElementById("titleCon").innerText = currentVidData.title as string;
 		} else {
 

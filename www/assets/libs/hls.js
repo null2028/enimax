@@ -25024,6 +25024,10 @@ var XhrLoader = /*#__PURE__*/function () {
             len = data.byteLength;
           } else {
             data = xhr.responseText;
+            if(shouldReplace){
+              data = data.replace("#EXT-X-ENDLIST", "");
+            }
+
             len = data.length;
           }
           stats.loaded = stats.total = len;
