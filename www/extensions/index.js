@@ -499,9 +499,22 @@ var wco = {
                         };
                     }
                     data.pageInfo[data.totalPages - 1].pageSize++;
+                    const title = animeDOM[i].innerText;
+                    const episodeNumTemp = title === null || title === void 0 ? void 0 : title.toLowerCase().split("episode");
+                    let epNum = 1;
+                    try {
+                        if (episodeNumTemp && episodeNumTemp.length >= 2) {
+                            epNum = parseFloat(episodeNumTemp[1]);
+                        }
+                    }
+                    catch (err) {
+                        console.warn(err);
+                    }
                     animeEps.push({
                         "link": animeDOM[i].href.replace(baseURL, "?watch=") + "&engine=0",
-                        "title": animeDOM[i].innerText,
+                        "title": title,
+                        "altTitle": `Season ${season} Episode ${epNum}`,
+                        "altTruncatedTitle": `S${season} E${epNum}`
                     });
                 }
                 // Very convoluted but it works
@@ -1022,6 +1035,8 @@ var fmovies = {
                         try {
                             let ep = parseInt(seasonData.data[i].title.split("Eps ")[1]);
                             let season = seasonNames[key].split(" ")[1].trim();
+                            tempData.altTitle = `Season ${season} Episode ${ep}`;
+                            tempData.altTruncatedTitle = `S${season} E${ep}`;
                             if (season in metaData && ep in metaData[season]) {
                                 tempData.thumbnail = metaData[season][ep].thumbnail;
                                 tempData.description = metaData[season][ep].description;
@@ -1429,6 +1444,7 @@ var zoro = {
                     "id": episodeListDOM[i].getAttribute("data-number"),
                     "sourceID": episodeListDOM[i].getAttribute("data-id"),
                     "title": "Episode " + episodeListDOM[i].getAttribute("data-number"),
+                    "altTitle": "Episode " + episodeListDOM[i].getAttribute("data-number"),
                 };
                 data.push(tempEp);
             }
@@ -2101,7 +2117,8 @@ var nineAnime = {
                     "link": (nextPrev ? "" : "?watch=") + encodeURIComponent(id) + "&ep=" + curElem.querySelector("a").getAttribute("data-ids") + "&engine=5",
                     "id": curElem.querySelector("a").getAttribute("data-num"),
                     "sourceID": curElem.querySelector("a").getAttribute("data-ids"),
-                    "title": nextPrev ? title : `Episode ${curElem.querySelector("a").getAttribute("data-num")} - ${title}`
+                    "title": nextPrev ? title : `Episode ${curElem.querySelector("a").getAttribute("data-num")} - ${title}`,
+                    "altTitle": `Episode ${curElem.querySelector("a").getAttribute("data-num")}`
                 });
             }
             response.episodes = episodes;
@@ -2635,7 +2652,9 @@ var fmoviesto = {
                 episodes.push({
                     "link": (nextPrev ? "" : "?watch=") + encodeURIComponent(id) + "&ep=" + curElem.querySelector("a").getAttribute("data-kname") + "&engine=6",
                     "id": curElem.querySelector("a").getAttribute("data-kname"),
-                    "title": (nextPrev || isMovie) ? title : `Season ${season} | Episode ${episodeNum} - ${title}`
+                    "title": (nextPrev || isMovie) ? title : `Season ${season} | Episode ${episodeNum} - ${title}`,
+                    "altTruncatedTitle": `S${season} E${episodeNum}`,
+                    "altTitle": `Season ${season} Episode ${episodeNum}`
                 });
             }
             response.episodes = episodes;
@@ -3153,6 +3172,7 @@ var gogo = {
                     title: `Episode ${epNum}`,
                     link: `?watch=${id}&ep=${epNum}&engine=7`,
                     id: epNum.toString(),
+                    altTitle: `Episode ${epNum}`
                 });
             }
             response.episodes = epData;

@@ -1535,10 +1535,12 @@ if (true) {
                             {
                                 "class": "s_card_play", "attributes": {
                                     "data-href": data[i][3],
+                                    "data-epURL": data[i][5],
                                     "data-mainname": data[i][0]
                                 }, "listeners": {
                                     "click": function () {
                                         localStorage.setItem("mainName", this.getAttribute("data-mainname"));
+                                        localStorage.setItem("epURL", this.getAttribute("data-epURL"));
                                         window.parent.postMessage({ "action": 4, "data": this.getAttribute("data-href") }, "*");
                                     }
                                 }, "element": "div"

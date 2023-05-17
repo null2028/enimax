@@ -87,7 +87,7 @@ var fmoviesto: extension = {
                 console.error(err);
             }
 
-            let episodes = [];
+            let episodes: extensionInfoEpisode[] = [];
             const uid = infoDOM.querySelector("#watch").getAttribute("data-id");
             let IDVRF = await this.getVRF(uid, "fmovies-vrf");
 
@@ -163,7 +163,9 @@ var fmoviesto: extension = {
                 episodes.push({
                     "link": (nextPrev ? "" : "?watch=") + encodeURIComponent(id) + "&ep=" + curElem.querySelector("a").getAttribute("data-kname") + "&engine=6",
                     "id": curElem.querySelector("a").getAttribute("data-kname"),
-                    "title": (nextPrev || isMovie) ? title : `Season ${season} | Episode ${episodeNum} - ${title}`
+                    "title": (nextPrev || isMovie) ? title : `Season ${season} | Episode ${episodeNum} - ${title}`,
+                    "altTruncatedTitle": `S${season} E${episodeNum}`,
+                    "altTitle": `Season ${season} Episode ${episodeNum}`
                 });
             }
 

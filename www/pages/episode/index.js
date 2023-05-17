@@ -599,6 +599,7 @@ function ini() {
                 tempDiv2.className = 'episodesPlay';
                 tempDiv2.onclick = function () {
                     localStorage.setItem("mainName", data.mainName);
+                    localStorage.setItem("epURL", location.search);
                     window.parent.postMessage({ "action": 4, "data": trr }, "*");
                 };
                 if (check || !downloaded || config.chrome) {
@@ -635,6 +636,7 @@ function ini() {
                             "listeners": {
                                 "click": function () {
                                     localStorage.setItem("mainName", data.mainName);
+                                    localStorage.setItem("epURL", location.search);
                                     window.parent.postMessage({ "action": 4, "data": trr }, "*");
                                 }
                             }
@@ -745,6 +747,7 @@ function ini() {
                     tempDiv2.className = 'episodesPlay';
                     tempDiv2.onclick = function () {
                         localStorage.setItem("mainName", data.mainName);
+                        localStorage.setItem("epURL", location.search);
                         window.parent.postMessage({ "action": 4, "data": `?watch=${localQuery}` }, "*");
                     };
                     let tempDiv4 = document.createElement("div");

@@ -155,6 +155,7 @@ var gogo: extension = {
                         title: `Episode ${epNum}`,
                         link: `?watch=${id}&ep=${epNum}&engine=7`,
                         id: epNum.toString(),
+                        altTitle: `Episode ${epNum}`
                     }
                 );
             }

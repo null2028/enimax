@@ -139,7 +139,9 @@ var fmoviesto = {
                 episodes.push({
                     "link": (nextPrev ? "" : "?watch=") + encodeURIComponent(id) + "&ep=" + curElem.querySelector("a").getAttribute("data-kname") + "&engine=6",
                     "id": curElem.querySelector("a").getAttribute("data-kname"),
-                    "title": (nextPrev || isMovie) ? title : `Season ${season} | Episode ${episodeNum} - ${title}`
+                    "title": (nextPrev || isMovie) ? title : `Season ${season} | Episode ${episodeNum} - ${title}`,
+                    "altTruncatedTitle": `S${season} E${episodeNum}`,
+                    "altTitle": `Season ${season} Episode ${episodeNum}`
                 });
             }
             response.episodes = episodes;

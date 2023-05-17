@@ -38,6 +38,7 @@ let subtitleConfig: subtitleConfig = {
 let lastFragError = -10;
 let lastFragDuration = 0;
 let fragErrorCount = 0;
+let hasLoadedEpList = false;
 
 function applySubtitleConfig(): void {
 	let subtitleStyle = document.getElementById("subtitleStyle") as HTMLStyleElement;
@@ -112,6 +113,11 @@ let DMenu = new dropDownMenu(
 					"open": "subtitlesOptions"
 				},
 				{
+					"text": "Episodes",
+					"iconID": "episodesIcon",
+					"open": "episodes"
+				},
+				{
 					"text": "Fill Mode",
 					"iconID": "fillIcon",
 					"open": "fillmode"
@@ -133,7 +139,17 @@ let DMenu = new dropDownMenu(
 
 			]
 		},
+		{
+			"id": "episodes",
+			"selectableScene": true,
+			"scrollIntoView": true,
+			"heading": {
+				"text": "Episodes",
+			},
+			"items": [
 
+			]
+		},
 		{
 			"id": "subtitles",
 			"selectableScene": true,
@@ -639,6 +655,7 @@ function changeEp(nextOrPrev: number, msg: null | string = null) {
 		clearInterval(updateCurrentTime);
 		document.getElementById("ep_dis").innerHTML = "loading...";
 		document.getElementById("total").innerHTML = "";
+		updateEpListSelected();
 		ini_main();
 	}
 }
@@ -966,7 +983,7 @@ function chooseQual(config: sourceConfig) {
 
 				// If it's 0, then hls.js will automatically skip to the end
 				// so we increment it by 0.1
-				if(skipTo === 0 && shouldReplace){
+				if (skipTo === 0 && shouldReplace) {
 					skipTo += 0.1;
 				}
 
@@ -1249,13 +1266,68 @@ document.querySelector("#setting_icon").addEventListener("click", function () {
 	openSettingsSemi(-1);
 });
 
+document.querySelector("#episodeList").addEventListener("click", function () {
+	openSettingsSemi(-1);
+	DMenu.open("episodes");
+});
+
+function updateEpListSelected() {
+	DMenu.selections[location.search].select();
+}
+
 window.onmessage = async function (message: MessageEvent) {
 
 	if (message.data.action == 1) {
 		currentVidData = message.data;
 
+		if (hasLoadedEpList === false) {
+			hasLoadedEpList = true;
+
+			extensionList[engine].getAnimeInfo(localStorage.getItem("epURL").replace("?watch=/", "")).then((data: extensionInfo) => {
+				const episodes = data.episodes;
+
+				for (let i = episodes.length - 1; i >= 0; i--) {
+					const ep = episodes[i];
+
+					let truncatedTitle = ep.title.substring(0, 30);
+					if (ep.title.length >= 30) {
+						truncatedTitle += "...";
+					}
+
+					const epNum = parseFloat(ep.title.toLowerCase().replace("episode", ""));
+
+					if (!isNaN(epNum)) {
+						ep.title = `Episode ${epNum}`;
+						truncatedTitle = ep.title;
+					}
+
+					if (ep.altTitle) {
+						ep.title = ep.altTitle;
+						truncatedTitle = ep.altTitle;
+					}
+
+					if (ep.altTruncatedTitle) {
+						truncatedTitle = ep.altTruncatedTitle;
+					}
+
+					DMenu.getScene("episodes").addItem({
+						highlightable: true,
+						html: ep.title + (ep.date ? `<div class="menuDate">${ep.date.toLocaleString()}</div>` : ""),
+						altText: truncatedTitle,
+						selected: location.search === ep.link,
+						id: ep.link,
+						callback: function () {
+							changeEp(0, ep.link);
+						}
+					}, false);
+				}
+			}).catch((err: Error) => {
+				console.error(err);
+			});
+		}
+
 		if ("title" in currentVidData) {
-			if(engine === 4){
+			if (engine === 4) {
 				shouldReplace = true;
 			}
 

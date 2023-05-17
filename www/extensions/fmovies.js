@@ -216,6 +216,8 @@ var fmovies = {
                         try {
                             let ep = parseInt(seasonData.data[i].title.split("Eps ")[1]);
                             let season = seasonNames[key].split(" ")[1].trim();
+                            tempData.altTitle = `Season ${season} Episode ${ep}`;
+                            tempData.altTruncatedTitle = `S${season} E${ep}`;
                             if (season in metaData && ep in metaData[season]) {
                                 tempData.thumbnail = metaData[season][ep].thumbnail;
                                 tempData.description = metaData[season][ep].description;

@@ -153,6 +153,7 @@ var zoro: extension = {
                     "id": episodeListDOM[i].getAttribute("data-number"),
                     "sourceID": episodeListDOM[i].getAttribute("data-id"),
                     "title": "Episode " + episodeListDOM[i].getAttribute("data-number"),
+                    "altTitle": "Episode " + episodeListDOM[i].getAttribute("data-number"),
                 };
                 data.push(tempEp);
             }

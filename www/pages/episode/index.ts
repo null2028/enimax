@@ -377,9 +377,9 @@ function ini() {
 
 
                     let metaData;
-                    if(!search.has("aniID")){
+                    if (!search.has("aniID")) {
                         metaData = await currentEngine.getMetaData(new URLSearchParams(location.search));
-                    }else{
+                    } else {
                         metaData = await (window.parent as cordovaWindow).getMetaByAniID(search.get("aniID"));
                     }
 
@@ -702,6 +702,7 @@ function ini() {
 
                 tempDiv2.onclick = function () {
                     localStorage.setItem("mainName", data.mainName);
+                    localStorage.setItem("epURL", location.search);
                     window.parent.postMessage({ "action": 4, "data": trr }, "*");
                 };
 
@@ -753,6 +754,7 @@ function ini() {
                             "listeners": {
                                 "click": function () {
                                     localStorage.setItem("mainName", data.mainName);
+                                    localStorage.setItem("epURL", location.search);
                                     window.parent.postMessage({ "action": 4, "data": trr }, "*");
                                 }
                             }
@@ -879,6 +881,7 @@ function ini() {
 
                     tempDiv2.onclick = function () {
                         localStorage.setItem("mainName", data.mainName);
+                        localStorage.setItem("epURL", location.search);
                         window.parent.postMessage({ "action": 4, "data": `?watch=${localQuery}` }, "*");
 
                     };

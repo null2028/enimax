@@ -161,7 +161,8 @@ var nineAnime = {
                     "link": (nextPrev ? "" : "?watch=") + encodeURIComponent(id) + "&ep=" + curElem.querySelector("a").getAttribute("data-ids") + "&engine=5",
                     "id": curElem.querySelector("a").getAttribute("data-num"),
                     "sourceID": curElem.querySelector("a").getAttribute("data-ids"),
-                    "title": nextPrev ? title : `Episode ${curElem.querySelector("a").getAttribute("data-num")} - ${title}`
+                    "title": nextPrev ? title : `Episode ${curElem.querySelector("a").getAttribute("data-num")} - ${title}`,
+                    "altTitle": `Episode ${curElem.querySelector("a").getAttribute("data-num")}`
                 });
             }
             response.episodes = episodes;

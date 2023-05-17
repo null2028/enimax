@@ -61,6 +61,7 @@ interface menuItemConfig {
     selectedValue?: string,
     valueDOM?: HTMLElement,
     triggerCallbackIfSelected?: boolean,
+    DOM?: HTMLElement
 }
 
 interface sliderConfig {
@@ -73,6 +74,7 @@ interface menuSceneConfig {
     config?: menuItemConfig,
     id: string,
     selectableScene?: boolean,
+    scrollIntoView?: boolean,
     heading?: menuItemConfig,
     items: Array<menuItemConfig>,
     element?: HTMLElement
@@ -251,6 +253,8 @@ interface extensionInfoEpisode {
     link: string,
     title: string,
     id?: string,
+    altTitle?: string,
+    altTruncatedTitle?: string,
     sourceID?: string,
     thumbnail?: string,
     description?: string,
