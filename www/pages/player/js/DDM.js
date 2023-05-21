@@ -149,6 +149,7 @@ class dropDownMenu {
                     const shouldScroll = this.scenes[sceneID].data.scrollIntoView;
                     if (shouldScroll) {
                         (_a = this.scenes[sceneID].element.querySelector(".menuItem.selected")) === null || _a === void 0 ? void 0 : _a.scrollIntoView({ block: "center" });
+                        this.scenes[sceneID].element.scrollBy(0, -100);
                     }
                     this.menuCon.style.height = this.scenes[sceneID].element.querySelector(".scene").offsetHeight + "px";
                 }

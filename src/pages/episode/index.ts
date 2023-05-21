@@ -59,6 +59,11 @@ function rgbToHex(r: number, g: number, b: number) {
 // @ts-ignore
 const extensionList = (<cordovaWindow>window.parent).returnExtensionList();
 
+// @ts-ignore
+const extensionTypes = (<cordovaWindow>window.parent).returnExtensionTypes();
+
+let didScroll = false;
+
 if (config.local || localStorage.getItem("offline") === 'true') {
     ini();
 } else {
@@ -240,10 +245,13 @@ function ini() {
 
         //todo
         let currentEngine: extension;
+        let engineNum = 0;
         let temp3 = main_url.split("&engine=");
         if (temp3.length == 1) {
             currentEngine = extensionList[0];
+            engineNum = 0;
         } else {
+            engineNum = parseInt(temp3[1]);
             currentEngine = extensionList[parseInt(temp3[1])];
         }
 
@@ -374,13 +382,13 @@ function ini() {
                     const relationsDOM = relationsCon;
                     const recomDOM = recomCon;
                     const search = new URLSearchParams(location.search);
-
+                    const isManga = extensionTypes[engineNum] === "manga";
 
                     let metaData;
                     if (!search.has("aniID")) {
                         metaData = await currentEngine.getMetaData(new URLSearchParams(location.search));
                     } else {
-                        metaData = await (window.parent as cordovaWindow).getMetaByAniID(search.get("aniID"));
+                        metaData = await (window.parent as cordovaWindow).getMetaByAniID(search.get("aniID"), isManga ? "MANGA" : "ANIME");
                     }
 
                     let addedCover = false;
@@ -496,9 +504,16 @@ function ini() {
                 let pageName = "? - ?"
                 try {
                     if (!usesCustomPartions) {
-                        const episodeKeyword = "episode";
-                        const fromNum = parseInt(animeEps[partitions * (i)].title.toLowerCase().split(episodeKeyword)[1]).toString();
-                        const toNum = parseInt(animeEps[Math.min(partitions * (i + 1) - 1, animeEps.length - 1)].title.toLowerCase().split(episodeKeyword)[1]).toString();
+                        let episodeKeyword = "episode";
+                        let fromNum = parseInt(animeEps[partitions * (i)].title.toLowerCase().split(episodeKeyword)[1]).toString();
+                        let toNum = parseInt(animeEps[Math.min(partitions * (i + 1) - 1, animeEps.length - 1)].title.toLowerCase().split(episodeKeyword)[1]).toString();
+
+                        if (isNaN(parseInt(fromNum)) && isNaN(parseInt(fromNum))) {
+                            episodeKeyword = "chapter";
+                            fromNum = parseInt(animeEps[partitions * (i)].title.toLowerCase().split(episodeKeyword)[1]).toString();
+                            toNum = parseInt(animeEps[Math.min(partitions * (i + 1) - 1, animeEps.length - 1)].title.toLowerCase().split(episodeKeyword)[1]).toString();
+                        }
+
                         pageName = `${fromNum} - ${toNum}`;
                         partitionSize.push(partitions);
                     } else {
@@ -710,7 +725,7 @@ function ini() {
 
 
 
-                    if (!downloaded) {
+                    if (!downloaded && data.disableThumbnail !== true) {
                         tempDiv.style.flexDirection = "column";
 
                         tempDiv2.remove();
@@ -834,6 +849,7 @@ function ini() {
 
 
                     if (trr == currentLink) {
+                        didScroll = true;
                         scrollToDOM = tempDiv;
                         tempDiv.style.backgroundColor = "rgba(255,255,255,1)";
                         tempDiv.classList.add("episodesSelected");
@@ -1140,8 +1156,39 @@ addToLibrary.onclick = function () {
     }
 };
 
-(<cordovaWindow>window.parent).apiCall("POST", { "username": "", "action": 4 }, (response) => {
-    const doesExist = response.data[0].find(elem => elem[5] === location.search);
+(<cordovaWindow>window.parent).apiCall("POST", { "username": "", "action": 4 }, async (response) => {
+    const search = new URLSearchParams(location.search);
+
+    const doesExist = response.data[0].find(elem => {
+        try {
+            const elemSearch = new URLSearchParams(elem[5]);
+            if (elemSearch.get("engine") == search.get("engine") && elemSearch.get("watch") == search.get("watch")) {
+                const currentLink = elem[3];
+
+                localStorage.setItem("currentLink", currentLink);
+
+                if (didScroll === false) {
+                    const epCons = document.querySelectorAll(".episodesCon");
+                    for (let i = 0; i < epCons.length; i++) {
+                        if (epCons[i].getAttribute("data-url") === currentLink) {
+                            const scrollToDOM = epCons[i] as HTMLElement;
+                            scrollToDOM.style.backgroundColor = "rgba(255,255,255,1)";
+                            scrollToDOM.classList.add("episodesSelected");
+                            scrollToDOM.parentElement.classList.remove("closed");
+                            scrollToDOM.scrollIntoView();
+                        }
+                    }
+                }
+
+                return true;
+            } else {
+                return false;
+            }
+        } catch (err) {
+            return false;
+        }
+    });
+
     if (doesExist) {
         addToLibrary.classList.add("isInLib");
     } else {

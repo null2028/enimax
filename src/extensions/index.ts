@@ -269,8 +269,8 @@ function getCurrentYear(type: "current" | "next") {
 }
 
 const anilistQueries = {
-    "info": `query ($id: Int) {
-                Media (id: $id, type: ANIME) { 
+    "info": `query ($id: Int, $type: MediaType) {
+                Media (id: $id, type: $type) { 
                     id
                     title {
                         romaji
@@ -379,14 +379,13 @@ async function anilistAPI(query: string, variables = {}) {
     return JSON.parse(await MakeFetch(url, options));
 }
 
-async function getAnilistInfo(type: anilistType, id: string) {
+async function getAnilistInfo(type: anilistType, id: string, mediaType: "ANIME" | "MANGA" = "ANIME") {
     const anilistID = JSON.parse(await MakeFetch(`https://raw.githubusercontent.com/MALSync/MAL-Sync-Backup/master/data/pages/${type}/${id}.json`)).aniId;
-
-    return (await anilistAPI(anilistQueries.info, { id: anilistID })).data.Media;
+    return (await anilistAPI(anilistQueries.info, { id: anilistID, type: mediaType })).data.Media;
 }
 
-async function getMetaByAniID(anilistID: string) {
-    return (await anilistAPI(anilistQueries.info, { id: anilistID })).data.Media;
+async function getMetaByAniID(anilistID: string, mediaType: "ANIME" | "MANGA" = "ANIME") {
+    return (await anilistAPI(anilistQueries.info, { id: anilistID, type: mediaType })).data.Media;
 }
 
 async function getAnilistTrending(type: "current" | "next") {

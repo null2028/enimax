@@ -185,6 +185,7 @@ class dropDownMenu {
 
                     if(shouldScroll){
                         this.scenes[sceneID].element.querySelector(".menuItem.selected")?.scrollIntoView({block: "center"});
+                        this.scenes[sceneID].element.scrollBy(0, -100);
                     }
 
                     this.menuCon.style.height = this.scenes[sceneID].element.querySelector<HTMLElement>(".scene").offsetHeight + "px";

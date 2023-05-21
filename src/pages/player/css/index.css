@@ -649,40 +649,6 @@ select {
     width: 240px;
 }
 
-#settingHandleCon {
-    width: 100%;
-    height: 20px;
-    border-radius: 10px;
-    position: absolute;
-    top: 0;
-    left: 0;
-    text-align: center;
-    box-sizing: border-box;
-    z-index: 5;
-}
-
-#settingHandle {
-    height: 6px;
-    width: 40px;
-    background-color: white;
-    border-radius: 10px;
-    display: inline-block;
-}
-
-#settingHandlePadding {
-    display: inline-block;
-    padding: 0 10px;
-    padding-top: 10px;
-    box-sizing: border-box;
-    width: 100%;
-    text-align: center;
-    position: absolute;
-    top: 0;
-    left: 0;
-    z-index: 11;
-    pointer-events: inherit;
-}
-
 .accessTable {
     padding: 0 40px !important;
 }

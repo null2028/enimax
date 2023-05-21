@@ -15,6 +15,9 @@ function returnExtensionDisabled() {
 function returnExtensionNames() {
     return extensionNames;
 }
+function returnExtensionTypes() {
+    return extensionTypes;
+}
 function setGradient() {
     let bgGradient = parseInt(localStorage.getItem("themegradient"));
     if (bgGradient) {
@@ -484,26 +487,47 @@ function executeAction(message, reqSource) {
         }
     }
     else if (message.action == 4) {
+        let isManga = false;
+        let pageName = "player";
+        try {
+            const search = new URLSearchParams(message.data);
+            const engine = search.get("engine");
+            if (extensionTypes[engine] === "manga") {
+                isManga = true;
+            }
+        }
+        catch (err) {
+            console.warn(err);
+        }
+        if (isManga) {
+            pageName = "reader";
+        }
         if (config.chrome && playerIFrame.contentWindow.location.href.includes("/www/fallback.html")) {
-            playerIFrame.contentWindow.location = ("pages/player/index.html" + message.data);
+            playerIFrame.contentWindow.location = (`pages/${pageName}/index.html` + message.data);
         }
         else if (config.chrome) {
-            playerIFrame.contentWindow.location.replace("pages/player/index.html" + message.data);
+            playerIFrame.contentWindow.location.replace(`pages/${pageName}/index.html` + message.data);
         }
         if (!config.chrome) {
             let checkLock = 0;
             setTimeout(function () {
                 if (checkLock == 0) {
-                    playerIFrame.contentWindow.location.replace("pages/player/index.html" + message.data);
+                    playerIFrame.contentWindow.location.replace(`pages/${pageName}/index.html` + message.data);
                 }
             }, 100);
-            screen.orientation.lock("landscape")
-                .then(() => { })
-                .catch(() => { })
-                .finally(function () {
+            if (!isManga) {
+                screen.orientation.lock("landscape")
+                    .then(() => { })
+                    .catch(() => { })
+                    .finally(function () {
+                    checkLock = 1;
+                    playerIFrame.contentWindow.location.replace(`pages/${pageName}/index.html` + message.data);
+                });
+            }
+            else {
                 checkLock = 1;
-                playerIFrame.contentWindow.location.replace("pages/player/index.html" + message.data);
-            });
+                playerIFrame.contentWindow.location.replace(`pages/${pageName}/index.html` + message.data);
+            }
         }
         mainIFrame.style.display = "none";
         mainIFrame.style.height = "100%";
@@ -562,7 +586,9 @@ async function onDeviceReady() {
             console.error(err);
         }
         let frameLocation = mainIFrame.contentWindow.location;
-        const frameWasOpen = playerIFrame.className.indexOf("pop") == -1 && playerIFrame.contentWindow.location.pathname.indexOf("www/pages/player/index.html") > -1;
+        const frameWasOpen = playerIFrame.className.indexOf("pop") == -1
+            && (playerIFrame.contentWindow.location.pathname.includes("www/pages/player/index.html")
+                || playerIFrame.contentWindow.location.pathname.includes("www/pages/reader/index.html"));
         const homePageOpen = frameLocation.pathname.indexOf("www/pages/homepage/index.html") > -1;
         if (homePageOpen || frameWasOpen) {
             playerIFrame.contentWindow.location.replace("fallback.html");

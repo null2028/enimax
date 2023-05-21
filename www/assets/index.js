@@ -27,8 +27,8 @@ function createElement(config) {
     }
     const listeners = config.listeners;
     for (const value in listeners) {
-        temp.addEventListener(value, function () {
-            listeners[value].bind(this)();
+        temp.addEventListener(value, function (event) {
+            listeners[value].bind(this)(event);
         });
     }
     if (config.children) {
@@ -205,11 +205,14 @@ function constructErrorPage(errorCon, message, config) {
         }));
     }
     if (config.hasReload) {
+        const reloadFunc = config.reloadFunc ? config.reloadFunc : function () {
+            window.location.reload();
+        };
         icons.append(createElement({
             "class": "icon reload",
             listeners: {
-                click: function () {
-                    window.location.reload();
+                click: function (event) {
+                    reloadFunc(event);
                 },
             }
         }));
@@ -238,12 +241,13 @@ function openWebview(url) {
         window.parent.getWebviewHTML(url, false, null, "console.log()");
     }
 }
-const sourceExtensionID = [7, 5, 3];
-const sourceID = ["Gogoanime", "9anime", "Zoro"];
+const sourceExtensionID = [7, 5, 3, 8];
+const sourceID = ["Gogoanime", "9anime", "Zoro", "Mangadex"];
 const sourcesURL = {
     "Zoro": [],
     "Gogoanime": [],
-    "9anime": []
+    "9anime": [],
+    "Mangadex": []
 };
 function makeCross(type, bottom = 260) {
     const cross = createElement({
@@ -317,13 +321,22 @@ function makeCard(config) {
             innerText: config.label
         }));
     }
+    if (config.type) {
+        card.setAttribute("data-type", config.type);
+    }
     return card;
 }
-async function fetchMapping(id) {
+async function fetchMapping(id, type) {
     const noti = sendNoti([0, "", "Alert", "Fetching the mappings..."]);
-    const sourcesToCheck = ["Zoro", "9anime", "Gogoanime"];
+    const sourcesToCheck = ["Zoro", "9anime", "Gogoanime", "Mangadex"];
+    if (type) {
+        type = (type === "MANGA" ? "manga" : "anime");
+    }
+    else {
+        type = "anime";
+    }
     try {
-        const pages = JSON.parse(await window.parent.MakeFetch(`https://raw.githubusercontent.com/MALSync/MAL-Sync-Backup/master/data/anilist/anime/${id}.json`));
+        const pages = JSON.parse(await window.parent.MakeFetch(`https://raw.githubusercontent.com/MALSync/MAL-Sync-Backup/master/data/anilist/${type}/${id}.json`));
         noti.remove();
         sourceChoiceDOM.style.display = "flex";
         for (let i = 0; i < sourcesToCheck.length; i++) {
@@ -351,24 +364,25 @@ async function fetchMapping(id) {
     }
 }
 function makeCardCon(con, nodes, edges) {
-    var _a;
+    var _a, _b, _c;
     let didAdd = false;
     try {
         const relationsCross = makeCross("fixed");
         con.append(relationsCross);
         for (let i = 0; i < nodes.length; i++) {
-            if (((_a = nodes[i]) === null || _a === void 0 ? void 0 : _a.type) !== "ANIME") {
+            if (((_a = nodes[i]) === null || _a === void 0 ? void 0 : _a.type) !== "ANIME" && ((_b = nodes[i]) === null || _b === void 0 ? void 0 : _b.type) !== "MANGA") {
                 continue;
             }
             didAdd = true;
             const card = makeCard({
                 id: nodes[i].id,
+                type: (_c = nodes[i]) === null || _c === void 0 ? void 0 : _c.type,
                 image: nodes[i].coverImage.extraLarge,
                 name: nodes[i].title.english ? nodes[i].title.english : nodes[i].title.native,
                 label: edges ? fixStatus(edges[i].relationType) : nodes[i].seasonYear ? nodes[i].seasonYear : ""
             });
             card.addEventListener("click", function () {
-                fetchMapping(this.getAttribute("data-id"));
+                fetchMapping(this.getAttribute("data-id"), this.getAttribute("data-type"));
             });
             con.append(card);
         }

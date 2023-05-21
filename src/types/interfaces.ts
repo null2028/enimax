@@ -1,7 +1,7 @@
 type ExitFullscreen = typeof document.exitFullscreen
 type RequestFullscreen = typeof document.documentElement.requestFullscreen
 type TypeFunc = (res: Response) => Promise<string>
-type anilistType = "9anime" | "Zoro" | "Gogoanime"
+type anilistType = "9anime" | "Zoro" | "Gogoanime" | "Mangadex"
 
 interface Document {
     webkitExitFullscreen: ExitFullscreen;
@@ -135,6 +135,7 @@ interface cordovaWindow extends Window {
     returnExtensionNames: Function,
     returnDownloadQueue: Function,
     returnExtensionDisabled: Function,
+    returnExtensionTypes: Function,
     getAnilistTrending: Function,
     listDir: Function,
     back: Function,
@@ -175,6 +176,7 @@ interface RelationCardConfig {
     id: string,
     image: string,
     name: string,
+    type?: string,
     label?: string
 }
 
@@ -216,6 +218,7 @@ interface extensionInfo {
     totalPages?: number
     pageInfo?: Array<PageInfo>
     genres?: Array<string>
+    disableThumbnail?: boolean
 }
 
 interface infoError extends Error {
@@ -230,6 +233,7 @@ interface searchError extends Error {
 type ErrorPageConfig = {
     hasLink: false,
     hasReload: Boolean,
+    reloadFunc?: Function,
     customConClass?: string,
     linkClass?: string,
     isError?: Boolean,
@@ -237,6 +241,7 @@ type ErrorPageConfig = {
 } | {
     hasLink: true,
     hasReload: Boolean,
+    reloadFunc?: Function,
     clickEvent: Function,
     customConClass?: string,
     linkClass?: string,
@@ -258,7 +263,8 @@ interface extensionInfoEpisode {
     sourceID?: string,
     thumbnail?: string,
     description?: string,
-    date?: Date
+    date?: Date,
+    number?: number,
 }
 
 interface extensionVidSource {
