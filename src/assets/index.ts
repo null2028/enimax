@@ -287,13 +287,14 @@ function openWebview(url: string) {
     }
 }
 
-const sourceExtensionID = [7, 5, 3, 8];
-const sourceID = ["Gogoanime", "9anime", "Zoro", "Mangadex"];
+const sourceExtensionID = [7, 5, 3, 8, 9];
+const sourceID = ["Gogoanime", "9anime", "Zoro", "Mangadex", "MangaFire"];
 const sourcesURL = {
     "Zoro": [],
     "Gogoanime": [],
     "9anime": [],
-    "Mangadex": []
+    "Mangadex": [],
+    "MangaFire": []
 }
 
 function makeCross(type?: "fixed", bottom = 260) {
@@ -392,7 +393,7 @@ function makeCard(config: RelationCardConfig) {
 
 async function fetchMapping(id: string, type: string | null) {
     const noti = sendNoti([0, "", "Alert", "Fetching the mappings..."]);
-    const sourcesToCheck = ["Zoro", "9anime", "Gogoanime", "Mangadex"];
+    const sourcesToCheck = ["Zoro", "9anime", "Gogoanime", "Mangadex", "MangaFire"];
     
     if(type){
         type = (type === "MANGA" ? "manga" : "anime");

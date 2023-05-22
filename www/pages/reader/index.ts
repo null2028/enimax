@@ -11,8 +11,9 @@ const mainCon = document.getElementById("con_11");
 let params: URLSearchParams;
 let totalPages = 0;
 let pagesDOM: HTMLElement[] = [];
-let pagesURL: string[] = [];
+let pagesURL: any = [];
 let panZooms: any = [];
+let pagesDescrambled = {};
 let currentMangaData = undefined;
 let dirty = false;
 let menuOpen = false;
@@ -20,6 +21,7 @@ let menuTimeout;
 let lastErrorClick = 0;
 let reversed = true;
 let touchStart = 0;
+let mangaEngine;
 // @ts-ignore
 let hasLoadedEpList = false;
 function loadNext() {
@@ -64,12 +66,36 @@ function handleMenu() {
     menuOpen = !menuOpen;
 }
 
+function loadPage(elem: HTMLImageElement, index: number) {
+    console.log(index);
+    const i = index;
+
+    if (pagesURL[i].needsDescrambling) {
+        if (i in pagesDescrambled) {
+            elem.src = pagesDescrambled[i];
+        } else {
+            extensionListReader[mangaEngine].descramble(pagesURL[i].img, pagesURL[i].key).then((url: string) => {
+                pagesDescrambled[i] = url;
+                elem.src = url;
+            }).catch(() => {
+                elem.onerror(new Event("error"));
+            });
+        }
+    } else {
+        elem.src = pagesURL[i].img;
+    }
+}
+
+function setSliderValue(num: number){
+    slider.value = normalizePage(num).toString();
+}
+
 async function ini() {
     container.onscroll = () => { };
     dirty = true;
     params = new URLSearchParams(location.search);
     pagesURL = [];
-
+    pagesDescrambled = {};
     while (pagesDOM.length) {
         pagesDOM[0].remove();
         pagesDOM.shift();
@@ -80,7 +106,7 @@ async function ini() {
         panZooms.shift();
     }
 
-    const mangaEngine = params.get("engine");
+    mangaEngine = params.get("engine");
 
     currentMangaData = await extensionListReader[mangaEngine].getLinkFromUrl(params.get("watch"));
 
@@ -131,7 +157,7 @@ async function ini() {
     }
 
     document.getElementById("name").textContent = currentMangaData.name;
-    document.getElementById("chapterNum").textContent = `Chapter ${currentMangaData.chapter} ${currentMangaData.title ? ` - ${currentMangaData.title}` : ""}`;
+    document.getElementById("chapterNum").textContent = `Chapter ${params.get("chap")} ${currentMangaData.title ? ` - ${currentMangaData.title}` : ""}`;
 
     const pages = currentMangaData.pages;
     totalPages = pages.length;
@@ -152,7 +178,7 @@ async function ini() {
             class: "page",
         });
 
-        pagesURL.push(page.img);
+        pagesURL.push(page);
         pagesDOM.push(pageDOM);
 
         pageDOM.append(imageDOM);
@@ -176,18 +202,18 @@ async function ini() {
                     // Divide the screen into thirds
                     if (xCoord < window.innerWidth / 3) {
                         if (reversed) {
-                            slider.value = normalizePage(totalPages - (currentPage - 1 * sign)).toString();
+                            setSliderValue(normalizePage(totalPages - (currentPage - 1 * sign)));
                         } else {
-                            slider.value = (currentPage - 1 * sign).toString();
+                            setSliderValue(currentPage - 1 * sign);
                         }
                         openPage(currentPage - 1 * sign);
                     } else if (xCoord < 2 * window.innerWidth / 3) {
                         handleMenu();
                     } else {
                         if (reversed) {
-                            slider.value = normalizePage(totalPages - (currentPage + 1 * sign)).toString();
+                            setSliderValue(normalizePage(totalPages - (currentPage + 1 * sign)));
                         } else {
-                            slider.value = (currentPage + 1 * sign).toString();
+                            setSliderValue(currentPage + 1 * sign);
                         }
                         openPage(currentPage + 1 * sign);
                     }
@@ -244,9 +270,9 @@ async function ini() {
         if (index != scrollLastIndex) {
 
             if (reversed) {
-                slider.value = (totalPages - index).toString();
+                setSliderValue(totalPages - index);
             } else {
-                slider.value = (index + 1).toString();
+                setSliderValue(index + 1);
             }
 
             if (index === totalPages) {
@@ -271,7 +297,7 @@ async function ini() {
                     const elem = con.querySelector(".page") as HTMLImageElement;
                     const hasBeenLoaded = elem?.getAttribute("data-loaded");
                     if (elem && hasBeenLoaded !== "true") {
-
+                        const index = i;
                         elem.onload = function () {
                             con.querySelector("#errorPageCon")?.remove();
                         }
@@ -287,7 +313,7 @@ async function ini() {
 
                             if (tries <= 5) {
                                 elem.removeAttribute("src");
-                                elem.src = elem.getAttribute("data-url");
+                                loadPage(elem, parseInt(elem.getAttribute("data-index")));
                             } else {
 
                                 con.querySelector("#errorPageCon")?.remove();
@@ -305,7 +331,7 @@ async function ini() {
                                             event.stopPropagation();
                                             lastErrorClick = Date.now();
                                             elem.removeAttribute("src");
-                                            elem.src = elem.getAttribute("data-url");
+                                            loadPage(elem, parseInt(elem.getAttribute("data-index")));
                                         }
                                     }
                                 );
@@ -313,8 +339,8 @@ async function ini() {
 
                         };
 
-                        elem.src = pagesURL[i];
-                        elem.setAttribute("data-url", pagesURL[i]);
+                        loadPage(elem, index);
+                        elem.setAttribute("data-index", index.toString());
                         elem.setAttribute("data-loaded", "true");
                     }
                 }
@@ -342,9 +368,9 @@ async function ini() {
     const currentPage = Math.min(apiRes.data.time, totalPages - 1);
 
     if (reversed) {
-        slider.value = (totalPages - currentPage + 1).toString();
+        setSliderValue(totalPages - currentPage + 1);
     } else {
-        slider.value = currentPage.toString();
+        setSliderValue(currentPage);
     }
 
     pagesDOM[currentPage]?.scrollIntoView({});
@@ -459,25 +485,10 @@ const mangaMenu = new dropDownMenu(
 document.getElementById("name").addEventListener("click", function () {
     openSettingsSemi(-1);
 });
-// container.addEventListener("touchstart", function (event) {
-//     touchStart = event.touches[0].screenY;
-// });
 
-// container.addEventListener("touchmove", function (event: TouchEvent) {
-//     if (event.touches.length === 1 && -event.touches[0].screenY + touchStart > 50) {
-//         openSettingsSemi(-event.touches[0].screenY + touchStart);
-//     }
-// });
-
-// container.addEventListener("touchend", function (event: TouchEvent) {
-//     if (event.changedTouches.length === 1 && touchStart - event.changedTouches[0].screenY < 130) {
-//         closeSettings();
-//     } else {
-//         openSettingsSemi(-1);
-//     }
-// });
-
-
+if(reversed){
+    slider.classList.add("reversed");
+}
 
 let mangeSettingsPullInstance = new settingsPull(document.getElementById("settingHandlePadding"), closeSettings);
 let mangaSettingsPullInstanceTT = new settingsPull(document.querySelector(".menuCon"), closeSettings, true);

@@ -112,7 +112,7 @@ var mangaDex: extension = {
             throw err;
         }
     },
-    getLinkFromUrl: async function (url: string): Promise<extensionVidSource> {
+    getLinkFromUrl: async function (url: string): Promise<extensionMangaSource> {
 
         function substringBefore(str: string, toFind: string) {
             let index = str.indexOf(toFind);
@@ -127,14 +127,14 @@ var mangaDex: extension = {
                 MakeFetch(`https://api.mangadex.org/chapter/${chapterId}?includes[]=scanlation_group&includes[]=manga&includes[]=user`)
             ]);
 
-            const response = {
+            const response: extensionMangaSource = {
                 pages: [],
                 next: null,
                 prev: null,
                 name: "",
                 chapter: 0,
                 title: "",
-                altTruncatedTitle: ""
+                type: "manga",
             };
 
             const res = JSON.parse(promisesRes[0]);
@@ -171,7 +171,6 @@ var mangaDex: extension = {
             for (const id of res.chapter.data) {
                 response.pages.push({
                     img: `${res.baseUrl}/data/${res.chapter.hash}/${id}`,
-                    page: parseInt(substringBefore(id, '-').replace(/[^0-9.]/g, '')),
                 });
             }
 

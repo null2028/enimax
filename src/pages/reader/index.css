@@ -97,11 +97,11 @@
     text-overflow: ellipsis;
 }
 
-#bottomNav{
+#bottomNav {
     display: table-row;
 }
 
-#next{
+#next {
     height: 30px;
     min-width: 30px;
     display: table-cell;
@@ -113,7 +113,7 @@
     padding-left: 10px;
 }
 
-#prev{
+#prev {
     height: 30px;
     min-width: 30px;
     display: table-cell;
@@ -125,8 +125,27 @@
     padding-right: 10px;
 }
 
-#slider{
+#slider {
     width: 100%;
     display: table-cell;
     vertical-align: middle;
+}
+
+.sliderMenu input {
+    height: 5px;
+    border-radius: 2px;
+}
+
+#sliderInput::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    background: #ffffff;
+    cursor: pointer;
+    border: 0;
+}
+
+#sliderInput::-webkit-slider-thumb:hover {
+    background: #4471ef;
 }

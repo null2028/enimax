@@ -10,14 +10,16 @@
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;700;800;900&display=swap"
         rel="stylesheet">
     <link href="../../assets/css/index.css" rel="stylesheet">
+    <link href="../../assets/css/range.css" rel="stylesheet">
     <link href="../player/css/DDM.css" rel="stylesheet">
     <link href="./index.css" rel="stylesheet">
+    <link href="../player/css/index.css" rel="stylesheet">
     <script src="../../assets/index.js"></script>
+    <script src="../../assets/libs/range-slider.js"></script>
     <script src="../../assets/js/config.js"></script>
     <script src="../../assets/js/pull.js"></script>
     <script src="../../assets/libs/panzoom.js"></script>
     <script src="../player/js/DDM.js"></script>
-
 </head>
 
 <body>
@@ -39,8 +41,14 @@
 
         <div class="bottomNav close" id="bottomNav">
             <div id="prev"></div>
+
+            <!-- <div id="bar" style="height: 4px;">
+                <div id="buffered" style="left: 13.0555%; width: 21.4171%;"></div>
+                <div id="loaded" style="width: 13.4113%;"></div>
+            </div> -->
+
             <div id="slider" class="sliderMenu">
-                <input type="range" max="255" step="1" min="1" class="sliderBox" id="sliderInput">
+                <range-slider type="range" max="255" step="1" min="1" class="sliderBox" id="sliderInput">
             </div>
             <div id="next"></div>
         </div>

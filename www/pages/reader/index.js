@@ -12,6 +12,7 @@ let totalPages = 0;
 let pagesDOM = [];
 let pagesURL = [];
 let panZooms = [];
+let pagesDescrambled = {};
 let currentMangaData = undefined;
 let dirty = false;
 let menuOpen = false;
@@ -19,6 +20,7 @@ let menuTimeout;
 let lastErrorClick = 0;
 let reversed = true;
 let touchStart = 0;
+let mangaEngine;
 // @ts-ignore
 let hasLoadedEpList = false;
 function loadNext() {
@@ -56,12 +58,36 @@ function handleMenu() {
     }
     menuOpen = !menuOpen;
 }
+function loadPage(elem, index) {
+    console.log(index);
+    const i = index;
+    if (pagesURL[i].needsDescrambling) {
+        if (i in pagesDescrambled) {
+            elem.src = pagesDescrambled[i];
+        }
+        else {
+            extensionListReader[mangaEngine].descramble(pagesURL[i].img, pagesURL[i].key).then((url) => {
+                pagesDescrambled[i] = url;
+                elem.src = url;
+            }).catch(() => {
+                elem.onerror(new Event("error"));
+            });
+        }
+    }
+    else {
+        elem.src = pagesURL[i].img;
+    }
+}
+function setSliderValue(num) {
+    slider.value = normalizePage(num).toString();
+}
 async function ini() {
     var _a;
     container.onscroll = () => { };
     dirty = true;
     params = new URLSearchParams(location.search);
     pagesURL = [];
+    pagesDescrambled = {};
     while (pagesDOM.length) {
         pagesDOM[0].remove();
         pagesDOM.shift();
@@ -70,7 +96,7 @@ async function ini() {
         panZooms[0].dispose();
         panZooms.shift();
     }
-    const mangaEngine = params.get("engine");
+    mangaEngine = params.get("engine");
     currentMangaData = await extensionListReader[mangaEngine].getLinkFromUrl(params.get("watch"));
     if (hasLoadedEpList === false) {
         hasLoadedEpList = true;
@@ -111,7 +137,7 @@ async function ini() {
         });
     }
     document.getElementById("name").textContent = currentMangaData.name;
-    document.getElementById("chapterNum").textContent = `Chapter ${currentMangaData.chapter} ${currentMangaData.title ? ` - ${currentMangaData.title}` : ""}`;
+    document.getElementById("chapterNum").textContent = `Chapter ${params.get("chap")} ${currentMangaData.title ? ` - ${currentMangaData.title}` : ""}`;
     const pages = currentMangaData.pages;
     totalPages = pages.length;
     slider.setAttribute("max", totalPages.toString());
@@ -126,7 +152,7 @@ async function ini() {
             element: "img",
             class: "page",
         });
-        pagesURL.push(page.img);
+        pagesURL.push(page);
         pagesDOM.push(pageDOM);
         pageDOM.append(imageDOM);
         container.append(pageDOM);
@@ -146,10 +172,10 @@ async function ini() {
                     // Divide the screen into thirds
                     if (xCoord < window.innerWidth / 3) {
                         if (reversed) {
-                            slider.value = normalizePage(totalPages - (currentPage - 1 * sign)).toString();
+                            setSliderValue(normalizePage(totalPages - (currentPage - 1 * sign)));
                         }
                         else {
-                            slider.value = (currentPage - 1 * sign).toString();
+                            setSliderValue(currentPage - 1 * sign);
                         }
                         openPage(currentPage - 1 * sign);
                     }
@@ -158,10 +184,10 @@ async function ini() {
                     }
                     else {
                         if (reversed) {
-                            slider.value = normalizePage(totalPages - (currentPage + 1 * sign)).toString();
+                            setSliderValue(normalizePage(totalPages - (currentPage + 1 * sign)));
                         }
                         else {
-                            slider.value = (currentPage + 1 * sign).toString();
+                            setSliderValue(currentPage + 1 * sign);
                         }
                         openPage(currentPage + 1 * sign);
                     }
@@ -205,10 +231,10 @@ async function ini() {
         }
         if (index != scrollLastIndex) {
             if (reversed) {
-                slider.value = (totalPages - index).toString();
+                setSliderValue(totalPages - index);
             }
             else {
-                slider.value = (index + 1).toString();
+                setSliderValue(index + 1);
             }
             if (index === totalPages) {
                 dirty = true;
@@ -230,6 +256,7 @@ async function ini() {
                     const elem = con.querySelector(".page");
                     const hasBeenLoaded = elem === null || elem === void 0 ? void 0 : elem.getAttribute("data-loaded");
                     if (elem && hasBeenLoaded !== "true") {
+                        const index = i;
                         elem.onload = function () {
                             var _a;
                             (_a = con.querySelector("#errorPageCon")) === null || _a === void 0 ? void 0 : _a.remove();
@@ -243,7 +270,7 @@ async function ini() {
                             elem.setAttribute("data-retry", (++tries).toString());
                             if (tries <= 5) {
                                 elem.removeAttribute("src");
-                                elem.src = elem.getAttribute("data-url");
+                                loadPage(elem, parseInt(elem.getAttribute("data-index")));
                             }
                             else {
                                 (_a = con.querySelector("#errorPageCon")) === null || _a === void 0 ? void 0 : _a.remove();
@@ -257,13 +284,13 @@ async function ini() {
                                         event.stopPropagation();
                                         lastErrorClick = Date.now();
                                         elem.removeAttribute("src");
-                                        elem.src = elem.getAttribute("data-url");
+                                        loadPage(elem, parseInt(elem.getAttribute("data-index")));
                                     }
                                 });
                             }
                         };
-                        elem.src = pagesURL[i];
-                        elem.setAttribute("data-url", pagesURL[i]);
+                        loadPage(elem, index);
+                        elem.setAttribute("data-index", index.toString());
                         elem.setAttribute("data-loaded", "true");
                     }
                 }
@@ -285,10 +312,10 @@ async function ini() {
     dirty = false;
     const currentPage = Math.min(apiRes.data.time, totalPages - 1);
     if (reversed) {
-        slider.value = (totalPages - currentPage + 1).toString();
+        setSliderValue(totalPages - currentPage + 1);
     }
     else {
-        slider.value = currentPage.toString();
+        setSliderValue(currentPage);
     }
     (_a = pagesDOM[currentPage]) === null || _a === void 0 ? void 0 : _a.scrollIntoView({});
     scrollSnapFunc(false);
@@ -389,21 +416,9 @@ const mangaMenu = new dropDownMenu([
 document.getElementById("name").addEventListener("click", function () {
     openSettingsSemi(-1);
 });
-// container.addEventListener("touchstart", function (event) {
-//     touchStart = event.touches[0].screenY;
-// });
-// container.addEventListener("touchmove", function (event: TouchEvent) {
-//     if (event.touches.length === 1 && -event.touches[0].screenY + touchStart > 50) {
-//         openSettingsSemi(-event.touches[0].screenY + touchStart);
-//     }
-// });
-// container.addEventListener("touchend", function (event: TouchEvent) {
-//     if (event.changedTouches.length === 1 && touchStart - event.changedTouches[0].screenY < 130) {
-//         closeSettings();
-//     } else {
-//         openSettingsSemi(-1);
-//     }
-// });
+if (reversed) {
+    slider.classList.add("reversed");
+}
 let mangeSettingsPullInstance = new settingsPull(document.getElementById("settingHandlePadding"), closeSettings);
 let mangaSettingsPullInstanceTT = new settingsPull(document.querySelector(".menuCon"), closeSettings, true);
 mangaMenu.open("initial");

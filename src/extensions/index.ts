@@ -479,3 +479,18 @@ async function sendBatchReqs(ids: Array<string>) {
 
     return result;
 }
+
+function loadImage(url: string): Promise<HTMLImageElement> {
+    return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.addEventListener("load", () => {
+            resolve(img);
+        }, false);
+
+        img.addEventListener("error", (err) => {
+            reject(err);
+        }, false);
+
+        img.src = url;
+    });
+}
