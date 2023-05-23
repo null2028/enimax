@@ -271,6 +271,7 @@ function constructErrorPage(errorCon: HTMLElement, message: string, config: Erro
         innerText: config.isError ? `Something went wrong: ${message}` : message,
         style: {
             "marginBottom": "20px",
+            "white-space": "break-spaces"
         }
     }));
 

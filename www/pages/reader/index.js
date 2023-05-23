@@ -7,9 +7,12 @@ const bottomNav = document.getElementById("bottomNav");
 const backDOM = document.getElementById("back");
 const slider = document.getElementById("sliderInput");
 const mainCon = document.getElementById("con_11");
+const currentPageDOM = document.getElementById("currentPage");
+const totalPageDOM = document.getElementById("totalPage");
 let params;
 let totalPages = 0;
 let pagesDOM = [];
+let paddingDOM = [];
 let pagesURL = [];
 let panZooms = [];
 let pagesDescrambled = {};
@@ -19,11 +22,13 @@ let menuOpen = false;
 let menuTimeout;
 let lastErrorClick = 0;
 let reversed = true;
+let webcomic = false;
 let touchStart = 0;
 let mangaEngine;
 let rootDir;
 let readerDownloaded = localStorage.getItem("offline") === 'true';
 let loadLocally = false;
+let pagePadding = { left: 2 };
 // @ts-ignore
 let hasLoadedEpList = false;
 function loadNext() {
@@ -90,7 +95,13 @@ async function loadPage(elem, index) {
     }
 }
 function setSliderValue(num) {
-    slider.value = normalizePage(num).toString();
+    if (reversed) {
+        currentPageDOM.textContent = normalizePage(totalPages - (num + 2) + 1).toString();
+    }
+    else {
+        currentPageDOM.textContent = normalizePage(num - 2).toString();
+    }
+    slider.value = normalizePage((num) - (reversed ? -1 : 1) * pagePadding.left).toString();
 }
 // @ts-ignore
 function checkIfExists(localURL) {
@@ -109,290 +120,361 @@ function checkIfExists(localURL) {
 }
 async function ini() {
     var _a;
-    container.onscroll = () => { };
-    dirty = true;
-    params = new URLSearchParams(location.search);
-    pagesURL = [];
-    pagesDescrambled = {};
-    while (pagesDOM.length) {
-        pagesDOM[0].remove();
-        pagesDOM.shift();
-    }
-    while (panZooms.length) {
-        panZooms[0].dispose();
-        panZooms.shift();
-    }
-    mangaEngine = params.get("engine");
-    loadLocally = false;
-    if (readerDownloaded) {
-        rootDir = decodeURIComponent(location.search.replace("?watch=", "").split("&")[0]);
-        // Getting the meta data
-        currentMangaData = JSON.parse(await parentWindow.makeLocalRequest("GET", `/manga/${rootDir}/viddata.json`)).data;
-        for (let i = 0; i < currentMangaData.pages.length; i++) {
-            const page = currentMangaData.pages[i];
-            page.img = `${i}.jpg`;
+    try {
+        container.onscroll = () => { };
+        dirty = true;
+        params = new URLSearchParams(location.search);
+        pagesURL = [];
+        pagesDescrambled = {};
+        while (pagesDOM.length) {
+            pagesDOM[0].remove();
+            pagesDOM.shift();
         }
-        try {
-            currentMangaData.next = "?watch=" + encodeURIComponent(`/${rootDir.split("/")[1]}/${btoa(parentWindow.normalise(currentMangaData.next))}`) + "&isManga=true";
-            currentMangaData.prev = "?watch=" + encodeURIComponent(`/${rootDir.split("/")[1]}/${btoa(parentWindow.normalise(currentMangaData.prev))}`) + "&isManga=true";
+        while (paddingDOM.length) {
+            paddingDOM[0].remove();
+            paddingDOM.shift();
         }
-        catch (err) {
-            console.warn(err);
+        while (panZooms.length) {
+            panZooms[0].dispose();
+            panZooms.shift();
         }
-        mangaEngine = currentMangaData.engine;
-    }
-    else {
-        currentMangaData = await extensionListReader[mangaEngine].getLinkFromUrl(params.get("watch"));
-    }
-    const mainName = localStorage.getItem("mainName");
-    const rootDirCheck = `${mainName}/${btoa(parentWindow.normalise(location.search))}`;
-    const localURL = `/manga/${rootDirCheck}/.downloaded`;
-    if (!readerDownloaded) {
-        try {
-            await checkIfExists(localURL);
-            rootDir = rootDirCheck;
-            let res;
-            if (localStorage.getItem("alwaysDown") === "true") {
-                res = true;
+        mangaEngine = params.get("engine");
+        loadLocally = false;
+        if (readerDownloaded) {
+            rootDir = decodeURIComponent(location.search.replace("?watch=", "").split("&")[0]);
+            // Getting the meta data
+            currentMangaData = JSON.parse(await parentWindow.makeLocalRequest("GET", `/manga/${rootDir}/viddata.json`)).data;
+            for (let i = 0; i < currentMangaData.pages.length; i++) {
+                const page = currentMangaData.pages[i];
+                page.img = `${i}.jpg`;
             }
-            else {
-                res = confirm("Want to open the downloaded version?");
+            try {
+                currentMangaData.next = "?watch=" + encodeURIComponent(`/${rootDir.split("/")[1]}/${btoa(parentWindow.normalise(currentMangaData.next))}`) + "&isManga=true";
+                currentMangaData.prev = "?watch=" + encodeURIComponent(`/${rootDir.split("/")[1]}/${btoa(parentWindow.normalise(currentMangaData.prev))}`) + "&isManga=true";
             }
-            if (res) {
-                let vidString = (await window.parent.makeLocalRequest("GET", `/manga/${rootDirCheck}/viddata.json`));
-                let viddata = JSON.parse(vidString).data;
-                currentMangaData.pages = viddata.pages;
-                loadLocally = true;
+            catch (err) {
+                console.warn(err);
             }
-        }
-        catch (err) {
-            console.error(err);
-        }
-    }
-    if (hasLoadedEpList === false && !readerDownloaded) {
-        hasLoadedEpList = true;
-        extensionListReader[mangaEngine].getAnimeInfo(localStorage.getItem("epURL").replace("?watch=/", "")).then((data) => {
-            const episodes = data.episodes;
-            for (let i = episodes.length - 1; i >= 0; i--) {
-                const ep = episodes[i];
-                let truncatedTitle = ep.title.substring(0, 30);
-                if (ep.title.length >= 30) {
-                    truncatedTitle += "...";
-                }
-                const epNum = parseFloat(ep.title.toLowerCase().replace("episode", ""));
-                if (!isNaN(epNum)) {
-                    ep.title = `Episode ${epNum}`;
-                    truncatedTitle = ep.title;
-                }
-                if (ep.altTitle) {
-                    ep.title = ep.altTitle;
-                    truncatedTitle = ep.altTitle;
-                }
-                if (ep.altTruncatedTitle) {
-                    truncatedTitle = ep.altTruncatedTitle;
-                }
-                mangaMenu.getScene("episodes").addItem({
-                    highlightable: true,
-                    html: ep.title + (ep.date ? `<div class="menuDate">${ep.date.toLocaleString()}</div>` : ""),
-                    altText: truncatedTitle,
-                    selected: location.search === ep.link,
-                    id: ep.link,
-                    callback: function () {
-                        history.replaceState({ page: 1 }, "", ep.link);
-                        ini();
-                    }
-                }, false);
-            }
-        }).catch((err) => {
-            console.error(err);
-        });
-    }
-    document.getElementById("name").textContent = currentMangaData.name;
-    document.getElementById("chapterNum").textContent = `Chapter ${currentMangaData.chapter} ${currentMangaData.title ? ` - ${currentMangaData.title}` : ""}`;
-    const pages = currentMangaData.pages;
-    totalPages = pages.length;
-    slider.setAttribute("max", totalPages.toString());
-    if (totalPages == 0) {
-        alert("No pages could be found");
-    }
-    for (const page of pages) {
-        const pageDOM = createElement({
-            class: "pageCon snappedCategoriesDataMain",
-        });
-        const imageDOM = createElement({
-            element: "img",
-            class: "page",
-        });
-        pagesURL.push(page);
-        pagesDOM.push(pageDOM);
-        pageDOM.append(imageDOM);
-        container.append(pageDOM);
-        // @ts-ignore
-        const panZoomInstance = panzoom(imageDOM, {
-            bounds: true,
-            boundsPadding: 1,
-            minZoom: 1,
-            onClick: (event) => {
-                if (Date.now() - lastErrorClick > 500) {
-                    let currentPage = parseInt(slider.value) - 1;
-                    const sign = reversed ? -1 : 1;
-                    const xCoord = event.type === "touchend" ? event.changedTouches[0].clientX : event.clientX;
-                    if (reversed) {
-                        currentPage = totalPages - currentPage - 1;
-                    }
-                    // Divide the screen into thirds
-                    if (xCoord < window.innerWidth / 3) {
-                        if (reversed) {
-                            setSliderValue(normalizePage(totalPages - (currentPage - 1 * sign)));
-                        }
-                        else {
-                            setSliderValue(currentPage - 1 * sign);
-                        }
-                        openPage(currentPage - 1 * sign);
-                    }
-                    else if (xCoord < 2 * window.innerWidth / 3) {
-                        handleMenu();
-                    }
-                    else {
-                        if (reversed) {
-                            setSliderValue(normalizePage(totalPages - (currentPage + 1 * sign)));
-                        }
-                        else {
-                            setSliderValue(currentPage + 1 * sign);
-                        }
-                        openPage(currentPage + 1 * sign);
-                    }
-                }
-            }
-        });
-        panZooms.push(panZoomInstance);
-    }
-    let apiRes = await window.parent.apiCall("POST", {
-        "username": "",
-        "action": 2,
-        "name": localStorage.mainName,
-        "nameUm": localStorage.mainName,
-        "ep": currentMangaData.chapter,
-        "cur": location.search
-    }, () => { });
-    window.parent.apiCall("POST", {
-        "username": "",
-        "action": 2,
-        "name": localStorage.mainName,
-        "nameUm": localStorage.mainName,
-        "ep": currentMangaData.chapter,
-        "duration": totalPages,
-        "cur": location.search
-    }, () => { });
-    let scrollLastIndex = -1;
-    const scrollSnapFunc = function (isEvent = false) {
-        if (isEvent && dirty) {
-            return;
-        }
-        let unRoundedIndex = 0;
-        if (!reversed) {
-            unRoundedIndex = container.scrollLeft / container.offsetWidth;
+            mangaEngine = currentMangaData.engine;
         }
         else {
-            unRoundedIndex = (container.offsetWidth - container.scrollLeft) / container.offsetWidth;
+            currentMangaData = await extensionListReader[mangaEngine].getLinkFromUrl(params.get("watch"));
         }
-        let index = Math.round(unRoundedIndex);
-        if (isNaN(index)) {
-            return;
+        const mainName = localStorage.getItem("mainName");
+        const rootDirCheck = `${mainName}/${btoa(parentWindow.normalise(location.search))}`;
+        const localURL = `/manga/${rootDirCheck}/.downloaded`;
+        if (!readerDownloaded && !config.chrome) {
+            try {
+                await checkIfExists(localURL);
+                rootDir = rootDirCheck;
+                let res;
+                if (localStorage.getItem("alwaysDown") === "true") {
+                    res = true;
+                }
+                else {
+                    res = confirm("Want to open the downloaded version?");
+                }
+                if (res) {
+                    let vidString = (await window.parent.makeLocalRequest("GET", `/manga/${rootDirCheck}/viddata.json`));
+                    let viddata = JSON.parse(vidString).data;
+                    currentMangaData.pages = viddata.pages;
+                    loadLocally = true;
+                }
+            }
+            catch (err) {
+                console.error(err);
+            }
         }
-        if (reversed) {
-            index--;
+        if (hasLoadedEpList === false && !readerDownloaded) {
+            hasLoadedEpList = true;
+            extensionListReader[mangaEngine].getAnimeInfo(localStorage.getItem("epURL").replace("?watch=/", "")).then((data) => {
+                const episodes = data.episodes;
+                for (let i = episodes.length - 1; i >= 0; i--) {
+                    const ep = episodes[i];
+                    let truncatedTitle = ep.title.substring(0, 30);
+                    if (ep.title.length >= 30) {
+                        truncatedTitle += "...";
+                    }
+                    const epNum = parseFloat(ep.title.toLowerCase().replace("episode", ""));
+                    if (!isNaN(epNum)) {
+                        ep.title = `Episode ${epNum}`;
+                        truncatedTitle = ep.title;
+                    }
+                    if (ep.altTitle) {
+                        ep.title = ep.altTitle;
+                        truncatedTitle = ep.altTitle;
+                    }
+                    if (ep.altTruncatedTitle) {
+                        truncatedTitle = ep.altTruncatedTitle;
+                    }
+                    mangaMenu.getScene("episodes").addItem({
+                        highlightable: true,
+                        html: ep.title + (ep.date ? `<div class="menuDate">${ep.date.toLocaleString()}</div>` : ""),
+                        altText: truncatedTitle,
+                        selected: location.search === ep.link,
+                        id: ep.link,
+                        callback: function () {
+                            history.replaceState({ page: 1 }, "", ep.link);
+                            ini();
+                        }
+                    }, false);
+                }
+            }).catch((err) => {
+                console.error(err);
+            });
         }
-        if (index != scrollLastIndex) {
-            if (reversed) {
-                setSliderValue(totalPages - index);
+        document.getElementById("name").textContent = currentMangaData.name;
+        document.getElementById("chapterNum").textContent = `Chapter ${currentMangaData.chapter} ${currentMangaData.title ? ` - ${currentMangaData.title}` : ""}`;
+        const pages = currentMangaData.pages;
+        totalPages = pages.length;
+        totalPageDOM.textContent = pages.length.toString();
+        slider.setAttribute("max", totalPages.toString());
+        if (totalPages == 0) {
+            alert("No pages could be found");
+        }
+        for (const page of pages) {
+            const pageDOM = createElement({
+                class: `pageCon${webcomic ? "" : " snappedCategoriesDataMain"}`,
+                children: [{
+                        class: "nextPrevPage",
+                        innerText: "Loading...",
+                    }]
+            });
+            const imageDOM = createElement({
+                element: "img",
+                class: "page",
+            });
+            pagesURL.push(page);
+            pagesDOM.push(pageDOM);
+            pageDOM.append(imageDOM);
+            container.append(pageDOM);
+            // @ts-ignore
+            const panZoomInstance = panzoom(imageDOM, {
+                bounds: true,
+                boundsPadding: 1,
+                minZoom: 1,
+                onClick: (event) => {
+                    if (Date.now() - lastErrorClick > 500) {
+                        let currentPage = parseInt(slider.value) - 1;
+                        const sign = reversed ? -1 : 1;
+                        const xCoord = event.type === "touchend" ? event.changedTouches[0].clientX : event.clientX;
+                        if (reversed) {
+                            currentPage = totalPages - currentPage - 1;
+                        }
+                        // Divide the screen into thirds
+                        if (xCoord < window.innerWidth / 3) {
+                            if (reversed && (currentPage + 1) != totalPages) {
+                                setSliderValue(normalizePage(totalPages - (currentPage - 1 * sign)));
+                            }
+                            else if (!reversed && currentPage != 0) {
+                                setSliderValue(currentPage - 1 * sign);
+                            }
+                            openPage(currentPage - 1 * sign);
+                        }
+                        else if (xCoord < 2 * window.innerWidth / 3) {
+                            handleMenu();
+                        }
+                        else {
+                            if (reversed && currentPage != 0) {
+                                setSliderValue(normalizePage(totalPages - (currentPage + 1 * sign)));
+                            }
+                            else if (!reversed && (currentPage + 1) != totalPages) {
+                                setSliderValue(currentPage + 1 * sign);
+                            }
+                            openPage(currentPage + 1 * sign);
+                        }
+                    }
+                }
+            });
+            panZooms.push(panZoomInstance);
+        }
+        let apiRes = await window.parent.apiCall("POST", {
+            "username": "",
+            "action": 2,
+            "name": localStorage.mainName,
+            "nameUm": localStorage.mainName,
+            "ep": currentMangaData.chapter,
+            "cur": location.search
+        }, () => { });
+        window.parent.apiCall("POST", {
+            "username": "",
+            "action": 2,
+            "name": localStorage.mainName,
+            "nameUm": localStorage.mainName,
+            "ep": currentMangaData.chapter,
+            "duration": totalPages,
+            "cur": location.search
+        }, () => { });
+        let scrollLastIndex = -1;
+        const scrollSnapFunc = function (isEvent = false, indexToScrollTo = -1) {
+            if (isEvent && dirty) {
+                return;
+            }
+            let unRoundedIndex = 0;
+            if (!reversed) {
+                unRoundedIndex = container.scrollLeft / container.offsetWidth;
             }
             else {
-                setSliderValue(index + 1);
+                unRoundedIndex = (container.offsetWidth - container.scrollLeft) / container.offsetWidth;
             }
-            if (index === totalPages) {
-                dirty = true;
-                container.onscroll = () => { };
-                return loadNext();
+            let index = Math.round(unRoundedIndex);
+            if (webcomic) {
+                if (indexToScrollTo != -1) {
+                    index = indexToScrollTo;
+                }
+                else {
+                    let i = 0;
+                    let didBreak = false;
+                    for (; i < pagesDOM.length; i++) {
+                        if (pagesDOM[i].getBoundingClientRect().bottom > 0) {
+                            didBreak = true;
+                            break;
+                        }
+                    }
+                    index = didBreak ? i : 0;
+                }
             }
-            window.parent.apiCall("POST", {
-                "username": "",
-                "action": 1,
-                "time": index,
-                "ep": currentMangaData.chapter,
-                "name": localStorage.mainName,
-                "nameUm": localStorage.mainName,
-                "prog": totalPages
-            }, () => { });
-            for (let i = 0; i < pagesDOM.length; i++) {
-                if (Math.abs(index - i) <= 3) {
-                    const con = pagesDOM[i];
-                    const elem = con.querySelector(".page");
-                    const hasBeenLoaded = elem === null || elem === void 0 ? void 0 : elem.getAttribute("data-loaded");
-                    if (elem && hasBeenLoaded !== "true") {
-                        const index = i;
-                        elem.onload = function () {
-                            var _a;
-                            (_a = con.querySelector("#errorPageCon")) === null || _a === void 0 ? void 0 : _a.remove();
-                        };
-                        elem.onerror = function () {
-                            var _a;
-                            let tries = parseInt(elem.getAttribute("data-retry"));
-                            if (isNaN(tries)) {
-                                tries = 0;
-                            }
-                            elem.setAttribute("data-retry", (++tries).toString());
-                            if (tries <= 5) {
-                                elem.removeAttribute("src");
-                                loadPage(elem, parseInt(elem.getAttribute("data-index")));
-                            }
-                            else {
+            if (isNaN(index)) {
+                return;
+            }
+            if (reversed) {
+                index--;
+            }
+            if (index != scrollLastIndex) {
+                if (reversed) {
+                    setSliderValue(totalPages - index);
+                }
+                else {
+                    setSliderValue(index + 1);
+                }
+                const pageIndex = normalizePage(index - pagePadding.left + 1) - 1;
+                if (index === totalPages + 1 + pagePadding.left) {
+                    dirty = true;
+                    container.onscroll = () => { };
+                    return loadNext();
+                }
+                else if (index == 0) {
+                    dirty = true;
+                    container.onscroll = () => { };
+                    return loadPrev();
+                }
+                window.parent.apiCall("POST", {
+                    "username": "",
+                    "action": 1,
+                    "time": pageIndex,
+                    "ep": currentMangaData.chapter,
+                    "name": localStorage.mainName,
+                    "nameUm": localStorage.mainName,
+                    "prog": totalPages - 1
+                }, () => { });
+                for (let i = 0; i < pagesDOM.length; i++) {
+                    if (Math.abs(index - i) <= 3) {
+                        const con = pagesDOM[i];
+                        const elem = con.querySelector(".page");
+                        const hasBeenLoaded = elem === null || elem === void 0 ? void 0 : elem.getAttribute("data-loaded");
+                        if (elem && hasBeenLoaded !== "true") {
+                            const index = i;
+                            elem.onload = function () {
+                                var _a, _b;
                                 (_a = con.querySelector("#errorPageCon")) === null || _a === void 0 ? void 0 : _a.remove();
-                                constructErrorPage(con, `Could not load the image`, {
-                                    hasLink: false,
-                                    hasReload: true,
-                                    customConClass: "absolute",
-                                    isError: false,
-                                    reloadFunc: (event) => {
-                                        event.preventDefault();
-                                        event.stopPropagation();
-                                        lastErrorClick = Date.now();
-                                        elem.removeAttribute("src");
-                                        loadPage(elem, parseInt(elem.getAttribute("data-index")));
-                                    }
-                                });
-                            }
-                        };
-                        loadPage(elem, index);
-                        elem.setAttribute("data-index", index.toString());
-                        elem.setAttribute("data-loaded", "true");
+                                (_b = con.querySelector(".nextPrevPage")) === null || _b === void 0 ? void 0 : _b.remove();
+                            };
+                            elem.onerror = function () {
+                                var _a;
+                                let tries = parseInt(elem.getAttribute("data-retry"));
+                                if (isNaN(tries)) {
+                                    tries = 0;
+                                }
+                                elem.setAttribute("data-retry", (++tries).toString());
+                                if (tries <= 5) {
+                                    elem.removeAttribute("src");
+                                    loadPage(elem, parseInt(elem.getAttribute("data-index")));
+                                }
+                                else {
+                                    (_a = con.querySelector("#errorPageCon")) === null || _a === void 0 ? void 0 : _a.remove();
+                                    constructErrorPage(con, `Could not load the image`, {
+                                        hasLink: false,
+                                        hasReload: true,
+                                        customConClass: "absolute",
+                                        isError: false,
+                                        reloadFunc: (event) => {
+                                            event.preventDefault();
+                                            event.stopPropagation();
+                                            lastErrorClick = Date.now();
+                                            elem.removeAttribute("src");
+                                            loadPage(elem, parseInt(elem.getAttribute("data-index")));
+                                        }
+                                    });
+                                }
+                            };
+                            loadPage(elem, index);
+                            elem.setAttribute("data-index", index.toString());
+                            elem.setAttribute("data-loaded", "true");
+                        }
                     }
                 }
             }
+            scrollLastIndex = index;
+        };
+        container.onscroll = function () {
+            scrollSnapFunc(true);
+        };
+        paddingDOM.push(createElement({
+            class: "pageCon snappedCategoriesDataMain nextPrevPage",
+            attributes: {
+                "data-side": "right"
+            },
+            innerText: `Next: ${currentMangaData.nextTitle}`
+        }));
+        paddingDOM.push(createElement({
+            class: "pageCon snappedCategoriesDataMain",
+            style: {
+                backgroundColor: "#000000"
+            },
+            attributes: {
+                "data-side": "right"
+            }
+        }));
+        paddingDOM.push(createElement({
+            class: "pageCon snappedCategoriesDataMain nextPrevPage",
+            innerText: `Previous: ${currentMangaData.prevTitle}`
+        }));
+        paddingDOM.push(createElement({
+            class: "pageCon snappedCategoriesDataMain",
+            style: {
+                backgroundColor: "#000000"
+            },
+        }));
+        for (const padding of paddingDOM) {
+            if (padding.getAttribute("data-side") === "right") {
+                container.append(padding);
+            }
+            else {
+                container.prepend(padding);
+            }
         }
-        scrollLastIndex = index;
-    };
-    container.onscroll = function () {
-        scrollSnapFunc(true);
-    };
-    const nextDOM = createElement({
-        class: "pageCon snappedCategoriesDataMain",
-        style: {
-            backgroundColor: "#121212"
+        dirty = false;
+        const currentPage = Math.max(Math.min(apiRes.data.time, totalPages - 1), 0);
+        if (reversed) {
+            setSliderValue(totalPages - currentPage + 1);
         }
-    });
-    pagesDOM.push(nextDOM);
-    container.append(nextDOM);
-    dirty = false;
-    const currentPage = Math.min(apiRes.data.time, totalPages - 1);
-    if (reversed) {
-        setSliderValue(totalPages - currentPage + 1);
+        else {
+            setSliderValue(currentPage);
+        }
+        (_a = pagesDOM[currentPage]) === null || _a === void 0 ? void 0 : _a.scrollIntoView({});
+        scrollSnapFunc(false, currentPage);
     }
-    else {
-        setSliderValue(currentPage);
+    catch (err) {
+        constructErrorPage(container, err === null || err === void 0 ? void 0 : err.toString(), {
+            hasLink: false,
+            hasReload: true,
+            customConClass: "absolute",
+            isError: false,
+            reloadFunc: (event) => {
+                window.location.reload();
+            }
+        });
     }
-    (_a = pagesDOM[currentPage]) === null || _a === void 0 ? void 0 : _a.scrollIntoView({});
-    scrollSnapFunc(false);
 }
 function openPage(num) {
     var _a;
@@ -492,6 +574,9 @@ document.getElementById("name").addEventListener("click", function () {
 });
 if (reversed) {
     slider.classList.add("reversed");
+}
+if (webcomic) {
+    container.classList.replace("snappedCustomRooms", "webcomics");
 }
 let mangeSettingsPullInstance = new settingsPull(document.getElementById("settingHandlePadding"), closeSettings);
 let mangaSettingsPullInstanceTT = new settingsPull(document.querySelector(".menuCon"), closeSettings, true);

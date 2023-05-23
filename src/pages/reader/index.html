@@ -7,7 +7,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-inline' blob:; object-src 'self'">
     <title>Reader</title>
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;700;800;900&display=swap"
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Montserrat:wght@300;400;500;700;800;900&display=swap"
         rel="stylesheet">
     <link href="../../assets/css/index.css" rel="stylesheet">
     <link href="../../assets/css/range.css" rel="stylesheet">
@@ -24,12 +24,14 @@
 
 <body>
     <div id="con_11" style="overflow: hidden !important;">
-
+        <div class="nextPrevPage">Loading...</div>
         <div class="menuCon">
             <div id="settingHandlePadding">
                 <div id="settingHandle"></div>
             </div>
         </div>
+
+        <div id="pageNum"><span id="currentPage"></span> / <span id="totalPage"></span></div>
 
         <div id="chapterCon" class="snappedCustomRooms"></div>
         <div class="spotlight" id="spotlight"></div>
@@ -48,7 +50,7 @@
             </div> -->
 
             <div id="slider" class="sliderMenu">
-                <range-slider type="range" max="255" step="1" min="1" class="sliderBox" id="sliderInput">
+                <range-slider type="range" max="0" step="1" min="1" class="sliderBox" id="sliderInput">
             </div>
             <div id="next"></div>
         </div>

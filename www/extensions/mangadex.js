@@ -102,7 +102,9 @@ var mangaDex = {
             const response = {
                 pages: [],
                 next: null,
+                nextTitle: null,
                 prev: null,
+                prevTitle: null,
                 name: "",
                 chapter: 0,
                 title: "",
@@ -118,7 +120,7 @@ var mangaDex = {
             for (let i = 0; i < allChapters.length; i++) {
                 const chapter = allChapters[i];
                 if (chapter.id === chapterId) {
-                    response.chapter = chapter.number;
+                    response.chapter = (chapter.number === 0) ? 0.1 : chapter.number;
                     currentIndex = i;
                     break;
                 }
@@ -126,10 +128,12 @@ var mangaDex = {
             if (allChapters[currentIndex - 1]) {
                 const prevChap = allChapters[currentIndex - 1];
                 response.prev = `?watch=${prevChap.id}&chap=${prevChap.number}&engine=8`;
+                response.prevTitle = prevChap.title;
             }
             if (allChapters[currentIndex + 1]) {
                 const nextChap = allChapters[currentIndex + 1];
                 response.next = `?watch=${nextChap.id}&chap=${nextChap.number}&engine=8`;
+                response.nextTitle = nextChap.title;
             }
             for (const id of res.chapter.data) {
                 response.pages.push({

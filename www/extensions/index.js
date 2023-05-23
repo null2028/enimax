@@ -3432,7 +3432,9 @@ var mangaDex = {
             const response = {
                 pages: [],
                 next: null,
+                nextTitle: null,
                 prev: null,
+                prevTitle: null,
                 name: "",
                 chapter: 0,
                 title: "",
@@ -3448,7 +3450,7 @@ var mangaDex = {
             for (let i = 0; i < allChapters.length; i++) {
                 const chapter = allChapters[i];
                 if (chapter.id === chapterId) {
-                    response.chapter = chapter.number;
+                    response.chapter = (chapter.number === 0) ? 0.1 : chapter.number;
                     currentIndex = i;
                     break;
                 }
@@ -3456,10 +3458,12 @@ var mangaDex = {
             if (allChapters[currentIndex - 1]) {
                 const prevChap = allChapters[currentIndex - 1];
                 response.prev = `?watch=${prevChap.id}&chap=${prevChap.number}&engine=8`;
+                response.prevTitle = prevChap.title;
             }
             if (allChapters[currentIndex + 1]) {
                 const nextChap = allChapters[currentIndex + 1];
                 response.next = `?watch=${nextChap.id}&chap=${nextChap.number}&engine=8`;
+                response.nextTitle = nextChap.title;
             }
             for (const id of res.chapter.data) {
                 response.pages.push({
@@ -3604,7 +3608,9 @@ var mangaFire = {
             const response = {
                 pages: [],
                 next: null,
+                nextTitle: null,
                 prev: null,
+                prevTitle: null,
                 name: name,
                 chapter: 0,
                 title: "",
@@ -3621,7 +3627,11 @@ var mangaFire = {
                 if (chapterId === "/read/" + linkSplit.join("/read/")) {
                     currentIndex = i;
                     response.chapter = parseFloat(anchorTag.getAttribute("data-number"));
+                    if (response.chapter === 0) {
+                        response.chapter = 0.1;
+                    }
                     chapterMainID = anchorTag.getAttribute("data-id");
+                    response.title = anchorTag.innerText.replace(`Chapter ${anchorTag.getAttribute("data-number")}:`, "");
                 }
             }
             if (chapterList[currentIndex + 1]) {
@@ -3629,12 +3639,14 @@ var mangaFire = {
                 const linkSplit = nextChap.getAttribute("href").split("/read/");
                 linkSplit.shift();
                 response.prev = `?watch=${"/read/" + linkSplit.join("/read/")}&chap=${nextChap.getAttribute("data-number")}&engine=9`;
+                response.prevTitle = nextChap.innerText;
             }
             if (chapterList[currentIndex - 1]) {
                 const prevChap = chapterList[currentIndex - 1];
                 const linkSplit = prevChap.getAttribute("href").split("/read/");
                 linkSplit.shift();
                 response.next = `?watch=${"/read/" + linkSplit.join("/read/")}&chap=${prevChap.getAttribute("data-number")}&engine=9`;
+                response.nextTitle = prevChap.innerText;
             }
             for (const page of JSON.parse(await MakeFetch(`https://mangafire.to/ajax/read/chapter/${chapterMainID}`)).result.images) {
                 response.pages.push({

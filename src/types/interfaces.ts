@@ -207,7 +207,9 @@ interface extension {
 interface extensionMangaSource {
     pages: MangaPage[],
     next: string | null,
+    nextTitle: string | null,
     prev: string | null,
+    prevTitle: string | null,
     name: string,
     chapter: number,
     title?: string,
