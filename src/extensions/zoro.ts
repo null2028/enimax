@@ -362,7 +362,7 @@ var zoro: extension = {
             }
 
             resp["sources"] = sourceURLs;
-            resp["episode"] = epNum.toString();
+            resp["episode"] = (epNum === 0 ? 0.1 : epNum).toString();
 
             if (next != null) {
                 resp.next = next;

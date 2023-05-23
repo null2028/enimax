@@ -337,6 +337,9 @@ var fmoviesto = {
                 throw new Error("No sources were found. Try again later or contact the developer.");
             }
             response.sources = sources;
+            if (parseFloat(response.episode) === 0) {
+                response.episode = "0.1";
+            }
             return response;
         }
         catch (err) {

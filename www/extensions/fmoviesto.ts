@@ -398,6 +398,11 @@ var fmoviesto: extension = {
             }
 
             response.sources = sources;
+
+            if(parseFloat(response.episode) === 0){
+                response.episode = "0.1";
+            }
+
             return response;
         } catch (err) {
             throw err;

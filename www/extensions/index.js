@@ -1255,6 +1255,9 @@ var fmovies = {
             }
             data.title = title;
             data.subtitles = sourceJSON.tracks;
+            if (parseFloat(data.episode) === 0) {
+                data.episode = "0.1";
+            }
             return (data);
         }
         catch (err) {
@@ -1644,7 +1647,7 @@ var zoro = {
                 }
             }
             resp["sources"] = sourceURLs;
-            resp["episode"] = epNum.toString();
+            resp["episode"] = (epNum === 0 ? 0.1 : epNum).toString();
             if (next != null) {
                 resp.next = next;
             }
@@ -2310,6 +2313,9 @@ var nineAnime = {
             if (!sources.length) {
                 throw new Error("No sources were found. Try again later or contact the developer.");
             }
+            if (parseFloat(response.episode) === 0) {
+                response.episode = "0.1";
+            }
             response.sources = sources;
             return response;
         }
@@ -2862,6 +2868,9 @@ var fmoviesto = {
                 throw new Error("No sources were found. Try again later or contact the developer.");
             }
             response.sources = sources;
+            if (parseFloat(response.episode) === 0) {
+                response.episode = "0.1";
+            }
             return response;
         }
         catch (err) {
@@ -3268,6 +3277,9 @@ var gogo = {
             resp.name = params.get("watch");
             resp.nameWSeason = params.get("watch");
             resp.episode = params.get("ep");
+            if (parseFloat(resp.episode) === 0) {
+                resp.episode = "0.1";
+            }
             return resp;
         }
         catch (err) {

@@ -342,6 +342,9 @@ var nineAnime = {
             if (!sources.length) {
                 throw new Error("No sources were found. Try again later or contact the developer.");
             }
+            if (parseFloat(response.episode) === 0) {
+                response.episode = "0.1";
+            }
             response.sources = sources;
             return response;
         }

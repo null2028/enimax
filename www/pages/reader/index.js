@@ -21,7 +21,7 @@ let dirty = false;
 let menuOpen = false;
 let menuTimeout;
 let lastErrorClick = 0;
-let reversed = true;
+let reversed = false;
 let webcomic = false;
 let touchStart = 0;
 let mangaEngine;

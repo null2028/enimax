@@ -509,6 +509,11 @@ var fmovies: extension = {
             data.title = title;
 
             data.subtitles = sourceJSON.tracks;
+
+            if(parseFloat(data.episode) === 0){
+                data.episode = "0.1";
+            }
+
             return (data);
 
 

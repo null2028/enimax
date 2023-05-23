@@ -219,6 +219,9 @@ var gogo = {
             resp.name = params.get("watch");
             resp.nameWSeason = params.get("watch");
             resp.episode = params.get("ep");
+            if (parseFloat(resp.episode) === 0) {
+                resp.episode = "0.1";
+            }
             return resp;
         }
         catch (err) {
