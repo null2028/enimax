@@ -1,42 +1,28 @@
-
 // https://stackoverflow.com/questions/2541481/get-average-color-of-image-via-javascript
-function getAverageRGB(imgEl: HTMLImageElement) {
-
+function getAverageRGB(imgEl) {
     var blockSize = 5, // only visit every 5 pixels
-        defaultRGB = { r: 0, g: 0, b: 0 }, // for non-supporting envs
-        canvas = document.createElement('canvas'),
-        context = canvas.getContext && canvas.getContext('2d'),
-        data, width, height,
-        i = -4,
-        length,
-        rgb = { r: 0, g: 0, b: 0 },
-        count = 0;
-
+    defaultRGB = { r: 0, g: 0, b: 0 }, // for non-supporting envs
+    canvas = document.createElement('canvas'), context = canvas.getContext && canvas.getContext('2d'), data, width, height, i = -4, length, rgb = { r: 0, g: 0, b: 0 }, count = 0;
     if (!context) {
         return defaultRGB;
     }
-
     height = canvas.height = imgEl.naturalHeight || imgEl.offsetHeight || imgEl.height;
     width = canvas.width = imgEl.naturalWidth || imgEl.offsetWidth || imgEl.width;
-
     context.drawImage(imgEl, 0, 0);
-
     try {
         data = context.getImageData(0, 0, width, height);
-    } catch (e) {
+    }
+    catch (e) {
         /* security error, img on diff domain */
         return defaultRGB;
     }
-
     length = data.data.length;
-
     while ((i += blockSize * 4) < length) {
         ++count;
         rgb.r += data.data[i];
         rgb.g += data.data[i + 1];
         rgb.b += data.data[i + 2];
     }
-
     // ~~ used to floor values
     rgb.r = ~~(rgb.r / count);
     rgb.g = ~~(rgb.g / count);
@@ -45,47 +31,39 @@ function getAverageRGB(imgEl: HTMLImageElement) {
     context = null;
     return rgb;
 }
-
-function componentToHex(c: number) {
+function componentToHex(c) {
     var hex = c.toString(16);
     return hex.length == 1 ? "0" + hex : hex;
 }
-
-function rgbToHex(r: number, g: number, b: number) {
+function rgbToHex(r, g, b) {
     return "#" + componentToHex(r) + componentToHex(g) + componentToHex(b);
 }
-
-
 // @ts-ignore
-const extensionList = (<cordovaWindow>window.parent).returnExtensionList();
-
+const extensionList = window.parent.returnExtensionList();
 // @ts-ignore
-const extensionTypes = (<cordovaWindow>window.parent).returnExtensionTypes();
-
+const extensionTypes = window.parent.returnExtensionTypes();
 let didScroll = false;
-let lastScrollPos: number;
+let lastScrollPos;
 let scrollDownTopDOM = document.getElementById("scrollDownTop");
-let scrollSnapFunc: undefined | Function;
+let scrollSnapFunc;
 let showMainName = null;
 let showImage = null;
-let displayTimeout: any;
+let displayTimeout;
 // @ts-ignore
 let pullTabArray = [];
 let webviewLink = "";
 let averageColor = "";
 let downloadedIsManga = false;
-
 try {
     const search = new URLSearchParams(location.search);
     downloadedIsManga = search.get("isManga") === "true";
-} catch (err) {
+}
+catch (err) {
     console.warn(err);
 }
-
-const imageDOM = document.getElementById("imageMain") as HTMLImageElement;
-
+const imageDOM = document.getElementById("imageMain");
 // @ts-ignore
-const backdrop = document.getElementsByClassName("backdrop")[0] as HTMLImageElement;
+const backdrop = document.getElementsByClassName("backdrop")[0];
 // @ts-ignore
 const sourceChoiceDOM = document.getElementById("sourceChoice");
 // @ts-ignore
@@ -94,69 +72,62 @@ const relationsCon = document.getElementById("relationsCon");
 const recomCon = document.getElementById("recomCon");
 // @ts-ignore
 const sourceCardsDOM = document.getElementById("sourceCards");
-
 iniChoiceDOM();
 const con = document.getElementById("con_11");
 pullTabArray.push(new pullToRefresh(con));
-
-
 function goBack() {
-    const [isSearch, searchParams] = (window.parent as cordovaWindow).findLastNotEpisode();
+    const [isSearch, searchParams] = window.parent.findLastNotEpisode();
     if (isSearch) {
         if (searchParams) {
             window.parent.postMessage({ "action": 500, data: "pages/search/index.html" + searchParams }, "*");
-        } else {
+        }
+        else {
             window.parent.postMessage({ "action": 500, data: "pages/search/index.html" }, "*");
         }
-    } else {
+    }
+    else {
         window.parent.postMessage({ "action": 500, data: "pages/homepage/index.html" }, "*");
     }
 }
-
 function collapseDesc() {
     const descDOM = document.getElementById("imageDesc");
     const descMoreDOM = document.getElementById("descReadMore");
-
     if (descDOM.getAttribute("data-expanded") !== "true") {
         descDOM.setAttribute("data-expanded", "true");
         descMoreDOM.innerText = "";
         descDOM.style.maxHeight = "none";
-    } else {
+    }
+    else {
         descDOM.setAttribute("data-expanded", "false");
         descMoreDOM.innerText = "Read more...";
         descDOM.style.maxHeight = "240px";
     }
 }
-
 document.getElementById("imageDesc").addEventListener("click", collapseDesc);
 document.getElementById("descReadMore").addEventListener("click", collapseDesc);
-
 document.getElementById("dottedMenu").addEventListener("click", function () {
     let settingDOM = document.getElementById("settingsCon");
     if (settingDOM.getAttribute("data-open") == "true") {
         settingDOM.setAttribute("data-open", "false");
         settingDOM.style.display = "none";
-    } else {
+    }
+    else {
         settingDOM.setAttribute("data-open", "true");
         settingDOM.style.display = "block";
     }
 });
-
-
-
-let lastScrollElem: Element = undefined;
-
+let lastScrollElem = undefined;
 scrollDownTopDOM.onclick = function () {
     if (scrollDownTopDOM.className == "scrollTopDOM" && lastScrollElem) {
         lastScrollElem.scrollTop = 0;
-    } else if (scrollDownTopDOM.className == "scrollBottomDOM" && lastScrollElem) {
+    }
+    else if (scrollDownTopDOM.className == "scrollBottomDOM" && lastScrollElem) {
         lastScrollElem.scrollTop = lastScrollElem.scrollHeight;
     }
 };
-
 // @ts-ignore
 // todo
-function fix_title(title: string) {
+function fix_title(title) {
     try {
         let titleArray = title.split("-");
         let temp = "";
@@ -164,28 +135,25 @@ function fix_title(title: string) {
             temp = temp + titleArray[i].substring(0, 1).toUpperCase() + titleArray[i].substring(1) + " ";
         }
         return temp;
-    } catch (err) {
+    }
+    catch (err) {
         return title;
     }
 }
-
 // @ts-ignore
 // todo
-function normalise(url: string) {
+function normalise(url) {
     url = url.replace("?watch=", "");
     url = url.split("&engine=")[0];
     url = url.split("&isManga=")[0];
     return url;
 }
-
 window.onmessage = function (x) {
     if (parseInt(x.data.action) == 200) {
         ini();
     }
-
 };
-
-async function updateShow(params: { [key: string]: any }, currentEngine: extension) {
+async function updateShow(params, currentEngine) {
     try {
         const search = new URLSearchParams(location.search);
         console.log(search, search.has("aniID"));
@@ -196,14 +164,15 @@ async function updateShow(params: { [key: string]: any }, currentEngine: extensi
                 params.url = location.search;
             }
         }
-    } catch (err) {
+    }
+    catch (err) {
         console.error(err);
-    } finally {
-        await (<cordovaWindow>window.parent).apiCall("POST", params, () => { });
+    }
+    finally {
+        await window.parent.apiCall("POST", params, () => { });
     }
 }
-
-function sendNoti(notiConfig: any) {
+function sendNoti(notiConfig) {
     return new notification(document.getElementById("noti_con"), {
         "perm": notiConfig[0],
         "color": notiConfig[1],
@@ -211,28 +180,23 @@ function sendNoti(notiConfig: any) {
         "notiData": notiConfig[3]
     });
 }
-
 // @ts-ignore
 // todo
-function checkIfExists(localURL: string, dList: Array<string>, dName: string): Promise<string> {
+function checkIfExists(localURL, dList, dName) {
     return (new Promise(function (resolve, reject) {
-
         let index = dList.indexOf(dName);
         if (index > -1) {
             dList.splice(index, 1);
             let timeout = setTimeout(function () {
                 resolve("timeout");
             }, 2000);
-
-
-            (<cordovaWindow>window.parent).resolveLocalFileSystemURL((<cordovaWindow>window.parent).cordova.file.externalDataDirectory + localURL, function (fileSystem) {
+            window.parent.resolveLocalFileSystemURL(window.parent.cordova.file.externalDataDirectory + localURL, function (fileSystem) {
                 clearTimeout(timeout);
                 resolve("downloaded");
             }, (err) => {
                 clearTimeout(timeout);
                 resolve("notdownloaded");
             });
-
             // (<cordovaWindow>window.parent).makeLocalRequest("GET", `${localURL}`).then(function (x) {
             //     clearTimeout(timeout);
             //     resolve("downloaded");
@@ -240,42 +204,37 @@ function checkIfExists(localURL: string, dList: Array<string>, dName: string): P
             //     clearTimeout(timeout);
             //     reject("notdownloaded");
             // });
-        } else {
+        }
+        else {
             resolve("notinlist");
         }
     }));
 }
-
 function ini() {
-    let downloadQueue = (<cordovaWindow>window.parent).returnDownloadQueue();
-
+    let downloadQueue = window.parent.returnDownloadQueue();
     let username = "hi";
-
     if (location.search.indexOf("?watch=/") > -1 || localStorage.getItem("offline") === 'true') {
-
         let main_url = location.search.replace("?watch=/", "");
-
         //todo
-        let currentEngine: extension;
+        let currentEngine;
         let engineNum = 0;
         let temp3 = main_url.split("&engine=");
         if (temp3.length == 1) {
             currentEngine = extensionList[0];
             engineNum = 0;
-        } else {
+        }
+        else {
             engineNum = parseInt(temp3[1]);
             currentEngine = extensionList[parseInt(temp3[1])];
         }
-
-
-        async function processEpisodeData(data: extensionInfo, downloaded, main_url) {
+        async function processEpisodeData(data, downloaded, main_url) {
+            var _a, _b, _c;
             showMainName = data.mainName;
             showImage = data.image;
             let currentLink = '';
             if (localStorage.getItem("currentLink")) {
                 currentLink = localStorage.getItem("currentLink");
             }
-
             let scrollToDOM;
             var a = document.getElementsByClassName("card_con");
             document.getElementById("updateImage").style.display = "inline-block";
@@ -285,71 +244,53 @@ function ini() {
             document.getElementById("copyLink").style.display = "inline-block";
             document.getElementById("updateLink").style.display = "inline-block";
             document.getElementById("copyImage").style.display = "inline-block";
-
-
             document.getElementById("copyLink").onclick = function () {
                 window.prompt("Copy it from below:", location.search);
             };
-
             document.getElementById("copyImage").onclick = function () {
                 window.prompt("Copy it from below:", data.image);
             };
-
             document.getElementById("updateLink").onclick = function () {
-                (<cordovaWindow>window.parent).apiCall("POST", { "username": username, "action": 14, "name": data.mainName, "url": location.search }, (x) => {
+                window.parent.apiCall("POST", { "username": username, "action": 14, "name": data.mainName, "url": location.search }, (x) => {
                     sendNoti([2, "", "Alert", "Done!"]);
                 });
             };
-
-
             document.getElementById("updateImage").onclick = function () {
-                (<cordovaWindow>window.parent).apiCall("POST", { "username": username, "action": 9, "name": data.mainName, "img": data.image }, (x) => {
+                window.parent.apiCall("POST", { "username": username, "action": 9, "name": data.mainName, "img": data.image }, (x) => {
                     sendNoti([2, "", "Alert", "Done!"]);
                 });
             };
-
             let downloadedList = [];
-            let doesExist: Array<Promise> = [];
+            let doesExist = [];
             if (!config.chrome) {
                 try {
-                    downloadedList = await (<cordovaWindow>window.parent).listDir(`${downloadedIsManga ? "manga/" : ""}${data.mainName}`);
-
+                    downloadedList = await window.parent.listDir(`${downloadedIsManga ? "manga/" : ""}${data.mainName}`);
                     let tempList = [];
                     for (let i = 0; i < downloadedList.length; i++) {
                         if (downloadedList[i].isDirectory) {
                             tempList.push(downloadedList[i].name);
                         }
                     }
-
                     downloadedList = tempList;
-
-                } catch (err) {
+                }
+                catch (err) {
                     console.error(err);
                 }
-
             }
-
-
-
-
-
             document.getElementById("imageTitle").innerText = data.name.trim();
             document.getElementById("showDescription").innerText = data.description.trim();
             if (document.getElementById("showDescription").offsetHeight < 180) {
                 document.getElementById("descReadMore").style.display = "none";
                 document.getElementById("epListCon").style.marginTop = "0";
             }
-
             imageDOM.src = data.image;
             imageDOM.onload = function () {
                 let color = getAverageRGB(imageDOM);
                 averageColor = rgbToHex(color.r, color.g, color.b);
                 document.documentElement.style.setProperty('--theme-color', averageColor);
             };
-
             let animeEps = data.episodes;
             let epCon = document.getElementById("epListCon");
-
             let catCon = createElement({
                 id: "categoriesCon",
                 style: {
@@ -364,7 +305,6 @@ function ini() {
                                 <div style="position: absolute;background: red;" id="catActiveMain"></div>
                             <div>`
             });
-
             let catDataCon = createElement({
                 style: {
                     width: "100%"
@@ -372,8 +312,6 @@ function ini() {
                 id: "custom_rooms",
                 class: "snappedCustomRooms"
             });
-
-
             const partitions = 50;
             const catDataCons = [];
             let totalCats = Math.ceil(animeEps.length / partitions);
@@ -383,12 +321,11 @@ function ini() {
                 totalCats = data.pageInfo.length;
                 usesCustomPartions = true;
             }
-
             if (downloaded) {
                 addToLibrary.classList.add("hidden");
                 totalCats = 0;
-            } else {
-
+            }
+            else {
                 try {
                     const timeDOM = document.getElementById("metaTime");
                     const statusDOM = document.getElementById("metaStatus");
@@ -399,46 +336,41 @@ function ini() {
                     const recomDOM = recomCon;
                     const search = new URLSearchParams(location.search);
                     const isManga = extensionTypes[engineNum] === "manga";
-
                     let metaData;
                     if (!search.has("aniID")) {
                         metaData = await currentEngine.getMetaData(new URLSearchParams(location.search));
-                    } else {
-                        metaData = await (window.parent as cordovaWindow).getMetaByAniID(search.get("aniID"), isManga ? "MANGA" : "ANIME");
                     }
-
+                    else {
+                        metaData = await window.parent.getMetaByAniID(search.get("aniID"), isManga ? "MANGA" : "ANIME");
+                    }
                     let addedCover = false;
-
                     if (metaData.nextAiringEpisode) {
                         nextDOM.style.display = "inline-block";
-                        nextDOM.textContent = `Episode ${metaData.nextAiringEpisode.episode} in ${(window.parent as cordovaWindow).secondsToHuman(metaData.nextAiringEpisode.timeUntilAiring)}`;
+                        nextDOM.textContent = `Episode ${metaData.nextAiringEpisode.episode} in ${window.parent.secondsToHuman(metaData.nextAiringEpisode.timeUntilAiring)}`;
                     }
-
                     if (metaData.season || metaData.seasonYear) {
                         timeDOM.style.display = "inline-block";
                         timeDOM.textContent = `${metaData.season} ${metaData.seasonYear}`;
                     }
-
                     if (metaData.status) {
                         statusDOM.style.display = "inline-block";
                         statusDOM.textContent = `${fixStatus(metaData.status)}`;
                     }
-
                     if (window.innerWidth > 600) {
                         if (metaData.bannerImage) {
                             addedCover = true;
                             con.style.background = `url("${metaData.bannerImage}") top no-repeat`;
                             con.style.backgroundSize = `auto 400px`;
                         }
-                    } else {
-                        if (metaData?.coverImage?.extraLarge) {
+                    }
+                    else {
+                        if ((_a = metaData === null || metaData === void 0 ? void 0 : metaData.coverImage) === null || _a === void 0 ? void 0 : _a.extraLarge) {
                             addedCover = true;
                             con.style.background = `url("${metaData.coverImage.extraLarge}") top no-repeat`;
                             con.style.backgroundSize = `contain`;
                         }
                     }
-
-                    if (metaData?.relations?.nodes.length > 0) {
+                    if (((_b = metaData === null || metaData === void 0 ? void 0 : metaData.relations) === null || _b === void 0 ? void 0 : _b.nodes.length) > 0) {
                         const nodes = metaData.relations.nodes;
                         const edges = metaData.relations.edges;
                         const didAdd = makeCardCon(relationsDOM, nodes, edges);
@@ -446,37 +378,31 @@ function ini() {
                             document.getElementById("relations").style.display = "inline-block";
                         }
                     }
-
-                    if (metaData?.recommendations?.edges.length > 0) {
-                        const nodes = metaData.recommendations.edges.map((edge: any) => edge.node.mediaRecommendation);
+                    if (((_c = metaData === null || metaData === void 0 ? void 0 : metaData.recommendations) === null || _c === void 0 ? void 0 : _c.edges.length) > 0) {
+                        const nodes = metaData.recommendations.edges.map((edge) => edge.node.mediaRecommendation);
                         const didAdd = makeCardCon(recomDOM, nodes);
                         if (didAdd) {
                             document.getElementById("recommendations").style.display = "inline-block";
                         }
                     }
-
                     if (addedCover) {
                         imageDOM.style.display = "none";
                         document.documentElement.style.setProperty('--theme-color', averageColor + "60");
                     }
-
                     malDOM.onclick = function () {
                         openWebview(`https://myanimelist.net/anime/${metaData.idMal}`);
                     };
-
                     anilistDOM.onclick = function () {
                         openWebview(`https://anilist.co/anime/${metaData.id}`);
                     };
-
                     if (!search.has("aniID")) {
-                        (<cordovaWindow>window.parent).apiCall("POST", { "username": username, "action": 14, "name": data.mainName, "url": `${location.search}&aniID=${metaData.id}` }, () => { });
+                        window.parent.apiCall("POST", { "username": username, "action": 14, "name": data.mainName, "url": `${location.search}&aniID=${metaData.id}` }, () => { });
                     }
-
                     malDOM.style.display = "inline-block";
                     anilistDOM.style.display = "inline-block";
-
                     document.getElementById("metadata").style.display = "block";
-                } catch (err) {
+                }
+                catch (err) {
                     console.error(err);
                 }
                 epCon.append(catCon);
@@ -490,7 +416,6 @@ function ini() {
                         });
                     });
                 }, document.getElementById("custom_rooms"), con);
-
                 new menuPull(document.querySelector(".infoCon"), () => {
                     con.style.transitionDuration = "200ms";
                     window.requestAnimationFrame(function () {
@@ -501,7 +426,6 @@ function ini() {
                     });
                 }, null, con);
             }
-
             if (data.genres) {
                 const genreContainer = document.getElementById("genres");
                 genreContainer.style.display = "block";
@@ -510,37 +434,31 @@ function ini() {
                         class: "genreItem",
                         innerText: genreText
                     });
-
                     genreContainer.append(genreDOM);
                 }
             }
-
             for (let i = 0; i < totalCats; i++) {
-
-                let pageName = "? - ?"
+                let pageName = "? - ?";
                 try {
                     if (!usesCustomPartions) {
                         let episodeKeyword = "episode";
                         let fromNum = parseInt(animeEps[partitions * (i)].title.toLowerCase().split(episodeKeyword)[1]).toString();
                         let toNum = parseInt(animeEps[Math.min(partitions * (i + 1) - 1, animeEps.length - 1)].title.toLowerCase().split(episodeKeyword)[1]).toString();
-
                         if (isNaN(parseInt(fromNum)) && isNaN(parseInt(fromNum))) {
                             episodeKeyword = "chapter";
                             fromNum = parseInt(animeEps[partitions * (i)].title.toLowerCase().split(episodeKeyword)[1]).toString();
                             toNum = parseInt(animeEps[Math.min(partitions * (i + 1) - 1, animeEps.length - 1)].title.toLowerCase().split(episodeKeyword)[1]).toString();
                         }
-
                         pageName = `${fromNum} - ${toNum}`;
                         partitionSize.push(partitions);
-                    } else {
+                    }
+                    else {
                         pageName = data.pageInfo[i].pageName;
                         partitionSize.push(data.pageInfo[i].pageSize);
                     }
-
-                } catch (err) {
-
                 }
-
+                catch (err) {
+                }
                 catCon.append(createCat(`room_${partitions * i}`, pageName, 1));
                 catDataCons.push(createElement({
                     "class": `categoriesDataMain snappedCategoriesDataMain`,
@@ -554,13 +472,14 @@ function ini() {
                             if (lastScrollPos) {
                                 if (2 * this.offsetHeight + this.scrollTop < this.scrollHeight) {
                                     scrollDownTopDOM.style.display = "block !important";
-
                                     if (lastScrollPos - this.scrollTop > 0) {
                                         scrollDownTopDOM.className = "scrollTopDOM";
-                                    } else {
+                                    }
+                                    else {
                                         scrollDownTopDOM.className = "scrollBottomDOM";
                                     }
-                                } else {
+                                }
+                                else {
                                     scrollDownTopDOM.className = "scrollHidden";
                                 }
                             }
@@ -568,11 +487,8 @@ function ini() {
                         }
                     }
                 }));
-
                 catDataCon.append(catDataCons[catDataCons.length - 1]);
             }
-
-
             if (isSnapSupported && !downloaded) {
                 let scrollLastIndex;
                 let tempCatDOM = document.getElementsByClassName("categories");
@@ -580,7 +496,6 @@ function ini() {
                 scrollSnapFunc = function (shouldScroll = true) {
                     let unRoundedIndex = cusRoomDOM.scrollLeft / cusRoomDOM.offsetWidth;
                     let index = Math.round(unRoundedIndex);
-
                     if (index != scrollLastIndex) {
                         for (let i = 0; i < tempCatDOM.length; i++) {
                             if (i == index) {
@@ -589,13 +504,13 @@ function ini() {
                                     tempCatDOM[i].scrollIntoView();
                                 }
                                 lastScrollElem = document.getElementById(tempCatDOM[i].getAttribute("data-id"));
-                            } else {
+                            }
+                            else {
                                 tempCatDOM[i].classList.remove("activeCat");
                             }
                         }
-
-                        let activeCatDOM = document.querySelector(".categories.activeCat") as HTMLElement;
-                        let temp = document.getElementById("catActiveMain") as HTMLElement;
+                        let activeCatDOM = document.querySelector(".categories.activeCat");
+                        let temp = document.getElementById("catActiveMain");
                         window.requestAnimationFrame(function () {
                             window.requestAnimationFrame(function () {
                                 if (temp && activeCatDOM) {
@@ -603,20 +518,19 @@ function ini() {
                                     temp.style.height = activeCatDOM.offsetHeight.toString();
                                     temp.style.width = activeCatDOM.offsetWidth.toString();
                                 }
-
                                 clearTimeout(displayTimeout);
                                 displayTimeout = setTimeout(() => {
+                                    var _a;
                                     let foundCurrentCon = false;
                                     for (let i = 0; i < tempCatDOM.length; i++) {
                                         const dataCon = document.getElementById(tempCatDOM[i].getAttribute("data-id"));
-                                        const prevCon = document.getElementById(tempCatDOM[i - 1]?.getAttribute("data-id"));
-
+                                        const prevCon = document.getElementById((_a = tempCatDOM[i - 1]) === null || _a === void 0 ? void 0 : _a.getAttribute("data-id"));
                                         if (i == index) {
                                             foundCurrentCon = true;
-                                            prevCon?.classList.remove("closed");
+                                            prevCon === null || prevCon === void 0 ? void 0 : prevCon.classList.remove("closed");
                                             dataCon.classList.remove("closed");
-                                        } else {
-
+                                        }
+                                        else {
                                             if (foundCurrentCon) {
                                                 dataCon.classList.remove("closed");
                                                 foundCurrentCon = false;
@@ -626,7 +540,6 @@ function ini() {
                                             }
                                         }
                                     }
-
                                     if (shouldScroll === false && !downloaded && scrollToDOM && localStorage.getItem("scrollBool") !== "false") {
                                         scrollToDOM.scrollIntoView();
                                     }
@@ -636,55 +549,41 @@ function ini() {
                     }
                     scrollLastIndex = index;
                 };
-                cusRoomDOM.addEventListener("scroll", () => { scrollSnapFunc() }, { "passive": true });
+                cusRoomDOM.addEventListener("scroll", () => { scrollSnapFunc(); }, { "passive": true });
             }
-
             let toAdd = [];
             let downloadPromises = [];
-
             for (var i = 0; i < animeEps.length; i++) {
                 let trr = animeEps[i].link;
                 downloadPromises.push(checkIfExists(`/${downloadedIsManga ? "manga/" : ""}${data.mainName}/${btoa(normalise(trr))}/.downloaded`, downloadedList, btoa(normalise(trr))));
             }
-
             // console.log(downloadPromises);
-
             // let start = performance.now();
             const hasBeenDownloaded = await Promise.all(downloadPromises);
             // alert(performance.now() - start);
-
             for (var i = 0; i < animeEps.length; i++) {
                 let trr = animeEps[i].link;
-
                 let tempDiv = document.createElement("div");
                 tempDiv.className = 'episodesCon';
                 tempDiv.setAttribute('data-url', animeEps[i].link);
-
-
-
-
                 let tempDiv4 = document.createElement("div");
                 tempDiv4.className = 'episodesDownload';
                 tempDiv4.setAttribute('data-url', animeEps[i].link);
                 tempDiv4.setAttribute('data-title', animeEps[i].title);
-
                 tempDiv4.onclick = function () {
                     window.parent.postMessage({
                         "action": 403,
-                        "data": (this as HTMLElement).getAttribute("data-url"),
+                        "data": this.getAttribute("data-url"),
                         "anime": data,
                         "mainUrl": main_url,
-                        "title": (this as HTMLElement).getAttribute("data-title")
+                        "title": this.getAttribute("data-title")
                     }, "*");
-
-                    (this as HTMLElement).className = 'episodesLoading';
+                    this.className = 'episodesLoading';
                 };
-
                 let tempDiv3 = document.createElement("div");
                 let tempTitle = animeEps[i].title;
                 tempDiv3.className = 'episodesTitle';
                 tempDiv3.innerText = tempTitle;
-
                 if (animeEps[i].date) {
                     tempDiv3.append(createElement({
                         element: "div",
@@ -695,84 +594,61 @@ function ini() {
                         innerText: animeEps[i].date.toLocaleString()
                     }));
                 }
-
                 let check = false;
                 if (!config.chrome) {
-
                     try {
-
                         // await checkIfExists(`/${downloadedIsManga ? "manga/" : ""}${data.mainName}/${btoa(normalise(trr))}/.downloaded`, downloadedList, btoa(normalise(trr)));
-                        if(hasBeenDownloaded[i] !== "downloaded"){
+                        if (hasBeenDownloaded[i] !== "downloaded") {
                             throw hasBeenDownloaded[i];
                         }
-
                         tempDiv4.className = 'episodesDownloaded';
                         tempDiv4.onclick = function () {
-                            (<cordovaWindow>window.parent).removeDirectory(`/${downloadedIsManga ? "manga/" : ""}${data.mainName}/${btoa(normalise(trr))}/`).then(function () {
+                            window.parent.removeDirectory(`/${downloadedIsManga ? "manga/" : ""}${data.mainName}/${btoa(normalise(trr))}/`).then(function () {
                                 if (downloaded) {
                                     tempDiv.remove();
-                                } else {
+                                }
+                                else {
                                     tempDiv4.className = 'episodesDownload';
                                     tempDiv4.onclick = function () {
                                         tempDiv4.className = 'episodesLoading';
-
                                         window.parent.postMessage({ "action": 403, "data": tempDiv4.getAttribute("data-url"), "anime": data, "mainUrl": main_url, "title": tempDiv4.getAttribute("data-title") }, "*");
-
-
                                     };
                                 }
                             }).catch(function (err) {
                                 alert("Error deleting the files.");
                             });
-                        }
-
-
+                        };
                         check = true;
-
-                    } catch (err) {
+                    }
+                    catch (err) {
                         if (downloadQueue.isInQueue(downloadQueue, animeEps[i].link)) {
                             tempDiv4.className = 'episodesLoading';
                             check = true;
-
-                        } else if (err == "notdownloaded") {
+                        }
+                        else if (err == "notdownloaded") {
                             check = true;
                             tempDiv4.className = 'episodesBroken';
                         }
-
                     }
-
                 }
-
-
-
-
                 let tempDiv2 = document.createElement("div");
                 tempDiv2.className = 'episodesPlay';
-
                 tempDiv2.onclick = function () {
                     localStorage.setItem("mainName", data.mainName);
                     localStorage.setItem("epURL", location.search);
                     window.parent.postMessage({ "action": 4, "data": trr }, "*");
                 };
-
                 if (check || !downloaded || config.chrome) {
-
-
-
                     if (!downloaded && data.isManga !== true) {
                         tempDiv.style.flexDirection = "column";
-
                         tempDiv2.remove();
                         let tempDiv2Con = createElement({
                             class: "episodesImageCon",
                         });
-
                         tempDiv2Con.append(createElement({
                             class: "episodesBackdrop",
                         }));
-
-
-                        tempDiv2 = <HTMLImageElement>createElement({
+                        tempDiv2 = createElement({
                             "class": "episodesThumbnail",
                             "element": "img",
                             "attributes": {
@@ -780,24 +656,17 @@ function ini() {
                                 "src": (animeEps[i].thumbnail ? animeEps[i].thumbnail : "../../assets/images/anime2.png"),
                             }
                         });
-
-
                         let horizontalCon = createElement({
                             "class": "hozCon"
                         });
-
                         let horizontalConT = createElement({
                             "class": "hozCon",
                             "style": {
                                 "marginTop": "12px"
                             }
                         });
-
-
                         horizontalConT.append(tempDiv3);
                         tempDiv3.className = 'episodesTitle aLeft';
-
-
                         horizontalConT.append(createElement({
                             "class": "episodesPlaySmall",
                             "listeners": {
@@ -808,20 +677,16 @@ function ini() {
                                 }
                             }
                         }));
-
-
                         tempDiv2Con.append(tempDiv2);
                         horizontalCon.append(tempDiv2Con);
                         horizontalCon.append(createElement({
                             "class": "episodesTitleTemp"
                         }));
-
                         if (!config.chrome) {
                             horizontalCon.append(tempDiv4);
                         }
                         tempDiv.append(horizontalCon);
                         tempDiv.append(horizontalConT);
-
                         let horizontalConD;
                         if (animeEps[i].description) {
                             horizontalConD = createElement({
@@ -831,7 +696,6 @@ function ini() {
                                     "flex-direction": "column"
                                 }
                             });
-
                             horizontalConD.append(createElement({
                                 "class": "episodesDescription",
                                 "innerText": animeEps[i].description,
@@ -842,11 +706,11 @@ function ini() {
                                         if (collapsed !== "false") {
                                             this.style.maxHeight = "none";
                                             this.setAttribute("collapsed", "false");
-
                                             if (readMore) {
                                                 readMore.style.display = "none";
                                             }
-                                        } else {
+                                        }
+                                        else {
                                             this.style.maxHeight = "94px";
                                             this.setAttribute("collapsed", "true");
                                             if (readMore) {
@@ -861,11 +725,11 @@ function ini() {
                                 "innerText": "Read more..."
                             }));
                             tempDiv.append(horizontalConD);
-
                         }
                         // epCon.append(tempDiv);
                         toAdd.push(tempDiv);
-                    } else {
+                    }
+                    else {
                         if (downloaded) {
                             let localQuery = encodeURIComponent(`/${data.mainName}/${btoa(normalise(trr))}`);
                             console.log(data);
@@ -883,31 +747,28 @@ function ini() {
                         // epCon.append(tempDiv);
                         toAdd.push(tempDiv);
                     }
-
-
                     if (trr == currentLink) {
                         didScroll = true;
                         scrollToDOM = tempDiv;
                         tempDiv.style.backgroundColor = "rgba(255,255,255,1)";
                         tempDiv.classList.add("episodesSelected");
                     }
-                } else {
+                }
+                else {
                     try {
                         tempDiv.remove();
-                    } catch (err) {
-
+                    }
+                    catch (err) {
                     }
                 }
-
             }
-
             let countAdded = 0;
             let whichCon = 0;
-
             for (let e of toAdd) {
                 if (downloaded) {
                     epCon.append(e);
-                } else {
+                }
+                else {
                     if (countAdded >= partitionSize[whichCon]) {
                         whichCon++;
                         countAdded = 0;
@@ -915,81 +776,62 @@ function ini() {
                     catDataCons[whichCon].append(e);
                     countAdded++;
                 }
-
             }
-
-
             if (downloaded) {
                 for (let downloadIndex = 0; downloadIndex < downloadedList.length; downloadIndex++) {
-
                     let thisLink = downloadedList[downloadIndex];
                     let localQuery = encodeURIComponent(`/${data.mainName}/${thisLink}`);
-
                     let tempDiv = document.createElement("div");
                     tempDiv.className = 'episodesCon';
-
-
                     let tempDiv2 = document.createElement("div");
                     tempDiv2.className = 'episodesPlay';
-
                     tempDiv2.onclick = function () {
                         localStorage.setItem("mainName", data.mainName);
                         localStorage.setItem("epURL", location.search);
-
                         window.parent.postMessage({ "action": 4, "data": `?watch=${localQuery}&isManga=${downloadedIsManga}` }, "*");
-
                     };
-
                     let tempDiv4 = document.createElement("div");
                     tempDiv4.className = 'episodesDownloaded';
                     tempDiv4.onclick = function () {
-                        (<cordovaWindow>window.parent).removeDirectory(`/${downloadedIsManga ? "manga/" : ""}${data.mainName}/${thisLink}`).then(function () {
+                        window.parent.removeDirectory(`/${downloadedIsManga ? "manga/" : ""}${data.mainName}/${thisLink}`).then(function () {
                             tempDiv.remove();
                         }).catch(function () {
                             alert("Error deleting the files");
                         });
-                    }
-
-
+                    };
                     let tempDiv3 = document.createElement("div");
                     tempDiv3.className = 'episodesTitle';
                     try {
                         tempDiv3.innerText = fix_title(atob(thisLink));
-                    } catch (err) {
+                    }
+                    catch (err) {
                         tempDiv3.innerText = "Could not parse the titles";
                     }
-
-
-
                     tempDiv.append(tempDiv2);
                     tempDiv.append(tempDiv3);
                     tempDiv.append(tempDiv4);
                     epCon.append(tempDiv);
                 }
             }
-
             try {
-
                 if (!downloaded && scrollToDOM && localStorage.getItem("scrollBool") !== "false") {
                     scrollToDOM.scrollIntoView();
                 }
-
                 if (scrollSnapFunc) {
                     scrollSnapFunc(false);
                 }
-
-
-            } catch (err) {
+            }
+            catch (err) {
                 console.error(err);
             }
-
             if (scrollToDOM && !config.chrome) {
                 document.getElementById("downloadNext").style.display = "inline-block";
                 document.getElementById("downloadNext").onclick = function () {
                     let howmany = parseInt(prompt("How many episodes do you want to download?", "5"));
                     if (isNaN(howmany)) {
                         alert("Not a valid number");
-                    } else {
+                    }
+                    else {
                         let cur = scrollToDOM;
                         let count = howmany;
                         while (cur != null && count > 0) {
@@ -1003,21 +845,16 @@ function ini() {
                     }
                 };
             }
-
             document.getElementById("downloadAll").onclick = function () {
                 let allEps = document.querySelectorAll(".episodesDownload");
                 for (let index = 0; index < allEps.length; index++) {
-                    const element = <HTMLElement>allEps[index];
+                    const element = allEps[index];
                     element.click();
                 }
-
             };
-
-
             if (!("image" in data) || data.image == undefined || data.image == null || data.image == "") {
                 data.image = "https://raw.githubusercontent.com/enimax-anime/enimax/main/www/assets/images/placeholder.jpg";
             }
-
             updateShow({
                 "username": username,
                 "action": 5,
@@ -1025,8 +862,7 @@ function ini() {
                 "img": data.image,
                 "url": location.search
             }, currentEngine);
-
-            (<cordovaWindow>window.parent).apiCall("POST", {
+            window.parent.apiCall("POST", {
                 "username": username,
                 "action": 2,
                 "name": data.mainName,
@@ -1042,7 +878,8 @@ function ini() {
                             };
                             episodes[ep.main_link] = thisEp;
                         }
-                    } else {
+                    }
+                    else {
                         if (ep.duration != 0 && ep.ep != 0) {
                             let thisEp = {
                                 duration: ep.duration,
@@ -1052,172 +889,142 @@ function ini() {
                         }
                     }
                 }
-
-
                 for (const elem of document.getElementsByClassName("episodesCon")) {
                     let dataURL = elem.getAttribute("data-url");
                     if (dataURL in episodes) {
                         try {
                             let imageCon = elem.children[0].children[0];
                             let curEp = episodes[dataURL];
-
                             let tempDiv = createElement({
                                 "class": "episodesProgressCon",
                             });
-
                             tempDiv.append(createElement({
                                 "class": "episodesProgress",
                                 "style": {
                                     "width": `${100 * (parseInt(curEp.curtime) / parseInt(curEp.duration))}%`
                                 }
                             }));
-
                             imageCon.append(tempDiv);
-                        } catch (err) {
+                        }
+                        catch (err) {
                             console.error(err);
                         }
-
                         delete episodes[dataURL];
                     }
-
-
                     if (Object.keys(episodes).length == 0) {
                         break;
                     }
                 }
-
             });
         }
-
-
         if (localStorage.getItem("offline") === 'true') {
-            (<cordovaWindow>window.parent).makeLocalRequest("GET", `/${downloadedIsManga ? "manga/" : ""}${normalise(main_url.split("&downloaded")[0])}/info.json`).then(function (data) {
+            window.parent.makeLocalRequest("GET", `/${downloadedIsManga ? "manga/" : ""}${normalise(main_url.split("&downloaded")[0])}/info.json`).then(function (data) {
                 let temp = JSON.parse(data);
                 temp.data.episodes = temp.episodes;
                 processEpisodeData(temp.data, true, main_url);
-
             }).catch(function (err) {
                 console.error(err);
                 alert("Could not find info.json");
             });
-
-        } else {
+        }
+        else {
             currentEngine.getAnimeInfo(main_url).then(function (data) {
                 if (data.isManga === true) {
                     downloadedIsManga = true;
                 }
                 processEpisodeData(data, false, main_url);
-            }).catch(function (err: infoError) {
-
+            }).catch(function (err) {
                 const epCon = document.getElementById("epListCon");
-                constructErrorPage(
-                    epCon,
-                    err.message,
-                    {
-                        hasLink: true,
-                        hasReload: true,
-                        clickEvent: () => {
-                            openWebview(webviewLink)
-                        }
+                constructErrorPage(epCon, err.message, {
+                    hasLink: true,
+                    hasReload: true,
+                    clickEvent: () => {
+                        openWebview(webviewLink);
                     }
-                );
-
+                });
                 epCon.style.marginTop = "0";
-
                 webviewLink = err.url;
-                (document.querySelector(".infoCon") as HTMLElement).style.display = "none";
-
+                document.querySelector(".infoCon").style.display = "none";
             });
         }
     }
 }
-
-
 const addToLibrary = document.getElementById("addToLibrary");
 const playIcon = document.getElementById("play");
-
 playIcon.onclick = function () {
+    var _a, _b;
     const selectedExists = document.querySelector(".episodesSelected");
     if (selectedExists) {
-        (selectedExists.querySelector(".episodesPlaySmall") as HTMLElement)?.click();
-        (selectedExists.querySelector(".episodesPlay") as HTMLElement)?.click();
-    } else {
-        (document.querySelector(".episodesCon").querySelector(".episodesPlaySmall") as HTMLElement).click();
+        (_a = selectedExists.querySelector(".episodesPlaySmall")) === null || _a === void 0 ? void 0 : _a.click();
+        (_b = selectedExists.querySelector(".episodesPlay")) === null || _b === void 0 ? void 0 : _b.click();
+    }
+    else {
+        document.querySelector(".episodesCon").querySelector(".episodesPlaySmall").click();
     }
 };
-
 addToLibrary.onclick = function () {
     if (localStorage.getItem("offline") === 'true') {
         return;
     }
-
     if (showMainName) {
         addToLibrary.classList.add("isWaiting");
-
         if (addToLibrary.classList.contains("notInLib")) {
-            (<cordovaWindow>window.parent).apiCall("POST", {
+            window.parent.apiCall("POST", {
                 "username": "",
                 "action": 5,
                 "name": showMainName,
                 "img": showImage,
                 "url": location.search
             }, () => {
-
-                let firstEpURL = document.querySelector(".episodesCon")?.getAttribute("data-url");
-
+                var _a;
+                let firstEpURL = (_a = document.querySelector(".episodesCon")) === null || _a === void 0 ? void 0 : _a.getAttribute("data-url");
                 if (!firstEpURL) {
                     firstEpURL = "?watch=null";
                 }
-
-                (<cordovaWindow>window.parent).apiCall("POST",
-                    {
-                        "username": "",
-                        "action": 2,
-                        "name": showMainName,
-                        "cur": firstEpURL,
-                        "ep": 1
-                    }, (response) => {
-                        addToLibrary.classList.remove("isWaiting");
-                        addToLibrary.classList.remove("notInLib");
-                        addToLibrary.classList.add("isInLib");
-                    });
-
+                window.parent.apiCall("POST", {
+                    "username": "",
+                    "action": 2,
+                    "name": showMainName,
+                    "cur": firstEpURL,
+                    "ep": 1
+                }, (response) => {
+                    addToLibrary.classList.remove("isWaiting");
+                    addToLibrary.classList.remove("notInLib");
+                    addToLibrary.classList.add("isInLib");
+                });
             });
-
-
-        } else {
+        }
+        else {
             const shouldDelete = confirm("Are you sure that you want to remove this show from your library?");
             if (shouldDelete) {
-                (<cordovaWindow>window.parent).apiCall("POST", { "username": "", "action": 6, "name": showMainName }, () => {
+                window.parent.apiCall("POST", { "username": "", "action": 6, "name": showMainName }, () => {
                     addToLibrary.classList.remove("isWaiting");
                     addToLibrary.classList.remove("isInLib");
                     addToLibrary.classList.add("notInLib");
                 });
-            } else {
+            }
+            else {
                 addToLibrary.classList.remove("isWaiting");
             }
         }
-    } else {
+    }
+    else {
         alert("Try again after the page has loaded.");
     }
 };
-
-(<cordovaWindow>window.parent).apiCall("POST", { "username": "", "action": 4 }, async (response) => {
+window.parent.apiCall("POST", { "username": "", "action": 4 }, async (response) => {
     const search = new URLSearchParams(location.search);
-
     const doesExist = response.data[0].find(elem => {
         try {
             const elemSearch = new URLSearchParams(elem[5]);
             if (elemSearch.get("engine") == search.get("engine") && elemSearch.get("watch") == search.get("watch")) {
                 const currentLink = elem[3];
-
                 localStorage.setItem("currentLink", currentLink);
-
                 if (didScroll === false) {
                     const epCons = document.querySelectorAll(".episodesCon");
                     for (let i = 0; i < epCons.length; i++) {
                         if (epCons[i].getAttribute("data-url") === currentLink) {
-                            const scrollToDOM = epCons[i] as HTMLElement;
+                            const scrollToDOM = epCons[i];
                             scrollToDOM.style.backgroundColor = "rgba(255,255,255,1)";
                             scrollToDOM.classList.add("episodesSelected");
                             scrollToDOM.parentElement.classList.remove("closed");
@@ -1225,38 +1032,34 @@ addToLibrary.onclick = function () {
                         }
                     }
                 }
-
                 return true;
-            } else {
+            }
+            else {
                 return false;
             }
-        } catch (err) {
+        }
+        catch (err) {
             return false;
         }
     });
-
     if (doesExist) {
         addToLibrary.classList.add("isInLib");
-    } else {
+    }
+    else {
         addToLibrary.classList.add("notInLib");
     }
-
 });
-
 document.getElementById("relations").onclick = function () {
     openCon(relationsCon);
 };
-
 document.getElementById("recommendations").onclick = function () {
     openCon(recomCon);
 };
-
 document.getElementById("back").onclick = goBack;
-
 applyTheme();
-
 if (config.local || localStorage.getItem("offline") === 'true') {
     ini();
-} else {
+}
+else {
     window.parent.postMessage({ "action": 20 }, "*");
 }

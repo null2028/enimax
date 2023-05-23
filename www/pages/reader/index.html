@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-inline' blob:; object-src 'self'">
+    <title>Reader</title>
+    <link href="../../assets/css/fonts.css" rel="stylesheet">
+    <link href="../../assets/css/index.css" rel="stylesheet">
+    <link href="../../assets/css/range.css" rel="stylesheet">
+    <link href="../player/css/DDM.css" rel="stylesheet">
+    <link href="./index.css" rel="stylesheet">
+    <link href="../player/css/index.css" rel="stylesheet">
+    <script src="../../assets/index.js"></script>
+    <script src="../../assets/libs/range-slider.js"></script>
+    <script src="../../assets/js/config.js"></script>
+    <script src="../../assets/js/pull.js"></script>
+    <script src="../../assets/libs/panzoom.js"></script>
+    <script src="../player/js/DDM.js"></script>
+</head>
+
+<body>
+    <div id="con_11" style="overflow: hidden !important;">
+        <div class="nextPrevPage">Loading...</div>
+        <div class="menuCon">
+            <div id="settingHandlePadding">
+                <div id="settingHandle"></div>
+            </div>
+        </div>
+
+        <div id="pageNum"><span id="currentPage"></span> / <span id="totalPage"></span></div>
+
+        <div id="chapterCon" class="snappedCustomRooms"></div>
+        <div class="spotlight" id="spotlight"></div>
+        <div class="topNav close" id="topNav">
+            <div id="back"></div>
+            <div id="name"></div>
+            <div id="chapterNum"></div>
+        </div>
+
+        <div class="bottomNav close" id="bottomNav">
+            <div id="prev"></div>
+
+            <!-- <div id="bar" style="height: 4px;">
+                <div id="buffered" style="left: 13.0555%; width: 21.4171%;"></div>
+                <div id="loaded" style="width: 13.4113%;"></div>
+            </div> -->
+
+            <div id="slider" class="sliderMenu">
+                <range-slider type="range" max="0" step="1" min="1" class="sliderBox" id="sliderInput">
+            </div>
+            <div id="next"></div>
+        </div>
+    </div>
+
+    <script src="./index.js"></script>
+</body>
+
+</html>
