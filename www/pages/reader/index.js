@@ -21,7 +21,7 @@ let dirty = false;
 let menuOpen = false;
 let menuTimeout;
 let lastErrorClick = 0;
-let reversed = false;
+let reversed = true;
 let webcomic = false;
 let touchStart = 0;
 let mangaEngine;
@@ -119,7 +119,7 @@ function checkIfExists(localURL) {
     }));
 }
 async function ini() {
-    var _a;
+    var _a, _b;
     try {
         container.onscroll = () => { };
         dirty = true;
@@ -253,6 +253,7 @@ async function ini() {
                 bounds: true,
                 boundsPadding: 1,
                 minZoom: 1,
+                maxZoom: 6,
                 onClick: (event) => {
                     if (Date.now() - lastErrorClick > 500) {
                         let currentPage = parseInt(slider.value) - 1;
@@ -463,6 +464,7 @@ async function ini() {
         }
         (_a = pagesDOM[currentPage]) === null || _a === void 0 ? void 0 : _a.scrollIntoView({});
         scrollSnapFunc(false, currentPage);
+        (_b = document.getElementById("mainLoading")) === null || _b === void 0 ? void 0 : _b.remove();
     }
     catch (err) {
         constructErrorPage(container, err === null || err === void 0 ? void 0 : err.toString(), {

@@ -22,7 +22,7 @@ let dirty = false;
 let menuOpen = false;
 let menuTimeout;
 let lastErrorClick = 0;
-let reversed = false;
+let reversed = true;
 let webcomic = false;
 let touchStart = 0;
 let mangaEngine;
@@ -287,6 +287,7 @@ async function ini() {
                 bounds: true,
                 boundsPadding: 1,
                 minZoom: 1,
+                maxZoom: 6,
                 onClick: (event) => {
                     if (Date.now() - lastErrorClick > 500) {
                         let currentPage = parseInt(slider.value) - 1;
@@ -533,6 +534,8 @@ async function ini() {
         pagesDOM[currentPage]?.scrollIntoView({});
 
         scrollSnapFunc(false, currentPage);
+        
+        document.getElementById("mainLoading")?.remove();
     } catch (err) {
         constructErrorPage(
             container,

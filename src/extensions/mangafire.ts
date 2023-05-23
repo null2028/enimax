@@ -74,41 +74,49 @@ var mangaFire: extension = {
         }
     },
 
-    descramble: async function (imageURL: string, key: number) {
+    descramble: function (imageURL: string, key: number) {
+        return new Promise(async function (resolve, reject) {
+            const s = key;
+            // const image = await loadImage(imageURL);
+            const worker = new Worker("./extensions/mangafireDecrambler.js");
+            // const bitmap = await createImageBitmap(image);
 
-        const s = key;
-        const image = await loadImage(imageURL);
-        try {
-            const canvas = new OffscreenCanvas(image.width, image.height);
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(image, 0, 0);
-            var x = Math.min(200, Math.ceil(image.height / 5));
-            var C = Math.ceil(image.height / x);
-            var W = C - 1;
-            var a = Math.min(200, Math.ceil(image.width / 5));
-            var v = Math.ceil(image.width / a);
-            var l = v - 1;
-
-            for (var q = 0; q <= W; q++) {
-                for (var R = 0; R <= l; R++) {
-                    let h = R, k = q;
-                    R < l && (h = (l - R + s) % l),
-                        q < W && (k = (W - q + s) % (W)),
-                        ctx.drawImage(
-                            image, h * a, k * x, Math.min(a, image.width - R * a),
-                            Math.min(x, image.height - q * x),
-                            R * a, q * x,
-                            Math.min(a, image.width - R * a),
-                            Math.min(x, image.height - q * x)
-                        );
+            const timeout = setTimeout(function () {
+                try {
+                    worker.terminate();
+                    reject(new Error("Timeout"));
+                } catch (err) {
+                    console.error(err);
                 }
-            }
-            return window.URL.createObjectURL(await canvas.convertToBlob());
-        } catch (err) {
-            throw err;
-        } finally {
+            }, 20000);
 
-        }
+            try {
+                worker.onmessage = (message) => {
+                    const data = message.data;
+                    if (data instanceof Blob) {
+                        clearTimeout(timeout);
+                        resolve(window.URL.createObjectURL(data));
+                    } else {
+                        clearTimeout(timeout);
+                        reject(new Error("Unexpected message"));
+                    }
+                };
+
+                worker.onerror = (err) => {
+                    clearTimeout(timeout);
+                    reject(err);
+                };
+
+                worker.postMessage([key, imageURL]);
+
+            } catch (err) {
+                console.error(err);
+                clearTimeout(timeout);
+                reject(err);
+            } finally {
+                worker.terminate();
+            }
+        });
     },
     getLinkFromUrl: async function (url: string): Promise<extensionMangaSource> {
 
@@ -147,7 +155,7 @@ var mangaFire: extension = {
                 if (chapterId === "/read/" + linkSplit.join("/read/")) {
                     currentIndex = i;
                     response.chapter = parseFloat(anchorTag.getAttribute("data-number"));
-                    if(response.chapter === 0){
+                    if (response.chapter === 0) {
                         response.chapter = 0.1;
                     }
                     chapterMainID = anchorTag.getAttribute("data-id");
