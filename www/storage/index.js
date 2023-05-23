@@ -493,7 +493,7 @@ if (true) {
                 var response = {};
                 if (isDownloaded) {
                     try {
-                        await window.parent.removeDirectory(`${name}`);
+                        await window.parent.removeDirectory(`${req.body.isManga === true ? "manga/" : ""}${name}`);
                     }
                     catch (err) {
                         alert("Could not delete the files. You have to manually delete it by going to the show's page.");

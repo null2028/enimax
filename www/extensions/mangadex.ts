@@ -42,7 +42,7 @@ var mangaDex: extension = {
         }
 
         const response = JSON.parse(await MakeFetch(
-            `${this.baseURL}/manga/${mangaId}/feed?offset=${offset}&limit=96&order[volume]=desc&order[chapter]=desc&translatedLanguage[]=en`
+            `${this.baseURL}/manga/${mangaId}/feed?offset=${offset}&limit=96&order[volume]=desc&order[chapter]=desc&translatedLanguage[]=en&includeFuturePublishAt=0&includeEmptyPages=0`
         ));
 
         return [...response.data, ...(await this.fetchAllChapters(mangaId, offset + 96, response))];
@@ -56,7 +56,7 @@ var mangaDex: extension = {
             "description": "",
             "episodes": [] as extensionInfoEpisode[],
             "mainName": "",
-            "disableThumbnail": true,
+            "isManga": true,
         };
 
         try {
@@ -112,7 +112,7 @@ var mangaDex: extension = {
             throw err;
         }
     },
-    getLinkFromUrl: async function (url: string): Promise<extensionVidSource> {
+    getLinkFromUrl: async function (url: string): Promise<extensionMangaSource> {
 
         function substringBefore(str: string, toFind: string) {
             let index = str.indexOf(toFind);
@@ -127,14 +127,14 @@ var mangaDex: extension = {
                 MakeFetch(`https://api.mangadex.org/chapter/${chapterId}?includes[]=scanlation_group&includes[]=manga&includes[]=user`)
             ]);
 
-            const response = {
+            const response: extensionMangaSource = {
                 pages: [],
                 next: null,
                 prev: null,
                 name: "",
                 chapter: 0,
                 title: "",
-                altTruncatedTitle: ""
+                type: "manga",
             };
 
             const res = JSON.parse(promisesRes[0]);
@@ -171,7 +171,6 @@ var mangaDex: extension = {
             for (const id of res.chapter.data) {
                 response.pages.push({
                     img: `${res.baseUrl}/data/${res.chapter.hash}/${id}`,
-                    page: parseInt(substringBefore(id, '-').replace(/[^0-9.]/g, '')),
                 });
             }
 

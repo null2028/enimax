@@ -449,6 +449,7 @@ window.addEventListener("videoStartInterval", () => {
 function normalise(url) {
     url = url.replace("?watch=", "");
     url = url.split("&engine=")[0];
+    url = url.split("&isManga=")[0];
     return url;
 }
 // @ts-ignore
@@ -1077,7 +1078,8 @@ document.querySelector("#episodeList").addEventListener("click", function () {
     DMenu.open("episodes");
 });
 function updateEpListSelected() {
-    DMenu.selections[location.search].select();
+    var _a;
+    (_a = DMenu === null || DMenu === void 0 ? void 0 : DMenu.selections[location.search]) === null || _a === void 0 ? void 0 : _a.select();
 }
 window.onmessage = async function (message) {
     if (message.data.action == 1) {

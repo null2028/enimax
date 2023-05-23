@@ -108,6 +108,11 @@ interface videoData {
     engine?: number
 }
 
+interface mangaData extends extensionMangaSource{
+    engine: number,
+    ogURL: string,
+}
+
 interface videoDoubleTapEvent extends CustomEvent {
     detail: {
         DTType: string
@@ -128,7 +133,8 @@ interface videoChangedFillModeEvent extends CustomEvent {
 
 interface cordovaWindow extends Window {
     cordova: any,
-    makeLocalRequest(method: string, url: string): Promise<string>,
+    makeLocalRequest: Function,
+    normalise: Function,
     apiCall: Function,
     returnExtensionList: Function,
     XMLHttpRequest: any,
@@ -192,10 +198,26 @@ interface extension {
     baseURL: string,
     searchApi: (query: string) => Promise<extensionSearch>;
     getAnimeInfo: (url: string) => Promise<extensionInfo>;
-    getLinkFromUrl: (url: any) => Promise<extensionVidSource>;
+    getLinkFromUrl: (url: any) => Promise<extensionVidSource | extensionMangaSource>;
     discover?: () => Promise<Array<extensionDiscoverData>>;
     fixTitle?: (title: string) => string;
     [key: string]: any;
+}
+
+interface extensionMangaSource {
+    pages: MangaPage[],
+    next: string | null,
+    prev: string | null,
+    name: string,
+    chapter: number,
+    title?: string,
+    type: "manga",
+}
+
+interface MangaPage {
+    img: string,
+    needsDescrambling?: boolean,
+    key?: number
 }
 
 interface extensionSearchData {
@@ -218,7 +240,7 @@ interface extensionInfo {
     totalPages?: number
     pageInfo?: Array<PageInfo>
     genres?: Array<string>
-    disableThumbnail?: boolean
+    isManga?: boolean
 }
 
 interface infoError extends Error {
@@ -277,7 +299,8 @@ interface extensionVidSource {
     next: string | null,
     prev: string | null,
     title?: string,
-    subtitles?: Array<videoSubtitle>
+    subtitles?: Array<videoSubtitle>,
+    type?: "anime",
 }
 
 interface extensionDiscoverData {
@@ -307,7 +330,7 @@ interface flaggedShows {
 interface queueElement {
     data: string,
     anime: extensionInfo,
-    downloadInstance?: DownloadVid,
+    downloadInstance?: DownloadVid | DownloadManga,
     mainUrl: string,
     title: string,
     errored?: boolean,

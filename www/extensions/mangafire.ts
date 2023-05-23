@@ -18,7 +18,7 @@ var mangaFire: extension = {
 
                 const nameDOM = mangaCard.querySelector(".name")?.querySelector("a");
                 results.data.push({
-                    link: nameDOM?.getAttribute("href") + "&engine=9",
+                    link: nameDOM?.getAttribute("href").replace("manga/", "mangafire-") + "&engine=9",
                     name: nameDOM?.getAttribute("title"),
                     image: mangaCard?.querySelector("img")?.getAttribute("src")
                 });
@@ -41,11 +41,11 @@ var mangaFire: extension = {
             "description": "",
             "episodes": [] as extensionInfoEpisode[],
             "mainName": "",
-            "disableThumbnail": true,
+            "isManga": true,
         };
 
         try {
-            const infoHTML = await MakeFetch(`${this.baseURL}/${id}`);
+            const infoHTML = await MakeFetch(`${this.baseURL}/${id.replace("mangafire-", "manga/")}`);
             infoDOM.innerHTML = DOMPurify.sanitize(infoHTML);
 
             response.name = (infoDOM?.querySelector(".info")?.querySelector(".name") as HTMLElement).innerText;
@@ -110,7 +110,7 @@ var mangaFire: extension = {
 
         }
     },
-    getLinkFromUrl: async function (url: string): Promise<extensionVidSource> {
+    getLinkFromUrl: async function (url: string): Promise<extensionMangaSource> {
 
         const chapterId = (new URLSearchParams("?watch=" + url)).get("watch");
         const chapterSplit = chapterId.split(".");
@@ -121,14 +121,14 @@ var mangaFire: extension = {
 
         try {
             const chapterListHTML = JSON.parse(await MakeFetch(`${this.baseURL}/ajax/read/${identifier}/list?viewby=chapter`)).result.html;
-            const response = {
+            const response: extensionMangaSource = {
                 pages: [],
                 next: null,
                 prev: null,
                 name: name,
                 chapter: 0,
                 title: "",
-                altTruncatedTitle: ""
+                type: "manga"
             };
 
             chapterListDOM.innerHTML = DOMPurify.sanitize(chapterListHTML);
@@ -144,6 +144,7 @@ var mangaFire: extension = {
 
                 if (chapterId === "/read/" + linkSplit.join("/read/")) {
                     currentIndex = i;
+                    response.chapter = parseFloat(anchorTag.getAttribute("data-number"));
                     chapterMainID = anchorTag.getAttribute("data-id");
                 }
             }
@@ -180,7 +181,7 @@ var mangaFire: extension = {
     },
     fixTitle(title: string) {
         try {
-            const titleTemp = title.replace("manga/", "").split(".");
+            const titleTemp = title.replace("mangafire-", "").split(".");
             titleTemp.pop();
 
             title = titleTemp.join(".");
@@ -191,14 +192,14 @@ var mangaFire: extension = {
         }
     },
     getMetaData: async function (search: URLSearchParams) {
-        const id = search.get("watch").replace("manga/", "");
+        const id = search.get("watch").replace("mangafire-", "");
         return await getAnilistInfo("MangaFire", id, "MANGA");
     },
     rawURLtoInfo: function (url: URL) {
         // https://mangafire.to/manga/dr-stone.qkm13/
 
-        let path = url.pathname; 
-        if(path[path.length - 1] === "/"){
+        let path = url.pathname.replace("manga/", "mangafire-");
+        if (path[path.length - 1] === "/") {
             path = path.substring(0, path.length - 1);
         }
         return `?watch=${path}&engine=9`;

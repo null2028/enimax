@@ -31,7 +31,7 @@ var mangaDex = {
         if ((res === null || res === void 0 ? void 0 : res.offset) + 96 >= (res === null || res === void 0 ? void 0 : res.total)) {
             return [];
         }
-        const response = JSON.parse(await MakeFetch(`${this.baseURL}/manga/${mangaId}/feed?offset=${offset}&limit=96&order[volume]=desc&order[chapter]=desc&translatedLanguage[]=en`));
+        const response = JSON.parse(await MakeFetch(`${this.baseURL}/manga/${mangaId}/feed?offset=${offset}&limit=96&order[volume]=desc&order[chapter]=desc&translatedLanguage[]=en&includeFuturePublishAt=0&includeEmptyPages=0`));
         return [...response.data, ...(await this.fetchAllChapters(mangaId, offset + 96, response))];
     },
     getAnimeInfo: async function (url) {
@@ -43,7 +43,7 @@ var mangaDex = {
             "description": "",
             "episodes": [],
             "mainName": "",
-            "disableThumbnail": true,
+            "isManga": true,
         };
         try {
             const data = JSON.parse(await MakeFetch(`${this.baseURL}/manga/${id}?includes[]=cover_art&hasAvailableChapters=1`));
@@ -106,7 +106,7 @@ var mangaDex = {
                 name: "",
                 chapter: 0,
                 title: "",
-                altTruncatedTitle: ""
+                type: "manga",
             };
             const res = JSON.parse(promisesRes[0]);
             const mangaInfo = JSON.parse(promisesRes[1]);
@@ -134,7 +134,6 @@ var mangaDex = {
             for (const id of res.chapter.data) {
                 response.pages.push({
                     img: `${res.baseUrl}/data/${res.chapter.hash}/${id}`,
-                    page: parseInt(substringBefore(id, '-').replace(/[^0-9.]/g, '')),
                 });
             }
             console.log(response);

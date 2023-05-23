@@ -329,9 +329,14 @@ function updateTheme() {
     }
 }
 
-function makeLocalRequest(method: string, url: string): Promise<string> {
+function makeLocalRequest(method: string, url: string, responseType?: "blob"): Promise<string> {
     return new Promise(function (resolve, reject) {
         var xhr = new XMLHttpRequest();
+
+        if (responseType) {
+            xhr.responseType = responseType;
+        }
+
         xhr.open(method, url);
 
         xhr.onload = function () {
@@ -587,9 +592,13 @@ function executeAction(message: MessageAction, reqSource: Window) {
     else if (message.action == 4) {
         let isManga = false;
         let pageName = "player";
+
+        console.log(message.data);
         try {
             const search = new URLSearchParams(message.data);
             const engine = search.get("engine");
+            const paramManga = search.get("isManga");
+            isManga = paramManga === "true";
 
             if (extensionTypes[engine] === "manga") {
                 isManga = true;
@@ -705,7 +714,7 @@ async function onDeviceReady() {
 
         const frameWasOpen = playerIFrame.className.indexOf("pop") == -1
             && ((playerIFrame as HTMLIFrameElement).contentWindow.location.pathname.includes("www/pages/player/index.html")
-            || (playerIFrame as HTMLIFrameElement).contentWindow.location.pathname.includes("www/pages/reader/index.html"));
+                || (playerIFrame as HTMLIFrameElement).contentWindow.location.pathname.includes("www/pages/reader/index.html"));
 
         const homePageOpen = frameLocation.pathname.indexOf("www/pages/homepage/index.html") > -1;
         if (homePageOpen || frameWasOpen) {

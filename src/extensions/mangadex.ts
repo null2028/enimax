@@ -42,7 +42,7 @@ var mangaDex: extension = {
         }
 
         const response = JSON.parse(await MakeFetch(
-            `${this.baseURL}/manga/${mangaId}/feed?offset=${offset}&limit=96&order[volume]=desc&order[chapter]=desc&translatedLanguage[]=en`
+            `${this.baseURL}/manga/${mangaId}/feed?offset=${offset}&limit=96&order[volume]=desc&order[chapter]=desc&translatedLanguage[]=en&includeFuturePublishAt=0&includeEmptyPages=0`
         ));
 
         return [...response.data, ...(await this.fetchAllChapters(mangaId, offset + 96, response))];
@@ -56,7 +56,7 @@ var mangaDex: extension = {
             "description": "",
             "episodes": [] as extensionInfoEpisode[],
             "mainName": "",
-            "disableThumbnail": true,
+            "isManga": true,
         };
 
         try {

@@ -1,9 +1,9 @@
 
 
 class downloadQueue {
-    queue : Array<queueElement>;
-    doneQueue : Array<queueElement>;
-    pause : boolean;
+    queue: Array<queueElement>;
+    doneQueue: Array<queueElement>;
+    pause: boolean;
     constructor() {
         this.queue = [];
         this.doneQueue = [];
@@ -28,7 +28,7 @@ class downloadQueue {
         }, 5000);
     }
 
-    emitPercent(self : downloadQueue) {
+    emitPercent(self: downloadQueue) {
         try {
             let currentHead = self.queue[0].downloadInstance;
             let downloadPercent = currentHead.downloaded / currentHead.total;
@@ -178,7 +178,7 @@ class downloadQueue {
             }
         }
     }
-    async add(data : string, anime : extensionInfo, mainUrl : string, title : string, self : downloadQueue) {
+    async add(data: string, anime: extensionInfo, mainUrl: string, title: string, self: downloadQueue) {
         if (!self) {
             self = this;
         }
@@ -273,8 +273,8 @@ class downloadQueue {
             self.updateLocalDoneQueue(self);
         }
     }
-    async updateLocalStorage(self : downloadQueue) {
-        
+    async updateLocalStorage(self: downloadQueue) {
+
         (document.getElementById("frame") as HTMLIFrameElement).contentWindow.postMessage({
             "action": "activeUpdate",
         }, "*");
@@ -308,7 +308,7 @@ class downloadQueue {
 
     }
 
-    startDownload(self : downloadQueue) {
+    startDownload(self: downloadQueue) {
         if (self.pause) {
             return;
         }
@@ -338,7 +338,7 @@ class downloadQueue {
                 currentEngine = extensionList[currentEngine];
             }
         }
-        currentEngine.getAnimeInfo(curQueueElem.mainUrl).then(function (episodes) {
+        (currentEngine as extension).getAnimeInfo(curQueueElem.mainUrl).then(function (episodes) {
             if (self.pause) {
                 return;
             }
@@ -348,8 +348,14 @@ class downloadQueue {
                 }
                 temp.ogURL = temp3[0];
                 temp.engine = engineNum;
-                curQueueElem.downloadInstance = new DownloadVid(temp, curQueueElem.anime, () => { self.done(self) }, () => { self.error(self) }, episodes.episodes, self.pause);
+
+                if (temp.type === "manga") {
+                    curQueueElem.downloadInstance = new DownloadManga(temp, curQueueElem.anime, () => { self.done(self) }, () => { self.error(self) }, episodes.episodes, self.pause);
+                } else {
+                    curQueueElem.downloadInstance = new DownloadVid(temp, curQueueElem.anime, () => { self.done(self) }, () => { self.error(self) }, episodes.episodes, self.pause);
+                }
             }).catch(function (x) {
+                console.error(x);
                 // @ts-ignore
                 curQueueElem.downloadInstance = {};
                 curQueueElem.downloadInstance.message = "Couldn't get the link";
@@ -376,13 +382,13 @@ class downloadQueue {
 
     }
 
-    async done(self : downloadQueue) {
+    async done(self: downloadQueue) {
         self.doneQueue.push((await self.remove(self)));
         self.updateLocalDoneQueue(self);
 
         self.startDownload(self);
     }
-    async remove(self : downloadQueue, error = false) {
+    async remove(self: downloadQueue, error = false) {
         let temp = self.queue.shift();
         temp.errored = error;
         if ("downloadInstance" in temp) {

@@ -294,8 +294,14 @@ class downloadQueue {
                 }
                 temp.ogURL = temp3[0];
                 temp.engine = engineNum;
-                curQueueElem.downloadInstance = new DownloadVid(temp, curQueueElem.anime, () => { self.done(self); }, () => { self.error(self); }, episodes.episodes, self.pause);
+                if (temp.type === "manga") {
+                    curQueueElem.downloadInstance = new DownloadManga(temp, curQueueElem.anime, () => { self.done(self); }, () => { self.error(self); }, episodes.episodes, self.pause);
+                }
+                else {
+                    curQueueElem.downloadInstance = new DownloadVid(temp, curQueueElem.anime, () => { self.done(self); }, () => { self.error(self); }, episodes.episodes, self.pause);
+                }
             }).catch(function (x) {
+                console.error(x);
                 // @ts-ignore
                 curQueueElem.downloadInstance = {};
                 curQueueElem.downloadInstance.message = "Couldn't get the link";

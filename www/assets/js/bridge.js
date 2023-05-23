@@ -252,9 +252,12 @@ function updateTheme() {
         console.error(err);
     }
 }
-function makeLocalRequest(method, url) {
+function makeLocalRequest(method, url, responseType) {
     return new Promise(function (resolve, reject) {
         var xhr = new XMLHttpRequest();
+        if (responseType) {
+            xhr.responseType = responseType;
+        }
         xhr.open(method, url);
         xhr.onload = function () {
             if (xhr.status >= 200 && xhr.status < 300) {
@@ -489,9 +492,12 @@ function executeAction(message, reqSource) {
     else if (message.action == 4) {
         let isManga = false;
         let pageName = "player";
+        console.log(message.data);
         try {
             const search = new URLSearchParams(message.data);
             const engine = search.get("engine");
+            const paramManga = search.get("isManga");
+            isManga = paramManga === "true";
             if (extensionTypes[engine] === "manga") {
                 isManga = true;
             }

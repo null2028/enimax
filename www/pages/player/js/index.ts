@@ -498,6 +498,7 @@ window.addEventListener("videoStartInterval", () => {
 function normalise(url: string): string {
 	url = url.replace("?watch=", "");
 	url = url.split("&engine=")[0];
+    url = url.split("&isManga=")[0];
 	return url;
 }
 
@@ -1272,7 +1273,7 @@ document.querySelector("#episodeList").addEventListener("click", function () {
 });
 
 function updateEpListSelected() {
-	DMenu.selections[location.search].select();
+	DMenu?.selections[location.search]?.select();
 }
 
 window.onmessage = async function (message: MessageEvent) {

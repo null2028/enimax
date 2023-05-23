@@ -43,12 +43,6 @@ const extensionList = window.parent.returnExtensionList();
 // @ts-ignore
 const extensionTypes = window.parent.returnExtensionTypes();
 let didScroll = false;
-if (config.local || localStorage.getItem("offline") === 'true') {
-    ini();
-}
-else {
-    window.parent.postMessage({ "action": 20 }, "*");
-}
 let lastScrollPos;
 let scrollDownTopDOM = document.getElementById("scrollDownTop");
 let scrollSnapFunc;
@@ -59,6 +53,14 @@ let displayTimeout;
 let pullTabArray = [];
 let webviewLink = "";
 let averageColor = "";
+let downloadedIsManga = false;
+try {
+    const search = new URLSearchParams(location.search);
+    downloadedIsManga = search.get("isManga") === "true";
+}
+catch (err) {
+    console.warn(err);
+}
 const imageDOM = document.getElementById("imageMain");
 // @ts-ignore
 const backdrop = document.getElementsByClassName("backdrop")[0];
@@ -143,6 +145,7 @@ function fix_title(title) {
 function normalise(url) {
     url = url.replace("?watch=", "");
     url = url.split("&engine=")[0];
+    url = url.split("&isManga=")[0];
     return url;
 }
 window.onmessage = function (x) {
@@ -185,18 +188,25 @@ function checkIfExists(localURL, dList, dName) {
         if (index > -1) {
             dList.splice(index, 1);
             let timeout = setTimeout(function () {
-                reject(new Error("timeout"));
-            }, 1000);
-            window.parent.makeLocalRequest("GET", `${localURL}`).then(function (x) {
+                resolve("timeout");
+            }, 2000);
+            window.parent.resolveLocalFileSystemURL(window.parent.cordova.file.externalDataDirectory + localURL, function (fileSystem) {
                 clearTimeout(timeout);
-                resolve(x);
-            }).catch(function () {
+                resolve("downloaded");
+            }, (err) => {
                 clearTimeout(timeout);
-                reject("notdownloaded");
+                resolve("notdownloaded");
             });
+            // (<cordovaWindow>window.parent).makeLocalRequest("GET", `${localURL}`).then(function (x) {
+            //     clearTimeout(timeout);
+            //     resolve("downloaded");
+            // }).catch(function () {
+            //     clearTimeout(timeout);
+            //     reject("notdownloaded");
+            // });
         }
         else {
-            reject("notinlist");
+            resolve("notinlist");
         }
     }));
 }
@@ -251,9 +261,10 @@ function ini() {
                 });
             };
             let downloadedList = [];
+            let doesExist = [];
             if (!config.chrome) {
                 try {
-                    downloadedList = await window.parent.listDir(data.mainName);
+                    downloadedList = await window.parent.listDir(`${downloadedIsManga ? "manga/" : ""}${data.mainName}`);
                     let tempList = [];
                     for (let i = 0; i < downloadedList.length; i++) {
                         if (downloadedList[i].isDirectory) {
@@ -311,6 +322,7 @@ function ini() {
                 usesCustomPartions = true;
             }
             if (downloaded) {
+                addToLibrary.classList.add("hidden");
                 totalCats = 0;
             }
             else {
@@ -540,6 +552,15 @@ function ini() {
                 cusRoomDOM.addEventListener("scroll", () => { scrollSnapFunc(); }, { "passive": true });
             }
             let toAdd = [];
+            let downloadPromises = [];
+            for (var i = 0; i < animeEps.length; i++) {
+                let trr = animeEps[i].link;
+                downloadPromises.push(checkIfExists(`/${downloadedIsManga ? "manga/" : ""}${data.mainName}/${btoa(normalise(trr))}/.downloaded`, downloadedList, btoa(normalise(trr))));
+            }
+            // console.log(downloadPromises);
+            // let start = performance.now();
+            const hasBeenDownloaded = await Promise.all(downloadPromises);
+            // alert(performance.now() - start);
             for (var i = 0; i < animeEps.length; i++) {
                 let trr = animeEps[i].link;
                 let tempDiv = document.createElement("div");
@@ -576,10 +597,13 @@ function ini() {
                 let check = false;
                 if (!config.chrome) {
                     try {
-                        await checkIfExists(`/${data.mainName}/${btoa(normalise(trr))}/.downloaded`, downloadedList, btoa(normalise(trr)));
+                        // await checkIfExists(`/${downloadedIsManga ? "manga/" : ""}${data.mainName}/${btoa(normalise(trr))}/.downloaded`, downloadedList, btoa(normalise(trr)));
+                        if (hasBeenDownloaded[i] !== "downloaded") {
+                            throw hasBeenDownloaded[i];
+                        }
                         tempDiv4.className = 'episodesDownloaded';
                         tempDiv4.onclick = function () {
-                            window.parent.removeDirectory(`/${data.mainName}/${btoa(normalise(trr))}/`).then(function () {
+                            window.parent.removeDirectory(`/${downloadedIsManga ? "manga/" : ""}${data.mainName}/${btoa(normalise(trr))}/`).then(function () {
                                 if (downloaded) {
                                     tempDiv.remove();
                                 }
@@ -615,7 +639,7 @@ function ini() {
                     window.parent.postMessage({ "action": 4, "data": trr }, "*");
                 };
                 if (check || !downloaded || config.chrome) {
-                    if (!downloaded && data.disableThumbnail !== true) {
+                    if (!downloaded && data.isManga !== true) {
                         tempDiv.style.flexDirection = "column";
                         tempDiv2.remove();
                         let tempDiv2Con = createElement({
@@ -708,8 +732,11 @@ function ini() {
                     else {
                         if (downloaded) {
                             let localQuery = encodeURIComponent(`/${data.mainName}/${btoa(normalise(trr))}`);
+                            console.log(data);
                             tempDiv2.onclick = function () {
-                                window.parent.postMessage({ "action": 4, "data": `?watch=${localQuery}` }, "*");
+                                localStorage.setItem("mainName", data.mainName);
+                                localStorage.setItem("epURL", location.search);
+                                window.parent.postMessage({ "action": 4, "data": `?watch=${localQuery}&isManga=${downloadedIsManga}` }, "*");
                             };
                         }
                         tempDiv.append(tempDiv2);
@@ -761,12 +788,12 @@ function ini() {
                     tempDiv2.onclick = function () {
                         localStorage.setItem("mainName", data.mainName);
                         localStorage.setItem("epURL", location.search);
-                        window.parent.postMessage({ "action": 4, "data": `?watch=${localQuery}` }, "*");
+                        window.parent.postMessage({ "action": 4, "data": `?watch=${localQuery}&isManga=${downloadedIsManga}` }, "*");
                     };
                     let tempDiv4 = document.createElement("div");
                     tempDiv4.className = 'episodesDownloaded';
                     tempDiv4.onclick = function () {
-                        window.parent.removeDirectory(`/${data.mainName}/${thisLink}`).then(function () {
+                        window.parent.removeDirectory(`/${downloadedIsManga ? "manga/" : ""}${data.mainName}/${thisLink}`).then(function () {
                             tempDiv.remove();
                         }).catch(function () {
                             alert("Error deleting the files");
@@ -891,7 +918,7 @@ function ini() {
             });
         }
         if (localStorage.getItem("offline") === 'true') {
-            window.parent.makeLocalRequest("GET", `/${main_url.split("&downloaded")[0]}/info.json`).then(function (data) {
+            window.parent.makeLocalRequest("GET", `/${downloadedIsManga ? "manga/" : ""}${normalise(main_url.split("&downloaded")[0])}/info.json`).then(function (data) {
                 let temp = JSON.parse(data);
                 temp.data.episodes = temp.episodes;
                 processEpisodeData(temp.data, true, main_url);
@@ -902,6 +929,9 @@ function ini() {
         }
         else {
             currentEngine.getAnimeInfo(main_url).then(function (data) {
+                if (data.isManga === true) {
+                    downloadedIsManga = true;
+                }
                 processEpisodeData(data, false, main_url);
             }).catch(function (err) {
                 const epCon = document.getElementById("epListCon");
@@ -931,6 +961,9 @@ playIcon.onclick = function () {
     }
 };
 addToLibrary.onclick = function () {
+    if (localStorage.getItem("offline") === 'true') {
+        return;
+    }
     if (showMainName) {
         addToLibrary.classList.add("isWaiting");
         if (addToLibrary.classList.contains("notInLib")) {
@@ -1022,3 +1055,9 @@ document.getElementById("recommendations").onclick = function () {
 };
 document.getElementById("back").onclick = goBack;
 applyTheme();
+if (config.local || localStorage.getItem("offline") === 'true') {
+    ini();
+}
+else {
+    window.parent.postMessage({ "action": 20 }, "*");
+}

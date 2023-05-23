@@ -82,12 +82,24 @@ function addState(id: string) {
 }
 
 async function populateDownloadedArray() {
+    downloadedFolders = {};
+
     try {
-        downloadedFolders = {};
         let temp = await (<cordovaWindow>window.parent).listDir("");
         for (let i = 0; i < temp.length; i++) {
             if (temp[i].isDirectory) {
                 downloadedFolders[temp[i].name] = true;
+            }
+        }
+    } catch (err) {
+
+    }
+
+    try {
+        let temp = await (<cordovaWindow>window.parent).listDir("manga");
+        for (let i = 0; i < temp.length; i++) {
+            if (temp[i].isDirectory) {
+                downloadedFolders[temp[i].name] = "manga";
             }
         }
     } catch (err) {
@@ -1567,15 +1579,9 @@ if (true) {
 
         },
 
-        delete_card: (x, domelem) => {
-
-
-
+        delete_card: (x, domelem, isManga = false) => {
             if (confirm("Are you sure you want to delete this show from your watched list?")) {
-                (<cordovaWindow>window.parent).apiCall("POST", { "username": username, "action": 6, "name": x }, delete_card_callback, [domelem]);
-
-
-
+                (<cordovaWindow>window.parent).apiCall("POST", { "username": username, "action": 6, "name": x, isManga }, delete_card_callback, [domelem]);
             }
 
         },
@@ -1924,10 +1930,6 @@ if (true) {
                                 "class": "s_card_delete", "attributes": {
                                     "data-showname": data[i][0]
 
-                                }, "listeners": {
-                                    "click": function () {
-                                        ini_api.delete_card(this.getAttribute("data-showname"), this);
-                                    }
                                 }
                             },
                             {
@@ -1955,10 +1957,18 @@ if (true) {
                                     },
                                     {
                                         "class": "card_menu_item card_menu_icon_delete", "attributes": {
-                                            "data-showname": data[i][0]
+                                            "data-showname": data[i][0],
+                                            "data-href": data[i][5]
                                         }, "listeners": {
                                             "click": function () {
-                                                ini_api.delete_card(this.getAttribute("data-showname"), this);
+                                                let isManga = false;
+                                                try{
+                                                    isManga = new URLSearchParams(this.getAttribute("data-href")).get("isManga") === "true"
+                                                }catch(err){
+
+                                                }
+
+                                                ini_api.delete_card(this.getAttribute("data-showname"), this, isManga);
                                             }
                                         }
                                     },
@@ -2038,9 +2048,11 @@ if (true) {
 
         if (offlineMode) {
             for (const showname in downloadedFolders) {
-                if (showname == "socialsharing-downloads") {
+                if (showname == "socialsharing-downloads" || showname == "manga") {
                     continue;
                 }
+
+                const isManga = downloadedFolders[showname] === "manga";
 
                 const domToAppend = document.getElementById('room_recently');
                 domToAppend.setAttribute("data-empty", "false");
@@ -2067,7 +2079,7 @@ if (true) {
                                     },
                                     "listeners": {
                                         "click": function () {
-                                            window.parent.postMessage({ "action": 500, data: "pages/episode/index.html" + (this as HTMLElement).getAttribute("data-href") }, "*");
+                                            window.parent.postMessage({ "action": 500, data: `pages/episode/index.html${(this as HTMLElement).getAttribute("data-href")}${isManga ? "&isManga=true" : ""}` }, "*");
                                         }
                                     }
                                 }
@@ -2084,7 +2096,7 @@ if (true) {
                                         "click": async function () {
                                             try {
                                                 if (confirm("Are you sure you want to delete this show?")) {
-                                                    await (<cordovaWindow>window.parent).removeDirectory(`${showname}`);
+                                                    await (<cordovaWindow>window.parent).removeDirectory(`${isManga ? "manga/" : ""}${showname}`);
                                                     cardImage.remove();
                                                 }
                                             } catch (err) {

@@ -13,7 +13,7 @@ var mangaFire = {
             for (const mangaCard of searchDOM.querySelectorAll(".item")) {
                 const nameDOM = (_a = mangaCard.querySelector(".name")) === null || _a === void 0 ? void 0 : _a.querySelector("a");
                 results.data.push({
-                    link: (nameDOM === null || nameDOM === void 0 ? void 0 : nameDOM.getAttribute("href")) + "&engine=9",
+                    link: (nameDOM === null || nameDOM === void 0 ? void 0 : nameDOM.getAttribute("href").replace("manga/", "mangafire-")) + "&engine=9",
                     name: nameDOM === null || nameDOM === void 0 ? void 0 : nameDOM.getAttribute("title"),
                     image: (_b = mangaCard === null || mangaCard === void 0 ? void 0 : mangaCard.querySelector("img")) === null || _b === void 0 ? void 0 : _b.getAttribute("src")
                 });
@@ -37,10 +37,10 @@ var mangaFire = {
             "description": "",
             "episodes": [],
             "mainName": "",
-            "disableThumbnail": true,
+            "isManga": true,
         };
         try {
-            const infoHTML = await MakeFetch(`${this.baseURL}/${id}`);
+            const infoHTML = await MakeFetch(`${this.baseURL}/${id.replace("mangafire-", "manga/")}`);
             infoDOM.innerHTML = DOMPurify.sanitize(infoHTML);
             response.name = ((_a = infoDOM === null || infoDOM === void 0 ? void 0 : infoDOM.querySelector(".info")) === null || _a === void 0 ? void 0 : _a.querySelector(".name")).innerText;
             response.image = (_c = (_b = infoDOM.querySelector(".poster")) === null || _b === void 0 ? void 0 : _b.querySelector("img")) === null || _c === void 0 ? void 0 : _c.getAttribute("src");
@@ -110,7 +110,7 @@ var mangaFire = {
                 name: name,
                 chapter: 0,
                 title: "",
-                altTruncatedTitle: ""
+                type: "manga"
             };
             chapterListDOM.innerHTML = DOMPurify.sanitize(chapterListHTML);
             const chapterList = (_a = chapterListDOM.querySelector(".numberlist[data-lang=\"en\"]")) === null || _a === void 0 ? void 0 : _a.querySelectorAll("a");
@@ -122,6 +122,7 @@ var mangaFire = {
                 linkSplit.shift();
                 if (chapterId === "/read/" + linkSplit.join("/read/")) {
                     currentIndex = i;
+                    response.chapter = parseFloat(anchorTag.getAttribute("data-number"));
                     chapterMainID = anchorTag.getAttribute("data-id");
                 }
             }
@@ -155,7 +156,7 @@ var mangaFire = {
     },
     fixTitle(title) {
         try {
-            const titleTemp = title.replace("manga/", "").split(".");
+            const titleTemp = title.replace("mangafire-", "").split(".");
             titleTemp.pop();
             title = titleTemp.join(".");
         }
@@ -167,12 +168,12 @@ var mangaFire = {
         }
     },
     getMetaData: async function (search) {
-        const id = search.get("watch").replace("manga/", "");
+        const id = search.get("watch").replace("mangafire-", "");
         return await getAnilistInfo("MangaFire", id, "MANGA");
     },
     rawURLtoInfo: function (url) {
         // https://mangafire.to/manga/dr-stone.qkm13/
-        let path = url.pathname;
+        let path = url.pathname.replace("manga/", "mangafire-");
         if (path[path.length - 1] === "/") {
             path = path.substring(0, path.length - 1);
         }

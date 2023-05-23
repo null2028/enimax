@@ -108,6 +108,11 @@ interface videoData {
     engine?: number
 }
 
+interface mangaData extends extensionMangaSource{
+    engine: number,
+    ogURL: string,
+}
+
 interface videoDoubleTapEvent extends CustomEvent {
     detail: {
         DTType: string
@@ -128,7 +133,8 @@ interface videoChangedFillModeEvent extends CustomEvent {
 
 interface cordovaWindow extends Window {
     cordova: any,
-    makeLocalRequest(method: string, url: string): Promise<string>,
+    makeLocalRequest: Function,
+    normalise: Function,
     apiCall: Function,
     returnExtensionList: Function,
     XMLHttpRequest: any,
@@ -234,7 +240,7 @@ interface extensionInfo {
     totalPages?: number
     pageInfo?: Array<PageInfo>
     genres?: Array<string>
-    disableThumbnail?: boolean
+    isManga?: boolean
 }
 
 interface infoError extends Error {
@@ -324,7 +330,7 @@ interface flaggedShows {
 interface queueElement {
     data: string,
     anime: extensionInfo,
-    downloadInstance?: DownloadVid,
+    downloadInstance?: DownloadVid | DownloadManga,
     mainUrl: string,
     title: string,
     errored?: boolean,

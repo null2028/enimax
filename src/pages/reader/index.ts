@@ -11,10 +11,10 @@ const mainCon = document.getElementById("con_11");
 let params: URLSearchParams;
 let totalPages = 0;
 let pagesDOM: HTMLElement[] = [];
-let pagesURL: any = [];
+let pagesURL: MangaPage[] = [];
 let panZooms: any = [];
 let pagesDescrambled = {};
-let currentMangaData = undefined;
+let currentMangaData: extensionMangaSource = undefined;
 let dirty = false;
 let menuOpen = false;
 let menuTimeout;
@@ -22,6 +22,9 @@ let lastErrorClick = 0;
 let reversed = true;
 let touchStart = 0;
 let mangaEngine;
+let rootDir: string;
+let readerDownloaded = localStorage.getItem("offline") === 'true';
+let loadLocally = false;
 // @ts-ignore
 let hasLoadedEpList = false;
 function loadNext() {
@@ -66,28 +69,53 @@ function handleMenu() {
     menuOpen = !menuOpen;
 }
 
-function loadPage(elem: HTMLImageElement, index: number) {
-    console.log(index);
+async function loadPage(elem: HTMLImageElement, index: number) {
     const i = index;
 
-    if (pagesURL[i].needsDescrambling) {
-        if (i in pagesDescrambled) {
-            elem.src = pagesDescrambled[i];
-        } else {
-            extensionListReader[mangaEngine].descramble(pagesURL[i].img, pagesURL[i].key).then((url: string) => {
-                pagesDescrambled[i] = url;
-                elem.src = url;
-            }).catch(() => {
-                elem.onerror(new Event("error"));
-            });
+    try {
+        if (readerDownloaded || loadLocally) {
+            const image = await parentWindow.makeLocalRequest("GET", `/manga/${rootDir}/${index}.jpg`, "blob");
+            pagesURL[i].img = URL.createObjectURL(image);
         }
-    } else {
-        elem.src = pagesURL[i].img;
+
+        if (pagesURL[i].needsDescrambling) {
+            if (i in pagesDescrambled) {
+                elem.src = pagesDescrambled[i];
+            } else {
+                extensionListReader[mangaEngine].descramble(pagesURL[i].img, pagesURL[i].key).then((url: string) => {
+                    pagesDescrambled[i] = url;
+                    elem.src = url;
+                }).catch(() => {
+                    elem.onerror(new Event("error"));
+                });
+            }
+        } else {
+            elem.src = pagesURL[i].img;
+        }
+    } catch (err) {
+        elem.onerror(new Event("error"));
     }
 }
 
-function setSliderValue(num: number){
+function setSliderValue(num: number) {
     slider.value = normalizePage(num).toString();
+}
+
+// @ts-ignore
+function checkIfExists(localURL: string): Promise<string> {
+    return (new Promise(function (resolve, reject) {
+        let timeout = setTimeout(function () {
+            reject(new Error("timeout"));
+        }, 1000);
+
+        (<cordovaWindow>window.parent).makeLocalRequest("GET", `${localURL}`).then(function () {
+            clearTimeout(timeout);
+            resolve("yes");
+        }).catch(function (err: Error) {
+            clearTimeout(timeout);
+            reject(err);
+        });
+    }));
 }
 
 async function ini() {
@@ -108,9 +136,58 @@ async function ini() {
 
     mangaEngine = params.get("engine");
 
-    currentMangaData = await extensionListReader[mangaEngine].getLinkFromUrl(params.get("watch"));
+    loadLocally = false;
 
-    if (hasLoadedEpList === false) {
+    if (readerDownloaded) {
+        rootDir = decodeURIComponent(location.search.replace("?watch=", "").split("&")[0]);
+
+        // Getting the meta data
+        currentMangaData = JSON.parse(await parentWindow.makeLocalRequest("GET", `/manga/${rootDir}/viddata.json`)).data;
+        for (let i = 0; i < currentMangaData.pages.length; i++) {
+            const page = currentMangaData.pages[i];
+            page.img = `${i}.jpg`;
+        }
+
+        try {
+            currentMangaData.next = "?watch=" + encodeURIComponent(`/${rootDir.split("/")[1]}/${btoa(parentWindow.normalise(currentMangaData.next))}`) + "&isManga=true";
+            currentMangaData.prev = "?watch=" + encodeURIComponent(`/${rootDir.split("/")[1]}/${btoa(parentWindow.normalise(currentMangaData.prev))}`) + "&isManga=true";
+        } catch (err) {
+            console.warn(err);
+        }
+
+        mangaEngine = (currentMangaData as mangaData).engine;
+    } else {
+        currentMangaData = await extensionListReader[mangaEngine].getLinkFromUrl(params.get("watch"));
+    }
+
+
+    const mainName = localStorage.getItem("mainName");
+    const rootDirCheck = `${mainName}/${btoa(parentWindow.normalise(location.search))}`;
+    const localURL = `/manga/${rootDirCheck}/.downloaded`;
+
+    if (!readerDownloaded) {
+        try {
+            await checkIfExists(localURL);
+            rootDir = rootDirCheck;
+            let res: boolean;
+            if (localStorage.getItem("alwaysDown") === "true") {
+                res = true;
+            } else {
+                res = confirm("Want to open the downloaded version?");
+            }
+            if (res) {
+                let vidString = (await (<cordovaWindow>window.parent).makeLocalRequest("GET", `/manga/${rootDirCheck}/viddata.json`));
+                let viddata: mangaData = JSON.parse(vidString).data;
+
+                currentMangaData.pages = viddata.pages;
+                loadLocally = true;
+            }
+        } catch (err) {
+            console.error(err);
+        }
+    }
+
+    if (hasLoadedEpList === false && !readerDownloaded) {
         hasLoadedEpList = true;
         extensionListReader[mangaEngine].getAnimeInfo(localStorage.getItem("epURL").replace("?watch=/", "")).then((data: extensionInfo) => {
             const episodes = data.episodes;
@@ -157,7 +234,7 @@ async function ini() {
     }
 
     document.getElementById("name").textContent = currentMangaData.name;
-    document.getElementById("chapterNum").textContent = `Chapter ${params.get("chap")} ${currentMangaData.title ? ` - ${currentMangaData.title}` : ""}`;
+    document.getElementById("chapterNum").textContent = `Chapter ${currentMangaData.chapter} ${currentMangaData.title ? ` - ${currentMangaData.title}` : ""}`;
 
     const pages = currentMangaData.pages;
     totalPages = pages.length;
@@ -230,7 +307,7 @@ async function ini() {
             "action": 2,
             "name": localStorage.mainName,
             "nameUm": localStorage.mainName,
-            "ep": params.get("chap"),
+            "ep": currentMangaData.chapter,
             "cur": location.search
         }, () => { });
 
@@ -241,7 +318,7 @@ async function ini() {
             "action": 2,
             "name": localStorage.mainName,
             "nameUm": localStorage.mainName,
-            "ep": params.get("chap"),
+            "ep": currentMangaData.chapter,
             "duration": totalPages,
             "cur": location.search
         }, () => { });
@@ -262,6 +339,10 @@ async function ini() {
         }
 
         let index = Math.round(unRoundedIndex);
+
+        if(isNaN(index)){
+            return;
+        }
 
         if (reversed) {
             index--;
@@ -285,7 +366,7 @@ async function ini() {
                 "username": "",
                 "action": 1,
                 "time": index,
-                "ep": params.get("chap"),
+                "ep": currentMangaData.chapter,
                 "name": localStorage.mainName,
                 "nameUm": localStorage.mainName,
                 "prog": totalPages
@@ -486,7 +567,7 @@ document.getElementById("name").addEventListener("click", function () {
     openSettingsSemi(-1);
 });
 
-if(reversed){
+if (reversed) {
     slider.classList.add("reversed");
 }
 
