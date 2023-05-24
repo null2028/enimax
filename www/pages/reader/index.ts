@@ -499,9 +499,9 @@ async function ini() {
             scrollLastIndex = index;
         };
 
-        // container.onscroll = function () {
-        //     scrollSnapFunc(true)
-        // };
+        container.onscroll = function () {
+            scrollSnapFunc(true)
+        };
 
 
         paddingDOM.push(createElement({
@@ -571,9 +571,9 @@ async function ini() {
             setSliderValue(currentPage);
         }
 
-        // pagesDOM[currentPage]?.scrollIntoView({});
+        pagesDOM[currentPage]?.scrollIntoView({});
         updateChapterListSelected();
-        // scrollSnapFunc(false, currentPage);
+        scrollSnapFunc(false, currentPage);
 
         mainLoading.style.display = "none";
     } catch (err) {

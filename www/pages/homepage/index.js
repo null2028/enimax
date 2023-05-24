@@ -1337,7 +1337,7 @@ if (true) {
             for (let promise of promiseResult) {
                 try {
                     if (promise === null) {
-                        sendNoti([0, "red", "Error", `Could not update ${fix_title(promiseShowData[count].name)}`]);
+                        sendNoti([5, "red", "Error", `Could not update ${fix_title(promiseShowData[count].name)}`]);
                         promiseShowData[count].dom.style.boxSizing = "border-box";
                         promiseShowData[count].dom.style.border = "3px solid grey";
                     }

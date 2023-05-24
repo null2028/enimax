@@ -134,6 +134,7 @@ function checkIfExists(localURL) {
     }));
 }
 async function ini() {
+    var _a;
     try {
         mainLoading.style.display = "flex";
         container.onscroll = () => { };
@@ -435,9 +436,9 @@ async function ini() {
             }
             scrollLastIndex = index;
         };
-        // container.onscroll = function () {
-        //     scrollSnapFunc(true)
-        // };
+        container.onscroll = function () {
+            scrollSnapFunc(true);
+        };
         paddingDOM.push(createElement({
             class: "pageCon snappedCategoriesDataMain nextPrevPage",
             attributes: {
@@ -500,9 +501,9 @@ async function ini() {
         else {
             setSliderValue(currentPage);
         }
-        // pagesDOM[currentPage]?.scrollIntoView({});
+        (_a = pagesDOM[currentPage]) === null || _a === void 0 ? void 0 : _a.scrollIntoView({});
         updateChapterListSelected();
-        // scrollSnapFunc(false, currentPage);
+        scrollSnapFunc(false, currentPage);
         mainLoading.style.display = "none";
     }
     catch (err) {
