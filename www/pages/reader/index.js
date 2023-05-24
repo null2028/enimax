@@ -134,7 +134,6 @@ function checkIfExists(localURL) {
     }));
 }
 async function ini() {
-    var _a;
     try {
         mainLoading.style.display = "flex";
         container.onscroll = () => { };
@@ -259,6 +258,9 @@ async function ini() {
             const imageDOM = createElement({
                 element: "img",
                 class: "page",
+                attributes: {
+                    src: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3C/svg%3E"
+                }
             });
             pagesURL.push(page);
             pagesDOM.push(pageDOM);
@@ -433,9 +435,9 @@ async function ini() {
             }
             scrollLastIndex = index;
         };
-        container.onscroll = function () {
-            // scrollSnapFunc(true)
-        };
+        // container.onscroll = function () {
+        //     scrollSnapFunc(true)
+        // };
         paddingDOM.push(createElement({
             class: "pageCon snappedCategoriesDataMain nextPrevPage",
             attributes: {
@@ -498,7 +500,7 @@ async function ini() {
         else {
             setSliderValue(currentPage);
         }
-        (_a = pagesDOM[currentPage]) === null || _a === void 0 ? void 0 : _a.scrollIntoView({});
+        // pagesDOM[currentPage]?.scrollIntoView({});
         updateChapterListSelected();
         // scrollSnapFunc(false, currentPage);
         mainLoading.style.display = "none";

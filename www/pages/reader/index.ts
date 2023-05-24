@@ -291,6 +291,9 @@ async function ini() {
             const imageDOM = createElement({
                 element: "img",
                 class: "page",
+                attributes: {
+                    src: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3C/svg%3E"
+                }
             });
 
             pagesURL.push(page);
@@ -496,9 +499,9 @@ async function ini() {
             scrollLastIndex = index;
         };
 
-        container.onscroll = function () {
-            // scrollSnapFunc(true)
-        };
+        // container.onscroll = function () {
+        //     scrollSnapFunc(true)
+        // };
 
 
         paddingDOM.push(createElement({
@@ -568,7 +571,7 @@ async function ini() {
             setSliderValue(currentPage);
         }
 
-        pagesDOM[currentPage]?.scrollIntoView({});
+        // pagesDOM[currentPage]?.scrollIntoView({});
         updateChapterListSelected();
         // scrollSnapFunc(false, currentPage);
 
