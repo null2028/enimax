@@ -76,7 +76,6 @@ var mangaFire: extension = {
 
     descramble: function (imageURL: string, key: number) {
         return new Promise(async function (resolve, reject) {
-            const s = key;
             // const image = await loadImage(imageURL);
             const worker = new Worker("./extensions/mangafireDecrambler.js");
             // const bitmap = await createImageBitmap(image);
@@ -100,6 +99,8 @@ var mangaFire: extension = {
                         clearTimeout(timeout);
                         reject(new Error("Unexpected message"));
                     }
+
+                    worker.terminate();
                 };
 
                 worker.onerror = (err) => {
@@ -113,8 +114,6 @@ var mangaFire: extension = {
                 console.error(err);
                 clearTimeout(timeout);
                 reject(err);
-            } finally {
-                worker.terminate();
             }
         });
     },
@@ -122,8 +121,8 @@ var mangaFire: extension = {
 
         const chapterId = (new URLSearchParams("?watch=" + url)).get("watch");
         const chapterSplit = chapterId.split(".");
-        const identifier = chapterSplit.pop().split("/")[0];
-        const name = fix_title(chapterSplit.join(".").replace("/read/", ""));
+        const identifier = chapterSplit[1].split("/")[0];
+        const name = fix_title(chapterSplit[0].replace("/read/", ""));
 
         const chapterListDOM = document.createElement("div");
 

@@ -229,7 +229,11 @@ function constructErrorPage(errorCon: HTMLElement, message: string, config: Erro
         container.className = config.customConClass;
     }
     const errorMessage = createElement({});
-    const icons = createElement({});
+    const icons = createElement({
+        style: {
+            "max-width": "100%"
+        }
+    });
     const emojiVar = config.positive === true ? unicodeMojisPos : unicodeMojis;
     container.append(errorMessage);
     container.append(icons);
@@ -252,7 +256,7 @@ function constructErrorPage(errorCon: HTMLElement, message: string, config: Erro
         icons.append(createElement({
             "class": "icon reload",
             listeners: {
-                click: function(event){
+                click: function (event) {
                     reloadFunc(event);
                 },
             }
@@ -276,6 +280,8 @@ function constructErrorPage(errorCon: HTMLElement, message: string, config: Erro
     }));
 
     errorCon.append(container);
+
+    return container;
 }
 
 
@@ -395,10 +401,10 @@ function makeCard(config: RelationCardConfig) {
 async function fetchMapping(id: string, type: string | null) {
     const noti = sendNoti([0, "", "Alert", "Fetching the mappings..."]);
     const sourcesToCheck = ["Zoro", "9anime", "Gogoanime", "Mangadex", "MangaFire"];
-    
-    if(type){
+
+    if (type) {
         type = (type === "MANGA" ? "manga" : "anime");
-    }else{
+    } else {
         type = "anime";
     }
 

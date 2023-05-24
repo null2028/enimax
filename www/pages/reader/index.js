@@ -1,3 +1,4 @@
+var _a, _b;
 const parentWindow = window.parent;
 const extensionListReader = parentWindow.returnExtensionList();
 const container = document.getElementById("chapterCon");
@@ -9,6 +10,13 @@ const slider = document.getElementById("sliderInput");
 const mainCon = document.getElementById("con_11");
 const currentPageDOM = document.getElementById("currentPage");
 const totalPageDOM = document.getElementById("totalPage");
+const settingCon = document.querySelector(".menuCon");
+const mainLoading = document.getElementById("mainLoading");
+const pageNumDOM = document.getElementById("pageNum");
+const modes = {
+    NORMAL: 0,
+    REVERSED: 1
+};
 let params;
 let totalPages = 0;
 let pagesDOM = [];
@@ -21,7 +29,7 @@ let dirty = false;
 let menuOpen = false;
 let menuTimeout;
 let lastErrorClick = 0;
-let reversed = true;
+let reversed = localStorage.getItem("manga-reversed") === "true";
 let webcomic = false;
 let touchStart = 0;
 let mangaEngine;
@@ -30,12 +38,18 @@ let readerDownloaded = localStorage.getItem("offline") === 'true';
 let loadLocally = false;
 let pagePadding = { left: 2 };
 // @ts-ignore
+let scrollSnapFunc;
+// @ts-ignore
 let hasLoadedEpList = false;
 function loadNext() {
     if (currentMangaData.next) {
         history.replaceState({ page: 1 }, "", currentMangaData.next);
         ini();
     }
+}
+function updateChapterListSelected() {
+    var _a;
+    (_a = mangaMenu === null || mangaMenu === void 0 ? void 0 : mangaMenu.selections[location.search]) === null || _a === void 0 ? void 0 : _a.select();
 }
 function loadPrev() {
     if (currentMangaData.prev) {
@@ -60,6 +74,7 @@ function handleMenu() {
         }, 3000);
     }
     else {
+        closeSettings();
         topNav.classList.replace("open", "close");
         bottomNav.classList.replace("open", "close");
         spotlight.style.display = "none";
@@ -119,8 +134,9 @@ function checkIfExists(localURL) {
     }));
 }
 async function ini() {
-    var _a, _b;
+    var _a;
     try {
+        mainLoading.style.display = "flex";
         container.onscroll = () => { };
         dirty = true;
         params = new URLSearchParams(location.search);
@@ -307,7 +323,7 @@ async function ini() {
             "cur": location.search
         }, () => { });
         let scrollLastIndex = -1;
-        const scrollSnapFunc = function (isEvent = false, indexToScrollTo = -1) {
+        scrollSnapFunc = function (isEvent = false, indexToScrollTo = -1) {
             if (isEvent && dirty) {
                 return;
             }
@@ -418,14 +434,19 @@ async function ini() {
             scrollLastIndex = index;
         };
         container.onscroll = function () {
-            scrollSnapFunc(true);
+            // scrollSnapFunc(true)
         };
         paddingDOM.push(createElement({
             class: "pageCon snappedCategoriesDataMain nextPrevPage",
             attributes: {
                 "data-side": "right"
             },
-            innerText: `Next: ${currentMangaData.nextTitle}`
+            innerText: `Next: ${currentMangaData.nextTitle}`,
+            listeners: {
+                click: function () {
+                    handleMenu();
+                }
+            }
         }));
         paddingDOM.push(createElement({
             class: "pageCon snappedCategoriesDataMain",
@@ -434,17 +455,32 @@ async function ini() {
             },
             attributes: {
                 "data-side": "right"
+            },
+            listeners: {
+                click: function () {
+                    handleMenu();
+                }
             }
         }));
         paddingDOM.push(createElement({
             class: "pageCon snappedCategoriesDataMain nextPrevPage",
-            innerText: `Previous: ${currentMangaData.prevTitle}`
+            innerText: `Previous: ${currentMangaData.prevTitle}`,
+            listeners: {
+                click: function () {
+                    handleMenu();
+                }
+            }
         }));
         paddingDOM.push(createElement({
             class: "pageCon snappedCategoriesDataMain",
             style: {
                 backgroundColor: "#000000"
             },
+            listeners: {
+                click: function () {
+                    handleMenu();
+                }
+            }
         }));
         for (const padding of paddingDOM) {
             if (padding.getAttribute("data-side") === "right") {
@@ -463,11 +499,12 @@ async function ini() {
             setSliderValue(currentPage);
         }
         (_a = pagesDOM[currentPage]) === null || _a === void 0 ? void 0 : _a.scrollIntoView({});
-        scrollSnapFunc(false, currentPage);
-        (_b = document.getElementById("mainLoading")) === null || _b === void 0 ? void 0 : _b.remove();
+        updateChapterListSelected();
+        // scrollSnapFunc(false, currentPage);
+        mainLoading.style.display = "none";
     }
     catch (err) {
-        constructErrorPage(container, err === null || err === void 0 ? void 0 : err.toString(), {
+        const errorPage = constructErrorPage(container, err === null || err === void 0 ? void 0 : err.toString(), {
             hasLink: false,
             hasReload: true,
             customConClass: "absolute",
@@ -476,6 +513,7 @@ async function ini() {
                 window.location.reload();
             }
         });
+        errorPage.addEventListener("click", handleMenu);
     }
 }
 function openPage(num) {
@@ -483,32 +521,37 @@ function openPage(num) {
     (_a = pagesDOM[num]) === null || _a === void 0 ? void 0 : _a.scrollIntoView();
 }
 function closeSettings() {
-    let settingCon = document.querySelector(".menuCon");
-    settingCon.style.transitionDuration = "0.2s";
-    window.requestAnimationFrame(function () {
-        window.requestAnimationFrame(function () {
-            settingCon.style.transform = "translateY(100%)";
-            settingCon.style.opacity = "0";
-            settingCon.style.pointerEvents = "none";
-            setTimeout(function () {
-                settingCon.style.transitionDuration = "0s";
-            }, 200);
-        });
-    });
+    settingCon.style.display = "none";
+    settingCon.setAttribute("data-open", "false");
 }
-function openSettingsSemi(translateY) {
-    let settingCon = document.querySelector(".menuCon");
+function openSettings() {
     settingCon.style.display = "block";
-    settingCon.style.pointerEvents = "auto";
-    settingCon.style.opacity = "1";
-    if (translateY == -1) {
-        settingCon.style.transform = "translateY(0px)";
+    settingCon.setAttribute("data-open", "true");
+}
+function changeMode(mode) {
+    if (mode === modes.NORMAL) {
+        slider.classList.remove("reversed");
+        container.classList.remove("reversed");
+        reversed = false;
+        const realPageNum = -parseInt(slider.value) + totalPages + 2 - 1;
+        setSliderValue(realPageNum + 2);
     }
-    else if (translateY == 0) {
-        settingCon.style.transform = "translateY(100%)";
+    else if (mode === modes.REVERSED) {
+        slider.classList.add("reversed");
+        container.classList.add("reversed");
+        reversed = true;
+        setSliderValue(totalPages - parseInt(slider.value) - 1);
+    }
+    if (scrollSnapFunc) {
+        scrollSnapFunc(true);
+    }
+}
+function togglePageNum(shouldShow) {
+    if (shouldShow) {
+        pageNumDOM.style.display = "block";
     }
     else {
-        settingCon.style.transform = `translateY(calc(100% + ${-translateY + 50}px))`;
+        pageNumDOM.style.display = "none";
     }
 }
 document.getElementById("next").onclick = function () {
@@ -549,38 +592,107 @@ slider.addEventListener("input", function () {
 });
 const mangaMenu = new dropDownMenu([
     {
-        "id": "initial",
-        "heading": {
-            "text": "Settings",
-        },
-        "items": [
-            {
-                "text": "Episodes",
-                "iconID": "episodesIcon",
-                "open": "episodes"
-            },
-        ]
-    },
-    {
         "id": "episodes",
         "selectableScene": true,
         "scrollIntoView": true,
+        "scrollOffset": 0,
         "heading": {
             "text": "Episodes",
         },
         "items": []
     },
+    {
+        "id": "settings",
+        "heading": {
+            "text": "Settings",
+        },
+        "items": [
+            {
+                "toggle": true,
+                "on": localStorage.getItem("manga-reversed") === "true",
+                "toggleOff": () => {
+                    localStorage.setItem("manga-reversed", "false");
+                    changeMode(modes.NORMAL);
+                },
+                "toggleOn": () => {
+                    localStorage.setItem("manga-reversed", "true");
+                    changeMode(modes.REVERSED);
+                },
+                "text": "Read from left to right"
+            },
+            {
+                "toggle": true,
+                "on": localStorage.getItem("manga-pageNum") === "false",
+                "toggleOn": () => {
+                    localStorage.setItem("manga-pageNum", "false");
+                    togglePageNum(false);
+                },
+                "toggleOff": () => {
+                    localStorage.setItem("manga-pageNum", "true");
+                    togglePageNum(true);
+                },
+                "text": "Hide page number"
+            },
+            {
+                "color": true,
+                "value": (_a = localStorage.getItem("manga-background")) !== null && _a !== void 0 ? _a : "#121212",
+                "onInput": function (event) {
+                    container.style.backgroundColor = this.value;
+                    localStorage.setItem("manga-background", this.value);
+                },
+                "text": "Background color",
+                "attributes": {
+                    "style": "display: flex; justify-content: space-between;"
+                }
+            }
+        ]
+    },
 ], document.querySelector(".menuCon"));
+mangaMenu.closeMenu = closeSettings;
 document.getElementById("name").addEventListener("click", function () {
     openSettingsSemi(-1);
 });
+document.querySelector(".bottomNavMenuItem.epListIcon").addEventListener("click", function () {
+    const isOpen = settingCon.getAttribute("data-open") === "true";
+    const isListOpen = settingCon.getAttribute("data-type") === "list";
+    if (!isOpen || !isListOpen) {
+        openSettings();
+        mangaMenu.openMenu();
+        mangaMenu.history = [];
+        mangaMenu.open("episodes");
+        clearTimeout(menuTimeout);
+        settingCon.setAttribute("data-type", "list");
+    }
+    else {
+        closeSettings();
+    }
+});
+document.querySelector(".bottomNavMenuItem.settingsIcon").addEventListener("click", function () {
+    const isOpen = settingCon.getAttribute("data-open") === "true";
+    const isSettingsOpen = settingCon.getAttribute("data-type") === "settings";
+    if (!isOpen || !isSettingsOpen) {
+        openSettings();
+        mangaMenu.openMenu();
+        mangaMenu.history = [];
+        mangaMenu.open("settings");
+        clearTimeout(menuTimeout);
+        settingCon.setAttribute("data-type", "settings");
+    }
+    else {
+        closeSettings();
+    }
+});
+mainLoading === null || mainLoading === void 0 ? void 0 : mainLoading.addEventListener("click", handleMenu);
+document.querySelector(".bottomNavMenuItem.reloadIcon").addEventListener("click", function () {
+    window.location.reload();
+});
 if (reversed) {
-    slider.classList.add("reversed");
+    changeMode(modes.REVERSED);
 }
 if (webcomic) {
     container.classList.replace("snappedCustomRooms", "webcomics");
 }
-let mangeSettingsPullInstance = new settingsPull(document.getElementById("settingHandlePadding"), closeSettings);
-let mangaSettingsPullInstanceTT = new settingsPull(document.querySelector(".menuCon"), closeSettings, true);
-mangaMenu.open("initial");
+container.style.backgroundColor = (_b = localStorage.getItem("manga-background")) !== null && _b !== void 0 ? _b : "#121212";
+togglePageNum(localStorage.getItem("manga-pageNum") !== "false");
+closeSettings();
 ini();

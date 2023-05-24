@@ -75,6 +75,7 @@ interface menuSceneConfig {
     id: string,
     selectableScene?: boolean,
     scrollIntoView?: boolean,
+    scrollOffset? : number,
     heading?: menuItemConfig,
     items: Array<menuItemConfig>,
     element?: HTMLElement

@@ -184,8 +184,9 @@ class dropDownMenu {
                     const shouldScroll = this.scenes[sceneID].data.scrollIntoView;
 
                     if(shouldScroll){
+                        const offset = this.scenes[sceneID].data.scrollOffset;
                         this.scenes[sceneID].element.querySelector(".menuItem.selected")?.scrollIntoView({block: "center"});
-                        this.scenes[sceneID].element.scrollBy(0, -100);
+                        this.scenes[sceneID].element.scrollBy(0, offset ?? -100);
                     }
 
                     this.menuCon.style.height = this.scenes[sceneID].element.querySelector<HTMLElement>(".scene").offsetHeight + "px";
@@ -379,7 +380,7 @@ class dropDownMenu {
             }
 
             inputBox.addEventListener("input", function (event) {
-                if (item.onInput) item.onInput(event);
+                if (item.onInput) item.onInput.bind(inputBox)(event);
             });
 
 

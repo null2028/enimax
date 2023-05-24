@@ -29,7 +29,7 @@ range-slider:before {
     width: 100%;
     height: var(--track-height);
     border-radius: calc(var(--track-height)/2);
-    background: linear-gradient(#6221ea, #6221ea) 0/var(--value-percent, 0) 100% no-repeat #c6afe5
+    background: linear-gradient(#2196F3, #2196F3) 0/var(--value-percent, 0) 100% no-repeat #c6afe5
 }
 
 range-slider.reversed:before {
@@ -38,7 +38,7 @@ range-slider.reversed:before {
     width: 100%;
     height: var(--track-height);
     border-radius: calc(var(--track-height)/2);
-    background: linear-gradient(#c6afe5, #c6afe5) 0/var(--value-percent, 0) 100% no-repeat #6221ea
+    background: linear-gradient(#c6afe5, #c6afe5) 0/var(--value-percent, 0) 100% no-repeat #2196F3;
 }
 
 range-slider:focus .thumb {

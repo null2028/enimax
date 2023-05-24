@@ -67,7 +67,6 @@ var mangaFire = {
     },
     descramble: function (imageURL, key) {
         return new Promise(async function (resolve, reject) {
-            const s = key;
             // const image = await loadImage(imageURL);
             const worker = new Worker("./extensions/mangafireDecrambler.js");
             // const bitmap = await createImageBitmap(image);
@@ -91,6 +90,7 @@ var mangaFire = {
                         clearTimeout(timeout);
                         reject(new Error("Unexpected message"));
                     }
+                    worker.terminate();
                 };
                 worker.onerror = (err) => {
                     clearTimeout(timeout);
@@ -103,17 +103,14 @@ var mangaFire = {
                 clearTimeout(timeout);
                 reject(err);
             }
-            finally {
-                worker.terminate();
-            }
         });
     },
     getLinkFromUrl: async function (url) {
         var _a;
         const chapterId = (new URLSearchParams("?watch=" + url)).get("watch");
         const chapterSplit = chapterId.split(".");
-        const identifier = chapterSplit.pop().split("/")[0];
-        const name = fix_title(chapterSplit.join(".").replace("/read/", ""));
+        const identifier = chapterSplit[1].split("/")[0];
+        const name = fix_title(chapterSplit[0].replace("/read/", ""));
         const chapterListDOM = document.createElement("div");
         try {
             const chapterListHTML = JSON.parse(await MakeFetch(`${this.baseURL}/ajax/read/${identifier}/list?viewby=chapter`)).result.html;

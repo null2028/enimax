@@ -192,7 +192,11 @@ function constructErrorPage(errorCon, message, config) {
         container.className = config.customConClass;
     }
     const errorMessage = createElement({});
-    const icons = createElement({});
+    const icons = createElement({
+        style: {
+            "max-width": "100%"
+        }
+    });
     const emojiVar = config.positive === true ? unicodeMojisPos : unicodeMojis;
     container.append(errorMessage);
     container.append(icons);
@@ -232,6 +236,7 @@ function constructErrorPage(errorCon, message, config) {
         }
     }));
     errorCon.append(container);
+    return container;
 }
 function openWebview(url) {
     if (config.chrome) {
