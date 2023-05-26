@@ -19,7 +19,7 @@ var gogo: extension = {
                 let con = itemsDOM[i];
                 let src = con.querySelector("img").getAttribute("src");
                 let aTag = con.querySelector("a");
-                let animeName = aTag.getAttribute("title");
+                let animeName = (con.querySelector(".name") as HTMLElement)?.innerText?.trim();
                 let animeHref = aTag.getAttribute("href") + "&engine=7";
                 data.push({ "name": animeName, "image": src, "link": animeHref });
             }

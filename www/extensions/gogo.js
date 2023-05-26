@@ -7,6 +7,7 @@ var gogo = {
         CryptoJS.enc.Utf8.parse("3134003223491201")
     ],
     searchApi: async function (query) {
+        var _a, _b;
         let dom = document.createElement("div");
         try {
             let searchHTML = await MakeFetchZoro(`${this.baseURL}/search.html?keyword=${encodeURIComponent(query)}`, {});
@@ -17,7 +18,7 @@ var gogo = {
                 let con = itemsDOM[i];
                 let src = con.querySelector("img").getAttribute("src");
                 let aTag = con.querySelector("a");
-                let animeName = aTag.getAttribute("title");
+                let animeName = (_b = (_a = con.querySelector(".name")) === null || _a === void 0 ? void 0 : _a.innerText) === null || _b === void 0 ? void 0 : _b.trim();
                 let animeHref = aTag.getAttribute("href") + "&engine=7";
                 data.push({ "name": animeName, "image": src, "link": animeHref });
             }
