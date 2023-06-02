@@ -67,6 +67,7 @@ jobs:
       env:
         TOKEN: ${{ secrets.TOKEN }}
         CHANNELID: ${{ secrets.CHANNELID }}
-        BRANCH:  ${{steps.branch-name.outputs.current_branch}}
+        BRANCH:  ${{ steps.branch-name.outputs.current_branch }}
+        MESSAGE: ${{ github.event.head_commit.message }}
 
 
