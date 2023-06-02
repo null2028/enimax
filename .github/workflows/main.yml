@@ -1,0 +1,72 @@
+name: Android Build
+on:
+  push:
+    branches: [ "*" ]
+  workflow_dispatch:
+    inputs:
+      name:
+        description: "World"
+        default: "Hello"
+jobs:
+  build:
+    environment: build
+    runs-on: ubuntu-latest
+    steps:
+    - name: Get branch name
+      id: branch-name
+      uses: tj-actions/branch-names@v7
+
+    - name: Cloing the repo to the host
+      run: git clone https://github.com/enimax-anime/enimax && cd enimax && git checkout $BRANCH && cd ..
+      env: 
+        BRANCH:  ${{steps.branch-name.outputs.current_branch}}
+
+    - name: Saving the key and build.json
+      env:
+        KEY: ${{secrets.KEY}}
+        BUILDJSON: ${{secrets.BUILDJSON}}
+      run: |
+        echo ${{ secrets.KEY }} | base64 -d > key.jks
+        echo ${{ secrets.BUILDJSON }} | base64 -d > build.json
+
+    - name: Downloading the docker image
+      run: docker run  -t -d --name "enimax-build" -d enimaxanime/anime
+    
+    - name: Starting the container
+      run: docker start enimax-build
+
+    - name: Cloning the repo to the container
+      run: docker exec enimax-build sh -c "(rm enimax -rf || echo 'Could not delete the folder') && git clone https://github.com/enimax-anime/enimax && cd enimax && git checkout $BRANCH"
+      env: 
+        BRANCH:  ${{steps.branch-name.outputs.current_branch}}
+
+    - name: Copying the key and build.json
+      run: |
+        docker cp ./build.json enimax-build:/usr/src/enimax/build.json   
+        docker cp ./key.jks enimax-build:/usr/src/key.jks
+
+    - name: Building the app
+      run:  docker exec enimax-build sh -c "cd enimax && make cordova && make build"
+
+    - name: Fetching the built APK
+      run: docker cp enimax-build:/usr/src/enimax/platforms/android/app/build/outputs/apk/release/app-release.apk ./      
+            
+    - name: Upload the APK as an artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: app-release.apk
+        path: ./app-release.apk
+
+    - name: Setting up node
+      uses: actions/setup-node@v3
+      with:
+          node-version: 18
+
+    - name: Uploading the APK to discord
+      run: npm install dotenv discord.js@14.11.0 && node ./enimax/helper/uploader.js
+      env:
+        TOKEN: ${{ secrets.TOKEN }}
+        CHANNELID: ${{ secrets.CHANNELID }}
+        BRANCH:  ${{steps.branch-name.outputs.current_branch}}
+
+
