@@ -368,12 +368,12 @@ async function ini() {
                     setSliderValue(index + 1);
                 }
                 const pageIndex = normalizePage(index - pagePadding.left + 1) - 1;
-                if (index === totalPages + 1 + pagePadding.left) {
+                if (index === totalPages + 1 + pagePadding.left && currentMangaData.next) {
                     dirty = true;
                     container.onscroll = () => { };
                     return loadNext();
                 }
-                else if (index == 0) {
+                else if (index == 0 && currentMangaData.prev) {
                     dirty = true;
                     container.onscroll = () => { };
                     return loadPrev();
