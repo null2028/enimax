@@ -24,7 +24,7 @@ var fmoviesto = {
                 const anchor = currentElem.querySelector(".meta").querySelector("a");
                 response.push({
                     "name": anchor.innerText,
-                    "image": currentElem.querySelector("img").src,
+                    "image": currentElem.querySelector("img").getAttribute("data-src"),
                     "link": "/" + anchor.getAttribute("href").slice(1).replace("/watch/", "") + "&engine=6"
                 });
             }
@@ -295,6 +295,7 @@ var fmoviesto = {
                 }
             }
             let check = false;
+            let sourceID = null;
             for (var i = 0; i < epList.length; i++) {
                 if (check === true) {
                     response.next = epList[i].link;
@@ -302,6 +303,7 @@ var fmoviesto = {
                 }
                 if (epList[i].sourceID == sourceEp) {
                     check = true;
+                    sourceID = epList[i].id;
                     response.title = epList[i].title ? epList[i].title.trim() : "";
                 }
                 if (check === false) {
@@ -314,7 +316,7 @@ var fmoviesto = {
             }
             if (!response.subtitles) {
                 try {
-                    const subURL = `https://fmovies.to/ajax/episode/subtitles/${uid}`;
+                    const subURL = `https://fmovies.to/ajax/episode/subtitles/${sourceID}`;
                     response.subtitles = JSON.parse(await MakeFetchZoro(subURL));
                 }
                 catch (err) {
