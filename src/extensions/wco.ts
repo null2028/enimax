@@ -106,9 +106,24 @@ var wco: extension = {
 
 
                     data.pageInfo[data.totalPages - 1].pageSize++;
+
+                    const title = animeDOM[i].innerText;
+                    const episodeNumTemp = title?.toLowerCase().split("episode");
+                    let epNum = 1;
+
+                    try {
+                        if (episodeNumTemp && episodeNumTemp.length >= 2) {
+                            epNum = parseFloat(episodeNumTemp[1]);
+                        }
+                    } catch (err) {
+                        console.warn(err);
+                    }
+
                     animeEps.push({
                         "link": animeDOM[i].href.replace(baseURL, "?watch=") + "&engine=0",
-                        "title": animeDOM[i].innerText,
+                        "title": title,
+                        "altTitle": `Season ${season} Episode ${epNum}`,
+                        "altTruncatedTitle": `S${season} E${epNum}`
                     });
                 }
 

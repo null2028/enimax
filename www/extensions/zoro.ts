@@ -26,7 +26,80 @@ var zoro: extension = {
             removeDOM(dom);
         }
     },
-    getAnimeInfo: async function (url, idToFind = null): Promise<extensionInfo> {
+    getAnimeInfo: async function (url): Promise<extensionInfo> {
+        const settled = "allSettled" in Promise;
+        const id = (new URLSearchParams(`?watch=${url}`)).get("watch").split("-").pop();
+
+        let response: extensionInfo = {
+            "name": "",
+            "image": "",
+            "description": "",
+            "episodes": [],
+            "mainName": ""
+        };
+
+        try {
+            if (settled) {
+                let anilistID: number;
+
+                try {
+                    anilistID = JSON.parse(await MakeFetch(`https://raw.githubusercontent.com/MALSync/MAL-Sync-Backup/master/data/pages/Zoro/${id}.json`)).aniId;
+                } catch (err) {
+                    // anilistID will be undefined
+                }
+
+                if (anilistID) {
+                    const promises = [
+                        this.getAnimeInfoInter(url),
+                        MakeFetchTimeout(`https://api.enime.moe/mapping/anilist/${anilistID}`, {}, 2000)
+                    ];
+
+                    const promiseResponses = await Promise.allSettled(promises);
+                    if (promiseResponses[0].status === "fulfilled") {
+
+                        response = promiseResponses[0].value;
+
+                        if (promiseResponses[1].status === "fulfilled") {
+                            try {
+                                const metaData = JSON.parse(promiseResponses[1].value).episodes;
+                                const metaDataMap = {};
+                                for (let i = 0; i < metaData.length; i++) {
+                                    metaDataMap[metaData[i].number] = metaData[i];
+                                }
+
+                                for (let i = 0; i < response.episodes.length; i++) {
+                                    const currentEp = metaDataMap[response.episodes[i].id];
+                                    const currentResponseEp = response.episodes[i];
+
+                                    currentResponseEp.description = currentEp?.description;
+                                    currentResponseEp.thumbnail = currentEp?.image;
+                                    currentResponseEp.date = new Date(currentEp?.airedAt);
+                                    currentResponseEp.title += ` - ${currentEp?.title}`;
+                                }
+                            } catch (err) {
+                                console.error(err);
+                            }
+                        }
+
+                        return response;
+
+                    } else {
+                        throw promiseResponses[0].reason;
+                    }
+                } else {
+                    return await this.getAnimeInfoInter(url);
+                }
+
+            } else {
+                return await this.getAnimeInfoInter(url);
+            }
+        } catch (err) {
+            console.error(err);
+            throw err;
+        }
+
+    },
+    getAnimeInfoInter: async function (url: string): Promise<extensionInfo> {
         url = url.split("&engine")[0];
 
         const rawURL = `https://zoro.to/${url}`;
@@ -36,7 +109,6 @@ var zoro: extension = {
         try {
             let idSplit = url.replace("?watch=/", "").split("-");
             let id = idSplit[idSplit.length - 1].split("?")[0];
-
             let response: extensionInfo = {
                 "name": "",
                 "image": "",
@@ -47,25 +119,12 @@ var zoro: extension = {
 
 
             let animeHTML = await MakeFetchZoro(`https://zoro.to/${url}`, {});
-            let malID = null;
-            let settled = "allSettled" in Promise;
-            try {
-                let tempID = parseInt(animeHTML.split(`"mal_id":"`)[1]);
-                if (!isNaN(tempID)) {
-                    malID = tempID;
-                }
-            } catch (err) {
-
-            }
-
-
             animeDOM.innerHTML = DOMPurify.sanitize(animeHTML);
 
-            let name = url;
-            let nameSplit = name.replace("?watch=", "").split("&ep=")[0].split("-");
+            let name = (new URLSearchParams(`?watch=${url}`)).get("watch");
+            const nameSplit = name.split("-");
             nameSplit.pop();
             name = nameSplit.join("-");
-
 
             response.mainName = name;
             response.name = (animeDOM.querySelector(".film-name.dynamic-name") as HTMLElement).innerText;
@@ -79,57 +138,11 @@ var zoro: extension = {
                     response.genres.push(genreAnchor.innerText);
                 }
             } catch (err) {
-                console.log(err);
+                console.error(err);
             }
 
-            let thumbnails = {};
-            let promises = [];
-            let episodeHTML;
-            let check = false;
-            if (malID !== null) {
-                try {
-
-                    let thumbnailsTemp = [];
-
-                    if (settled) {
-                        promises.push(MakeFetchTimeout(`https://api.enime.moe/mapping/mal/${malID}`, {}, 2000));
-                        promises.push(MakeFetchZoro(`https://zoro.to/ajax/v2/episode/list/${id}`, {}));
-
-                        let responses = await Promise.allSettled(promises);
-
-                        try {
-                            if (responses[0].status === "fulfilled") {
-                                thumbnailsTemp = JSON.parse(responses[0].value).episodes;
-                            }
-                        } catch (err) {
-
-                        }
-
-                        if (responses[1].status === "fulfilled") {
-                            episodeHTML = responses[1].value;
-                            check = true;
-                        }
-                    } else {
-
-                        let metaData = await MakeFetchTimeout(`https://api.enime.moe/mapping/mal/${malID}`, {}, 2000);
-                        thumbnailsTemp = JSON.parse(metaData).episodes;
-                    }
-
-                    for (let i = 0; i < thumbnailsTemp.length; i++) {
-                        thumbnails[thumbnailsTemp[i].number] = thumbnailsTemp[i];
-                    }
-                } catch (err) {
-                    console.error(err);
-                }
-            }
-
-            if (!check) {
-                episodeHTML = await MakeFetchZoro(`https://zoro.to/ajax/v2/episode/list/${id}`, {});
-            }
-
-            episodeHTML = JSON.parse(episodeHTML).html;
+            let episodeHTML = JSON.parse(await MakeFetchZoro(`https://zoro.to/ajax/v2/episode/list/${id}`, {})).html;
             dom.innerHTML = DOMPurify.sanitize(episodeHTML);
-
 
             let episodeListDOM = dom.querySelectorAll('.ep-item');
             let data = [];
@@ -137,36 +150,12 @@ var zoro: extension = {
             for (var i = 0; i < episodeListDOM.length; i++) {
                 let tempEp: extensionInfoEpisode = {
                     "link": episodeListDOM[i].getAttribute("href").replace("/watch/", "?watch=").replace("?ep=", "&ep=") + "&engine=3",
-                    "id": episodeListDOM[i].getAttribute("data-id"),
+                    "id": episodeListDOM[i].getAttribute("data-number"),
+                    "sourceID": episodeListDOM[i].getAttribute("data-id"),
                     "title": "Episode " + episodeListDOM[i].getAttribute("data-number"),
+                    "altTitle": "Episode " + episodeListDOM[i].getAttribute("data-number"),
                 };
-
-                if (idToFind !== null && parseInt(episodeListDOM[i].getAttribute("data-id")) == idToFind) {
-                    try {
-                        let epIndex = parseFloat(episodeListDOM[i].getAttribute("data-number"));
-                        if (epIndex in thumbnails) {
-                            response.name = thumbnails[epIndex].title;
-                        }
-                    } catch (err) {
-                        console.error(err);
-                    }
-
-                    return response;
-                }
-
-                try {
-                    let epIndex = parseFloat(episodeListDOM[i].getAttribute("data-number"));
-                    if (epIndex in thumbnails) {
-                        tempEp.thumbnail = thumbnails[epIndex].image;
-                        tempEp.title = "Episode " + epIndex + " - " + thumbnails[epIndex].title;
-                        tempEp.description = thumbnails[epIndex].description;
-                    }
-                } catch (err) {
-
-                }
-
                 data.push(tempEp);
-
             }
 
             response.episodes = data;
@@ -277,7 +266,22 @@ var zoro: extension = {
         let showURL = new URLSearchParams(url);
 
         try {
-            return (await this.getAnimeInfo(showURL.get("watch"), showURL.get("ep"))).name;
+            const response = await this.getAnimeInfo(showURL.get("watch")) as extensionInfo;
+            const ep = showURL.get("ep");
+
+            for (let i = 0; i < response.episodes.length; i++) {
+                if (response.episodes[i].sourceID === ep) {
+                    const titleTemp = response.episodes[i].title.split("-");
+                    titleTemp.shift();
+                    const title = titleTemp.join("-");
+
+                    if(title){
+                        return title?.trim();
+                    }
+                    return "";
+                }
+            }
+            return "";
         } catch (err) {
             return "";
         }
@@ -358,7 +362,7 @@ var zoro: extension = {
             }
 
             resp["sources"] = sourceURLs;
-            resp["episode"] = epNum.toString();
+            resp["episode"] = (epNum === 0 ? 0.1 : epNum).toString();
 
             if (next != null) {
                 resp.next = next;

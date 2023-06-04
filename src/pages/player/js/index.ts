@@ -1,4 +1,5 @@
 var CustomXMLHttpRequest = XMLHttpRequest;
+var shouldReplace = false;
 var engine: number;
 
 const isChrome = config.chrome;
@@ -37,6 +38,7 @@ let subtitleConfig: subtitleConfig = {
 let lastFragError = -10;
 let lastFragDuration = 0;
 let fragErrorCount = 0;
+let hasLoadedEpList = false;
 
 function applySubtitleConfig(): void {
 	let subtitleStyle = document.getElementById("subtitleStyle") as HTMLStyleElement;
@@ -111,6 +113,11 @@ let DMenu = new dropDownMenu(
 					"open": "subtitlesOptions"
 				},
 				{
+					"text": "Episodes",
+					"iconID": "episodesIcon",
+					"open": "episodes"
+				},
+				{
 					"text": "Fill Mode",
 					"iconID": "fillIcon",
 					"open": "fillmode"
@@ -132,7 +139,17 @@ let DMenu = new dropDownMenu(
 
 			]
 		},
+		{
+			"id": "episodes",
+			"selectableScene": true,
+			"scrollIntoView": true,
+			"heading": {
+				"text": "Episodes",
+			},
+			"items": [
 
+			]
+		},
 		{
 			"id": "subtitles",
 			"selectableScene": true,
@@ -481,6 +498,7 @@ window.addEventListener("videoStartInterval", () => {
 function normalise(url: string): string {
 	url = url.replace("?watch=", "");
 	url = url.split("&engine=")[0];
+    url = url.split("&isManga=")[0];
 	return url;
 }
 
@@ -638,6 +656,7 @@ function changeEp(nextOrPrev: number, msg: null | string = null) {
 		clearInterval(updateCurrentTime);
 		document.getElementById("ep_dis").innerHTML = "loading...";
 		document.getElementById("total").innerHTML = "";
+		updateEpListSelected();
 		ini_main();
 	}
 }
@@ -817,9 +836,7 @@ function loadSubs(sourceName: string) {
 		let check = true;
 		for (var i = 0; i < vidInstance.vid.textTracks.length; i++) {
 			if (vidInstance.vid.textTracks[i].label == localStorage.getItem(`${engine}-${sourceName}-subtitle`) && check) {
-				console.log("e");
 				let subDOM: Selectables = DMenu.selections[`subtitle-${i}`];
-				console.log(subDOM);
 
 				if (subDOM) {
 					subDOM.select();
@@ -932,7 +949,6 @@ function chooseQual(config: sourceConfig) {
 						return;
 					}
 
-					console.log(data);
 					const errorFatal = data.fatal;
 					if (data.details === Hls.ErrorDetails.FRAG_LOAD_ERROR ||
 						data.details === Hls.ErrorDetails.FRAG_LOAD_TIMEOUT ||
@@ -945,7 +961,6 @@ function chooseQual(config: sourceConfig) {
 							hls.startLoad();
 						}
 					} else if (data.details === Hls.ErrorDetails.BUFFER_STALLED_ERROR) {
-						console.log(lastFragError, lastFragDuration, vidInstance.vid.currentTime);
 						if ((Math.abs(lastFragError - vidInstance.vid.currentTime) < 0.3) && fragErrorCount < 10) {
 							vidInstance.vid.currentTime = lastFragError + lastFragDuration + 0.3;
 							fragErrorCount++;
@@ -966,6 +981,13 @@ function chooseQual(config: sourceConfig) {
 
 			//@ts-ignore
 			hls.on(Hls.Events.MANIFEST_PARSED, function () {
+
+				// If it's 0, then hls.js will automatically skip to the end
+				// so we increment it by 0.1
+				if (skipTo === 0 && shouldReplace) {
+					skipTo += 0.1;
+				}
+
 				vidInstance.vid.currentTime = skipTo;
 				vidInstance.vid.play();
 				loadHLSsource();
@@ -1245,13 +1267,71 @@ document.querySelector("#setting_icon").addEventListener("click", function () {
 	openSettingsSemi(-1);
 });
 
+document.querySelector("#episodeList").addEventListener("click", function () {
+	openSettingsSemi(-1);
+	DMenu.open("episodes");
+});
+
+function updateEpListSelected() {
+	DMenu?.selections[location.search]?.select();
+}
+
 window.onmessage = async function (message: MessageEvent) {
 
 	if (message.data.action == 1) {
 		currentVidData = message.data;
 
+		if (hasLoadedEpList === false) {
+			hasLoadedEpList = true;
+
+			extensionList[engine].getAnimeInfo(localStorage.getItem("epURL").replace("?watch=/", "")).then((data: extensionInfo) => {
+				const episodes = data.episodes;
+
+				for (let i = episodes.length - 1; i >= 0; i--) {
+					const ep = episodes[i];
+
+					let truncatedTitle = ep.title.substring(0, 30);
+					if (ep.title.length >= 30) {
+						truncatedTitle += "...";
+					}
+
+					const epNum = parseFloat(ep.title.toLowerCase().replace("episode", ""));
+
+					if (!isNaN(epNum)) {
+						ep.title = `Episode ${epNum}`;
+						truncatedTitle = ep.title;
+					}
+
+					if (ep.altTitle) {
+						ep.title = ep.altTitle;
+						truncatedTitle = ep.altTitle;
+					}
+
+					if (ep.altTruncatedTitle) {
+						truncatedTitle = ep.altTruncatedTitle;
+					}
+
+					DMenu.getScene("episodes").addItem({
+						highlightable: true,
+						html: ep.title + (ep.date ? `<div class="menuDate">${ep.date.toLocaleString()}</div>` : ""),
+						altText: truncatedTitle,
+						selected: location.search === ep.link,
+						id: ep.link,
+						callback: function () {
+							changeEp(0, ep.link);
+						}
+					}, false);
+				}
+			}).catch((err: Error) => {
+				console.error(err);
+			});
+		}
 
 		if ("title" in currentVidData) {
+			if (engine === 4) {
+				shouldReplace = true;
+			}
+
 			document.getElementById("titleCon").innerText = currentVidData.title as string;
 		} else {
 
@@ -1260,7 +1340,7 @@ window.onmessage = async function (message: MessageEvent) {
 				extensionList[engine].getVideoTitle(window.location.search).then((title: string) => {
 					document.getElementById("titleCon").innerText = title;
 				}).catch((err: Error) => {
-					console.log(err);
+					console.error(err);
 					document.getElementById("titleCon").innerText = "";
 				});
 			} catch (err) {

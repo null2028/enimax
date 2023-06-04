@@ -1,0 +1,14 @@
+1. Fixed a few bugs.
+2. Added more meta data to 9anime and gogoanime -- like thumbnails, titles, dates, etc.
+3. When a show is added to "Ongoing", it will tell you on the homepage when the next episode will air, if that info is available.
+4. You can now swipe right on most pages to navigate back.
+5. Improved the player's slide down transition.
+6. Twitch vods are treated like a livestream, so it automatically updates the video without having to reload (a really good QoL change imo).
+7. Fixed fmovies
+8. Added timeouts to notifications
+9. Automated a whole bunch of CI/CD stuff.
+
+Onto the major features:
+
+10. Added episode list to the player
+11. Added manga!!: All you need to do is go to search, select mangafire/mangadex as the source and search. It will automatically redirect you to the mangareader. You can also download mangas, which is fricking awesome. I plan on improving the manga reader too.

@@ -6,21 +6,21 @@
 	<style id="subtitleStyle"></style>
 	<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 	<meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-inline' blob:; object-src 'self'">
-	<link href="https://fonts.googleapis.com/css?family=Montserrat&display=swap" rel="stylesheet">
+	<link href="../../assets/css/fonts.css" rel="stylesheet">
 	<link href="../../notification/noti.css" rel="stylesheet">
-	<link href="../../assets/index.css" rel="stylesheet">
+	<link href="../../assets/css/index.css" rel="stylesheet">
 	<link href="./css/DDM.css" rel="stylesheet">
 	<link href="./css/index.css" rel="stylesheet">
 
-	<script src="../../assets/socket.js"></script>
+	<script src="../../assets/libs/socket.js"></script>
 
-	<script type="text/javascript" src="../../assets/config.js"></script>
-	<script src="../../assets/hls.js"></script>
-	<script src="../../assets/pull.js"></script>
+	<script type="text/javascript" src="../../assets/js/config.js"></script>
+	<script src="../../assets/libs/hls.js"></script>
+	<script src="../../assets/js/pull.js"></script>
 	<script type="text/javascript" src="../../notification/noti.js"></script>
 	<script type="text/javascript" src="../../assets/index.js"></script>
 
-	<script type="text/javascript" src="../../assets/dexie.js"></script>
+	<script type="text/javascript" src="../../assets/libs/dexie.js"></script>
 	<script type="text/javascript" src="../../storage/index.js"></script>
 	<script type="text/javascript" src="./js/DDM.js"></script>
 	<script type="text/javascript" src="./js/XMLHttpRequest.js"></script>
@@ -28,7 +28,7 @@
 </head>
 
 <body>
-	<div id="con">
+	<div id="con" style="font-weight: lighter;">
 
 		<div class="overlay" id="seek_overlay"></div>
 		<div id="noti_con"></div>
@@ -214,6 +214,9 @@
 				</div>
 			</div>
 			<div id="options">
+				<div style="display: table-cell;vertical-align: middle;">
+					<div id="episodeList"></div>
+				</div>
 				<div style="display: table-cell;vertical-align: middle;">
 					<div id="fullscreenToggle" style="display: none;"></div>
 				</div>

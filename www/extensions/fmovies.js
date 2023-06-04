@@ -78,7 +78,7 @@ var fmovies = {
                 }
             }
             catch (err) {
-                console.log(err);
+                console.error(err);
             }
             return { "status": 200, "data": { "seasons": seasonInfo, "meta": metaData } };
         }
@@ -176,7 +176,6 @@ var fmovies = {
                     let allReponses = await Promise.allSettled([Promise.all(allAwaits), Promise.all(metaDataPromises)]);
                     if (allReponses[0].status === "fulfilled") {
                         values = allReponses[0].value;
-                        console.log(values);
                     }
                     else {
                         throw Error("Could not get the seasons. Try again.");
@@ -217,6 +216,8 @@ var fmovies = {
                         try {
                             let ep = parseInt(seasonData.data[i].title.split("Eps ")[1]);
                             let season = seasonNames[key].split(" ")[1].trim();
+                            tempData.altTitle = `Season ${season} Episode ${ep}`;
+                            tempData.altTruncatedTitle = `S${season} E${ep}`;
                             if (season in metaData && ep in metaData[season]) {
                                 tempData.thumbnail = metaData[season][ep].thumbnail;
                                 tempData.description = metaData[season][ep].description;
@@ -423,6 +424,9 @@ var fmovies = {
             }
             data.title = title;
             data.subtitles = sourceJSON.tracks;
+            if (parseFloat(data.episode) === 0) {
+                data.episode = "0.1";
+            }
             return (data);
         }
         catch (err) {
@@ -468,7 +472,6 @@ var fmovies = {
     fixTitle: function (title) {
         try {
             const tempTitle = title.split("-");
-            console.log(tempTitle, title);
             if (tempTitle.length > 2) {
                 tempTitle.pop();
                 if (title[title.length - 1] == "-") {

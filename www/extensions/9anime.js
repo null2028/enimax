@@ -30,7 +30,73 @@ var nineAnime = {
             removeDOM(searchDOM);
         }
     },
-    getAnimeInfo: async function (url, nextPrev = false) {
+    getAnimeInfo: async function (url) {
+        const settled = "allSettled" in Promise;
+        const id = (new URLSearchParams(`?watch=${url}`)).get("watch").split(".").pop();
+        let response = {
+            "name": "",
+            "image": "",
+            "description": "",
+            "episodes": [],
+            "mainName": ""
+        };
+        try {
+            if (settled) {
+                let anilistID;
+                try {
+                    anilistID = JSON.parse(await MakeFetch(`https://raw.githubusercontent.com/MALSync/MAL-Sync-Backup/master/data/pages/9anime/${id}.json`)).aniId;
+                }
+                catch (err) {
+                    // anilistID will be undefined
+                }
+                if (anilistID) {
+                    const promises = [
+                        this.getAnimeInfoInter(url),
+                        MakeFetchTimeout(`https://api.enime.moe/mapping/anilist/${anilistID}`, {}, 2000)
+                    ];
+                    const promiseResponses = await Promise.allSettled(promises);
+                    if (promiseResponses[0].status === "fulfilled") {
+                        response = promiseResponses[0].value;
+                        if (promiseResponses[1].status === "fulfilled") {
+                            try {
+                                const metaData = JSON.parse(promiseResponses[1].value).episodes;
+                                const metaDataMap = {};
+                                for (let i = 0; i < metaData.length; i++) {
+                                    metaDataMap[metaData[i].number] = metaData[i];
+                                }
+                                for (let i = 0; i < response.episodes.length; i++) {
+                                    const currentEp = metaDataMap[response.episodes[i].id];
+                                    const currentResponseEp = response.episodes[i];
+                                    currentResponseEp.description = currentEp === null || currentEp === void 0 ? void 0 : currentEp.description;
+                                    currentResponseEp.thumbnail = currentEp === null || currentEp === void 0 ? void 0 : currentEp.image;
+                                    currentResponseEp.date = new Date(currentEp === null || currentEp === void 0 ? void 0 : currentEp.airedAt);
+                                    currentResponseEp.title = `Episode ${currentResponseEp.id} - ${currentEp === null || currentEp === void 0 ? void 0 : currentEp.title}`;
+                                }
+                            }
+                            catch (err) {
+                                console.error(err);
+                            }
+                        }
+                        return response;
+                    }
+                    else {
+                        throw promiseResponses[0].reason;
+                    }
+                }
+                else {
+                    return await this.getAnimeInfoInter(url);
+                }
+            }
+            else {
+                return await this.getAnimeInfoInter(url);
+            }
+        }
+        catch (err) {
+            console.error(err);
+            throw err;
+        }
+    },
+    getAnimeInfoInter: async function (url, nextPrev = false) {
         url = url.split("&engine")[0];
         const response = {
             "name": "",
@@ -63,7 +129,7 @@ var nineAnime = {
                 }
             }
             catch (err) {
-                console.log(err);
+                console.error(err);
             }
             let episodes = [];
             let IDVRF = await this.getVRF(nineAnimeID, "ajax-episode-list");
@@ -93,8 +159,10 @@ var nineAnime = {
                 }
                 episodes.push({
                     "link": (nextPrev ? "" : "?watch=") + encodeURIComponent(id) + "&ep=" + curElem.querySelector("a").getAttribute("data-ids") + "&engine=5",
-                    "id": curElem.querySelector("a").getAttribute("data-ids"),
-                    "title": nextPrev ? title : `Episode ${curElem.querySelector("a").getAttribute("data-num")} - ${title}`
+                    "id": curElem.querySelector("a").getAttribute("data-num"),
+                    "sourceID": curElem.querySelector("a").getAttribute("data-ids"),
+                    "title": nextPrev ? title : `Episode ${curElem.querySelector("a").getAttribute("data-num")} - ${title}`,
+                    "altTitle": `Episode ${curElem.querySelector("a").getAttribute("data-num")}`
                 });
             }
             response.episodes = episodes;
@@ -242,7 +310,7 @@ var nineAnime = {
             let settledSupported = "allSettled" in Promise;
             let epList = [];
             if (settledSupported) {
-                promises.unshift(this.getAnimeInfo(`?watch=/${searchParams.get("watch")}`, true));
+                promises.unshift(this.getAnimeInfoInter(`?watch=/${searchParams.get("watch")}`, true));
                 const promiseResult = await Promise.allSettled(promises);
                 if (promiseResult[0].status === "fulfilled") {
                     epList = promiseResult[0].value.episodes;
@@ -251,7 +319,7 @@ var nineAnime = {
             else {
                 try {
                     await Promise.all(promises);
-                    epList = (await this.getAnimeInfo(`?watch=/${searchParams.get("watch")}`, true)).episodes;
+                    epList = (await this.getAnimeInfoInter(`?watch=/${searchParams.get("watch")}`, true)).episodes;
                 }
                 catch (err) {
                     console.error(err);
@@ -263,7 +331,7 @@ var nineAnime = {
                     response.next = epList[i].link;
                     break;
                 }
-                if (epList[i].id == sourceEp) {
+                if (epList[i].sourceID == sourceEp) {
                     check = true;
                     response.title = epList[i].title;
                 }
@@ -273,6 +341,9 @@ var nineAnime = {
             }
             if (!sources.length) {
                 throw new Error("No sources were found. Try again later or contact the developer.");
+            }
+            if (parseFloat(response.episode) === 0) {
+                response.episode = "0.1";
             }
             response.sources = sources;
             return response;

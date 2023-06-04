@@ -122,7 +122,6 @@ class XMLHttpRequest2 {
 				self.dispatchReadyStateChangeEvent(2);
 				self.dispatchReadyStateChangeEvent(3);
 				self.dispatchReadyStateChangeEvent(4);
-				console.log(response);
 			},
 			function (response) {
 				console.error(response);

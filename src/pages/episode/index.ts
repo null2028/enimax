@@ -59,21 +59,29 @@ function rgbToHex(r: number, g: number, b: number) {
 // @ts-ignore
 const extensionList = (<cordovaWindow>window.parent).returnExtensionList();
 
-if (config.local || localStorage.getItem("offline") === 'true') {
-    ini();
-} else {
-    window.parent.postMessage({ "action": 20 }, "*");
-}
+// @ts-ignore
+const extensionTypes = (<cordovaWindow>window.parent).returnExtensionTypes();
 
+let didScroll = false;
 let lastScrollPos: number;
 let scrollDownTopDOM = document.getElementById("scrollDownTop");
 let scrollSnapFunc: undefined | Function;
 let showMainName = null;
 let showImage = null;
+let displayTimeout: any;
 // @ts-ignore
 let pullTabArray = [];
 let webviewLink = "";
 let averageColor = "";
+let downloadedIsManga = false;
+
+try {
+    const search = new URLSearchParams(location.search);
+    downloadedIsManga = search.get("isManga") === "true";
+} catch (err) {
+    console.warn(err);
+}
+
 const imageDOM = document.getElementById("imageMain") as HTMLImageElement;
 
 // @ts-ignore
@@ -88,8 +96,22 @@ const recomCon = document.getElementById("recomCon");
 const sourceCardsDOM = document.getElementById("sourceCards");
 
 iniChoiceDOM();
+const con = document.getElementById("con_11");
+pullTabArray.push(new pullToRefresh(con));
 
-pullTabArray.push(new pullToRefresh(document.getElementById("con_11")));
+
+function goBack() {
+    const [isSearch, searchParams] = (window.parent as cordovaWindow).findLastNotEpisode();
+    if (isSearch) {
+        if (searchParams) {
+            window.parent.postMessage({ "action": 500, data: "pages/search/index.html" + searchParams }, "*");
+        } else {
+            window.parent.postMessage({ "action": 500, data: "pages/search/index.html" }, "*");
+        }
+    } else {
+        window.parent.postMessage({ "action": 500, data: "pages/homepage/index.html" }, "*");
+    }
+}
 
 function collapseDesc() {
     const descDOM = document.getElementById("imageDesc");
@@ -106,7 +128,7 @@ function collapseDesc() {
     }
 }
 
-document.getElementById("showDescription").addEventListener("click", collapseDesc);
+document.getElementById("imageDesc").addEventListener("click", collapseDesc);
 document.getElementById("descReadMore").addEventListener("click", collapseDesc);
 
 document.getElementById("dottedMenu").addEventListener("click", function () {
@@ -152,6 +174,7 @@ function fix_title(title: string) {
 function normalise(url: string) {
     url = url.replace("?watch=", "");
     url = url.split("&engine=")[0];
+    url = url.split("&isManga=")[0];
     return url;
 }
 
@@ -162,6 +185,23 @@ window.onmessage = function (x) {
 
 };
 
+async function updateShow(params: { [key: string]: any }, currentEngine: extension) {
+    try {
+        const search = new URLSearchParams(location.search);
+        console.log(search, search.has("aniID"));
+        if (!search.has("aniID")) {
+            const metaData = await currentEngine.getMetaData(new URLSearchParams(location.search));
+            if (metaData.id) {
+                window.history.replaceState({}, "", `${location.search}&aniID=${metaData.id}`);
+                params.url = location.search;
+            }
+        }
+    } catch (err) {
+        console.error(err);
+    } finally {
+        await (<cordovaWindow>window.parent).apiCall("POST", params, () => { });
+    }
+}
 
 function sendNoti(notiConfig: any) {
     return new notification(document.getElementById("noti_con"), {
@@ -176,23 +216,32 @@ function sendNoti(notiConfig: any) {
 // todo
 function checkIfExists(localURL: string, dList: Array<string>, dName: string): Promise<string> {
     return (new Promise(function (resolve, reject) {
+
         let index = dList.indexOf(dName);
         if (index > -1) {
             dList.splice(index, 1);
             let timeout = setTimeout(function () {
-                reject(new Error("timeout"));
-            }, 1000);
+                resolve("timeout");
+            }, 2000);
 
-            (<cordovaWindow>window.parent).makeLocalRequest("GET", `${localURL}`).then(function (x) {
-                clearTimeout(timeout);
-                resolve(x);
-            }).catch(function () {
-                clearTimeout(timeout);
-                reject("notdownloaded");
 
+            (<cordovaWindow>window.parent).resolveLocalFileSystemURL((<cordovaWindow>window.parent).cordova.file.externalDataDirectory + localURL, function (fileSystem) {
+                clearTimeout(timeout);
+                resolve("downloaded");
+            }, (err) => {
+                clearTimeout(timeout);
+                resolve("notdownloaded");
             });
+
+            // (<cordovaWindow>window.parent).makeLocalRequest("GET", `${localURL}`).then(function (x) {
+            //     clearTimeout(timeout);
+            //     resolve("downloaded");
+            // }).catch(function () {
+            //     clearTimeout(timeout);
+            //     reject("notdownloaded");
+            // });
         } else {
-            reject("notinlist");
+            resolve("notinlist");
         }
     }));
 }
@@ -208,10 +257,13 @@ function ini() {
 
         //todo
         let currentEngine: extension;
+        let engineNum = 0;
         let temp3 = main_url.split("&engine=");
         if (temp3.length == 1) {
             currentEngine = extensionList[0];
+            engineNum = 0;
         } else {
+            engineNum = parseInt(temp3[1]);
             currentEngine = extensionList[parseInt(temp3[1])];
         }
 
@@ -257,9 +309,11 @@ function ini() {
             };
 
             let downloadedList = [];
+            let doesExist: Array<Promise> = [];
             if (!config.chrome) {
                 try {
-                    downloadedList = await (<cordovaWindow>window.parent).listDir(data.mainName);
+                    downloadedList = await (<cordovaWindow>window.parent).listDir(`${downloadedIsManga ? "manga/" : ""}${data.mainName}`);
+
                     let tempList = [];
                     for (let i = 0; i < downloadedList.length; i++) {
                         if (downloadedList[i].isDirectory) {
@@ -268,6 +322,7 @@ function ini() {
                     }
 
                     downloadedList = tempList;
+
                 } catch (err) {
                     console.error(err);
                 }
@@ -330,37 +385,9 @@ function ini() {
             }
 
             if (downloaded) {
+                addToLibrary.classList.add("hidden");
                 totalCats = 0;
             } else {
-
-                function secondsToHuman(seconds: number) {
-                    const d = Math.floor(seconds / (3600 * 24));
-                    const h = Math.floor(seconds % (3600 * 24) / 3600);
-                    const m = Math.floor(seconds % 3600 / 60);
-                    const s = Math.floor(seconds % 60);
-
-                    const dDisplay = d > 0 ? d + (d == 1 ? " day, " : " days ") : "";
-                    const hDisplay = h > 0 ? h + (h == 1 ? " hour, " : " hours ") : "";
-                    const mDisplay = m > 0 ? m + (m == 1 ? " minute, " : " minutes ") : "";
-                    const sDisplay = s > 0 ? s + (s == 1 ? " second" : " seconds") : "";
-
-                    if (dDisplay) {
-                        return dDisplay;
-                    }
-
-                    if (hDisplay) {
-                        return hDisplay;
-                    }
-
-                    if (mDisplay) {
-                        return mDisplay;
-                    }
-
-                    if (sDisplay) {
-                        return sDisplay;
-                    }
-
-                }
 
                 try {
                     const timeDOM = document.getElementById("metaTime");
@@ -370,14 +397,21 @@ function ini() {
                     const anilistDOM = document.getElementById("metaAnilist");
                     const relationsDOM = relationsCon;
                     const recomDOM = recomCon;
+                    const search = new URLSearchParams(location.search);
+                    const isManga = extensionTypes[engineNum] === "manga";
 
+                    let metaData;
+                    if (!search.has("aniID")) {
+                        metaData = await currentEngine.getMetaData(new URLSearchParams(location.search));
+                    } else {
+                        metaData = await (window.parent as cordovaWindow).getMetaByAniID(search.get("aniID"), isManga ? "MANGA" : "ANIME");
+                    }
 
-                    const metaData = await currentEngine.getMetaData(new URLSearchParams(location.search));
                     let addedCover = false;
 
                     if (metaData.nextAiringEpisode) {
                         nextDOM.style.display = "inline-block";
-                        nextDOM.textContent = `Episode ${metaData.nextAiringEpisode.episode} in ${secondsToHuman(metaData.nextAiringEpisode.timeUntilAiring)}`;
+                        nextDOM.textContent = `Episode ${metaData.nextAiringEpisode.episode} in ${(window.parent as cordovaWindow).secondsToHuman(metaData.nextAiringEpisode.timeUntilAiring)}`;
                     }
 
                     if (metaData.season || metaData.seasonYear) {
@@ -393,28 +427,32 @@ function ini() {
                     if (window.innerWidth > 600) {
                         if (metaData.bannerImage) {
                             addedCover = true;
-                            document.getElementById("con_11").style.background = `url("${metaData.bannerImage}") top no-repeat`;
-                            document.getElementById("con_11").style.backgroundSize = `auto 400px`;
+                            con.style.background = `url("${metaData.bannerImage}") top no-repeat`;
+                            con.style.backgroundSize = `auto 400px`;
                         }
                     } else {
                         if (metaData?.coverImage?.extraLarge) {
                             addedCover = true;
-                            document.getElementById("con_11").style.background = `url("${metaData.coverImage.extraLarge}") top no-repeat`;
-                            document.getElementById("con_11").style.backgroundSize = `contain`;
+                            con.style.background = `url("${metaData.coverImage.extraLarge}") top no-repeat`;
+                            con.style.backgroundSize = `contain`;
                         }
                     }
 
                     if (metaData?.relations?.nodes.length > 0) {
-                        document.getElementById("relations").style.display = "inline-block";
                         const nodes = metaData.relations.nodes;
                         const edges = metaData.relations.edges;
-                        makeCardCon(relationsDOM, nodes, edges);
+                        const didAdd = makeCardCon(relationsDOM, nodes, edges);
+                        if (didAdd) {
+                            document.getElementById("relations").style.display = "inline-block";
+                        }
                     }
 
                     if (metaData?.recommendations?.edges.length > 0) {
-                        document.getElementById("recommendations").style.display = "inline-block";
                         const nodes = metaData.recommendations.edges.map((edge: any) => edge.node.mediaRecommendation);
-                        makeCardCon(recomDOM, nodes);
+                        const didAdd = makeCardCon(recomDOM, nodes);
+                        if (didAdd) {
+                            document.getElementById("recommendations").style.display = "inline-block";
+                        }
                     }
 
                     if (addedCover) {
@@ -430,6 +468,10 @@ function ini() {
                         openWebview(`https://anilist.co/anime/${metaData.id}`);
                     };
 
+                    if (!search.has("aniID")) {
+                        (<cordovaWindow>window.parent).apiCall("POST", { "username": username, "action": 14, "name": data.mainName, "url": `${location.search}&aniID=${metaData.id}` }, () => { });
+                    }
+
                     malDOM.style.display = "inline-block";
                     anilistDOM.style.display = "inline-block";
 
@@ -439,6 +481,25 @@ function ini() {
                 }
                 epCon.append(catCon);
                 epCon.append(catDataCon);
+                new menuPull(epCon, () => {
+                    con.style.transitionDuration = "200ms";
+                    window.requestAnimationFrame(function () {
+                        window.requestAnimationFrame(function () {
+                            con.style.transform = `translateX(100px)`;
+                            goBack();
+                        });
+                    });
+                }, document.getElementById("custom_rooms"), con);
+
+                new menuPull(document.querySelector(".infoCon"), () => {
+                    con.style.transitionDuration = "200ms";
+                    window.requestAnimationFrame(function () {
+                        window.requestAnimationFrame(function () {
+                            con.style.transform = `translateX(100px)`;
+                            goBack();
+                        });
+                    });
+                }, null, con);
             }
 
             if (data.genres) {
@@ -459,9 +520,16 @@ function ini() {
                 let pageName = "? - ?"
                 try {
                     if (!usesCustomPartions) {
-                        const episodeKeyword = "episode";
-                        const fromNum = parseInt(animeEps[partitions * (i)].title.toLowerCase().split(episodeKeyword)[1]).toString();
-                        const toNum = parseInt(animeEps[Math.min(partitions * (i + 1) - 1, animeEps.length - 1)].title.toLowerCase().split(episodeKeyword)[1]).toString();
+                        let episodeKeyword = "episode";
+                        let fromNum = parseInt(animeEps[partitions * (i)].title.toLowerCase().split(episodeKeyword)[1]).toString();
+                        let toNum = parseInt(animeEps[Math.min(partitions * (i + 1) - 1, animeEps.length - 1)].title.toLowerCase().split(episodeKeyword)[1]).toString();
+
+                        if (isNaN(parseInt(fromNum)) && isNaN(parseInt(fromNum))) {
+                            episodeKeyword = "chapter";
+                            fromNum = parseInt(animeEps[partitions * (i)].title.toLowerCase().split(episodeKeyword)[1]).toString();
+                            toNum = parseInt(animeEps[Math.min(partitions * (i + 1) - 1, animeEps.length - 1)].title.toLowerCase().split(episodeKeyword)[1]).toString();
+                        }
+
                         pageName = `${fromNum} - ${toNum}`;
                         partitionSize.push(partitions);
                     } else {
@@ -475,7 +543,7 @@ function ini() {
 
                 catCon.append(createCat(`room_${partitions * i}`, pageName, 1));
                 catDataCons.push(createElement({
-                    "class": `categoriesDataMain snappedCategoriesDataMain closed`,
+                    "class": `categoriesDataMain snappedCategoriesDataMain`,
                     style: {
                         "min-width": "100%"
                     },
@@ -536,7 +604,8 @@ function ini() {
                                     temp.style.width = activeCatDOM.offsetWidth.toString();
                                 }
 
-                                setTimeout(() => {
+                                clearTimeout(displayTimeout);
+                                displayTimeout = setTimeout(() => {
                                     let foundCurrentCon = false;
                                     for (let i = 0; i < tempCatDOM.length; i++) {
                                         const dataCon = document.getElementById(tempCatDOM[i].getAttribute("data-id"));
@@ -557,6 +626,10 @@ function ini() {
                                             }
                                         }
                                     }
+
+                                    if (shouldScroll === false && !downloaded && scrollToDOM && localStorage.getItem("scrollBool") !== "false") {
+                                        scrollToDOM.scrollIntoView();
+                                    }
                                 }, 250);
                             });
                         });
@@ -567,6 +640,19 @@ function ini() {
             }
 
             let toAdd = [];
+            let downloadPromises = [];
+
+            for (var i = 0; i < animeEps.length; i++) {
+                let trr = animeEps[i].link;
+                downloadPromises.push(checkIfExists(`/${downloadedIsManga ? "manga/" : ""}${data.mainName}/${btoa(normalise(trr))}/.downloaded`, downloadedList, btoa(normalise(trr))));
+            }
+
+            // console.log(downloadPromises);
+
+            // let start = performance.now();
+            const hasBeenDownloaded = await Promise.all(downloadPromises);
+            // alert(performance.now() - start);
+
             for (var i = 0; i < animeEps.length; i++) {
                 let trr = animeEps[i].link;
 
@@ -614,10 +700,15 @@ function ini() {
                 if (!config.chrome) {
 
                     try {
-                        await checkIfExists(`/${data.mainName}/${btoa(normalise(trr))}/.downloaded`, downloadedList, btoa(normalise(trr)));
+
+                        // await checkIfExists(`/${downloadedIsManga ? "manga/" : ""}${data.mainName}/${btoa(normalise(trr))}/.downloaded`, downloadedList, btoa(normalise(trr)));
+                        if(hasBeenDownloaded[i] !== "downloaded"){
+                            throw hasBeenDownloaded[i];
+                        }
+
                         tempDiv4.className = 'episodesDownloaded';
                         tempDiv4.onclick = function () {
-                            (<cordovaWindow>window.parent).removeDirectory(`/${data.mainName}/${btoa(normalise(trr))}/`).then(function () {
+                            (<cordovaWindow>window.parent).removeDirectory(`/${downloadedIsManga ? "manga/" : ""}${data.mainName}/${btoa(normalise(trr))}/`).then(function () {
                                 if (downloaded) {
                                     tempDiv.remove();
                                 } else {
@@ -660,6 +751,7 @@ function ini() {
 
                 tempDiv2.onclick = function () {
                     localStorage.setItem("mainName", data.mainName);
+                    localStorage.setItem("epURL", location.search);
                     window.parent.postMessage({ "action": 4, "data": trr }, "*");
                 };
 
@@ -667,7 +759,7 @@ function ini() {
 
 
 
-                    if (!downloaded) {
+                    if (!downloaded && data.isManga !== true) {
                         tempDiv.style.flexDirection = "column";
 
                         tempDiv2.remove();
@@ -711,6 +803,7 @@ function ini() {
                             "listeners": {
                                 "click": function () {
                                     localStorage.setItem("mainName", data.mainName);
+                                    localStorage.setItem("epURL", location.search);
                                     window.parent.postMessage({ "action": 4, "data": trr }, "*");
                                 }
                             }
@@ -775,8 +868,11 @@ function ini() {
                     } else {
                         if (downloaded) {
                             let localQuery = encodeURIComponent(`/${data.mainName}/${btoa(normalise(trr))}`);
+                            console.log(data);
                             tempDiv2.onclick = function () {
-                                window.parent.postMessage({ "action": 4, "data": `?watch=${localQuery}` }, "*");
+                                localStorage.setItem("mainName", data.mainName);
+                                localStorage.setItem("epURL", location.search);
+                                window.parent.postMessage({ "action": 4, "data": `?watch=${localQuery}&isManga=${downloadedIsManga}` }, "*");
                             };
                         }
                         tempDiv.append(tempDiv2);
@@ -790,6 +886,7 @@ function ini() {
 
 
                     if (trr == currentLink) {
+                        didScroll = true;
                         scrollToDOM = tempDiv;
                         tempDiv.style.backgroundColor = "rgba(255,255,255,1)";
                         tempDiv.classList.add("episodesSelected");
@@ -837,14 +934,16 @@ function ini() {
 
                     tempDiv2.onclick = function () {
                         localStorage.setItem("mainName", data.mainName);
-                        window.parent.postMessage({ "action": 4, "data": `?watch=${localQuery}` }, "*");
+                        localStorage.setItem("epURL", location.search);
+
+                        window.parent.postMessage({ "action": 4, "data": `?watch=${localQuery}&isManga=${downloadedIsManga}` }, "*");
 
                     };
 
                     let tempDiv4 = document.createElement("div");
                     tempDiv4.className = 'episodesDownloaded';
                     tempDiv4.onclick = function () {
-                        (<cordovaWindow>window.parent).removeDirectory(`/${data.mainName}/${thisLink}`).then(function () {
+                        (<cordovaWindow>window.parent).removeDirectory(`/${downloadedIsManga ? "manga/" : ""}${data.mainName}/${thisLink}`).then(function () {
                             tempDiv.remove();
                         }).catch(function () {
                             alert("Error deleting the files");
@@ -871,13 +970,14 @@ function ini() {
 
             try {
 
+                if (!downloaded && scrollToDOM && localStorage.getItem("scrollBool") !== "false") {
+                    scrollToDOM.scrollIntoView();
+                }
+
                 if (scrollSnapFunc) {
                     scrollSnapFunc(false);
                 }
 
-                if (!downloaded && scrollToDOM && localStorage.getItem("scrollBool") !== "false") {
-                    scrollToDOM.scrollIntoView();
-                }
 
             } catch (err) {
                 console.error(err);
@@ -918,13 +1018,13 @@ function ini() {
                 data.image = "https://raw.githubusercontent.com/enimax-anime/enimax/main/www/assets/images/placeholder.jpg";
             }
 
-            (<cordovaWindow>window.parent).apiCall("POST", {
+            updateShow({
                 "username": username,
                 "action": 5,
                 "name": data.mainName,
                 "img": data.image,
                 "url": location.search
-            }, () => { });
+            }, currentEngine);
 
             (<cordovaWindow>window.parent).apiCall("POST", {
                 "username": username,
@@ -991,7 +1091,7 @@ function ini() {
 
 
         if (localStorage.getItem("offline") === 'true') {
-            (<cordovaWindow>window.parent).makeLocalRequest("GET", `/${main_url.split("&downloaded")[0]}/info.json`).then(function (data) {
+            (<cordovaWindow>window.parent).makeLocalRequest("GET", `/${downloadedIsManga ? "manga/" : ""}${normalise(main_url.split("&downloaded")[0])}/info.json`).then(function (data) {
                 let temp = JSON.parse(data);
                 temp.data.episodes = temp.episodes;
                 processEpisodeData(temp.data, true, main_url);
@@ -1003,6 +1103,9 @@ function ini() {
 
         } else {
             currentEngine.getAnimeInfo(main_url).then(function (data) {
+                if (data.isManga === true) {
+                    downloadedIsManga = true;
+                }
                 processEpisodeData(data, false, main_url);
             }).catch(function (err: infoError) {
 
@@ -1036,13 +1139,18 @@ const playIcon = document.getElementById("play");
 playIcon.onclick = function () {
     const selectedExists = document.querySelector(".episodesSelected");
     if (selectedExists) {
-        (selectedExists.querySelector(".episodesPlaySmall") as HTMLElement).click();
+        (selectedExists.querySelector(".episodesPlaySmall") as HTMLElement)?.click();
+        (selectedExists.querySelector(".episodesPlay") as HTMLElement)?.click();
     } else {
         (document.querySelector(".episodesCon").querySelector(".episodesPlaySmall") as HTMLElement).click();
     }
 };
 
 addToLibrary.onclick = function () {
+    if (localStorage.getItem("offline") === 'true') {
+        return;
+    }
+
     if (showMainName) {
         addToLibrary.classList.add("isWaiting");
 
@@ -1055,12 +1163,18 @@ addToLibrary.onclick = function () {
                 "url": location.search
             }, () => {
 
+                let firstEpURL = document.querySelector(".episodesCon")?.getAttribute("data-url");
+
+                if (!firstEpURL) {
+                    firstEpURL = "?watch=null";
+                }
+
                 (<cordovaWindow>window.parent).apiCall("POST",
                     {
                         "username": "",
                         "action": 2,
                         "name": showMainName,
-                        "cur": document.querySelector(".episodesCon").getAttribute("data-url"),
+                        "cur": firstEpURL,
                         "ep": 1
                     }, (response) => {
                         addToLibrary.classList.remove("isWaiting");
@@ -1088,8 +1202,39 @@ addToLibrary.onclick = function () {
     }
 };
 
-(<cordovaWindow>window.parent).apiCall("POST", { "username": "", "action": 4 }, (response) => {
-    const doesExist = response.data[0].find(elem => elem[5] === location.search);
+(<cordovaWindow>window.parent).apiCall("POST", { "username": "", "action": 4 }, async (response) => {
+    const search = new URLSearchParams(location.search);
+
+    const doesExist = response.data[0].find(elem => {
+        try {
+            const elemSearch = new URLSearchParams(elem[5]);
+            if (elemSearch.get("engine") == search.get("engine") && elemSearch.get("watch") == search.get("watch")) {
+                const currentLink = elem[3];
+
+                localStorage.setItem("currentLink", currentLink);
+
+                if (didScroll === false) {
+                    const epCons = document.querySelectorAll(".episodesCon");
+                    for (let i = 0; i < epCons.length; i++) {
+                        if (epCons[i].getAttribute("data-url") === currentLink) {
+                            const scrollToDOM = epCons[i] as HTMLElement;
+                            scrollToDOM.style.backgroundColor = "rgba(255,255,255,1)";
+                            scrollToDOM.classList.add("episodesSelected");
+                            scrollToDOM.parentElement.classList.remove("closed");
+                            scrollToDOM.scrollIntoView();
+                        }
+                    }
+                }
+
+                return true;
+            } else {
+                return false;
+            }
+        } catch (err) {
+            return false;
+        }
+    });
+
     if (doesExist) {
         addToLibrary.classList.add("isInLib");
     } else {
@@ -1106,9 +1251,12 @@ document.getElementById("recommendations").onclick = function () {
     openCon(recomCon);
 };
 
-document.getElementById("back").onclick = function () {
-    window.parent.postMessage({ "action": 500, data: "pages/homepage/index.html" }, "*");
-};
-
+document.getElementById("back").onclick = goBack;
 
 applyTheme();
+
+if (config.local || localStorage.getItem("offline") === 'true') {
+    ini();
+} else {
+    window.parent.postMessage({ "action": 20 }, "*");
+}

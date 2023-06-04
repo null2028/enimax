@@ -14,6 +14,7 @@ function fix_title(title) {
 function normalise(url) {
     url = url.replace("?watch=", "");
     url = url.split("&engine=")[0];
+    url = url.split("&isManga=")[0];
     return url;
 }
 class DownloadVid {
@@ -98,7 +99,7 @@ class DownloadVid {
                 "body": {
                     "img": self.base64Image,
                     "name": self.name,
-                    "url": `?watch=/${self.name}`
+                    "url": `?watch=/${self.name}&engine=${self.engine}`
                 }
             }, true);
             let localQuery = encodeURIComponent(`/${self.name}/${btoa(self.vidData.ogURL)}`);
@@ -113,7 +114,7 @@ class DownloadVid {
             await actionSQLite[14]({
                 "body": {
                     "name": vidData.name,
-                    "url": `?watch=/${self.name}`,
+                    "url": `?watch=/${self.name}&engine=${self.engine}`,
                 }
             }, true);
         });
@@ -274,7 +275,6 @@ class DownloadVid {
         });
     }
     async makeRequest(uri, typeFunc, headers) {
-        console.log(uri, headers);
         return new Promise(function (resolve, reject) {
             if (headers) {
                 const options = {

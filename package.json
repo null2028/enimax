@@ -66,9 +66,7 @@
       "cordova-plugin-xhr-local-file": {},
       "cordova-plugin-file-transfer": {}
     },
-    "platforms": [
-      "android"
-    ]
+    "platforms": []
   },
   "dependencies": {
     "@types/crypto-js": "^4.1.1",

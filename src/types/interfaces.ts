@@ -1,7 +1,7 @@
 type ExitFullscreen = typeof document.exitFullscreen
 type RequestFullscreen = typeof document.documentElement.requestFullscreen
 type TypeFunc = (res: Response) => Promise<string>
-type anilistType = "9anime" | "Zoro" | "Gogoanime"
+type anilistType = "9anime" | "Zoro" | "Gogoanime" | "Mangadex" | "MangaFire"
 
 interface Document {
     webkitExitFullscreen: ExitFullscreen;
@@ -30,6 +30,7 @@ interface createElementConfig {
     id?: string,
     innerText?: string,
     innerHTML?: string,
+    children?: createElementConfig[]
     listeners?: { [key: string]: Function }
 }
 
@@ -60,6 +61,7 @@ interface menuItemConfig {
     selectedValue?: string,
     valueDOM?: HTMLElement,
     triggerCallbackIfSelected?: boolean,
+    DOM?: HTMLElement
 }
 
 interface sliderConfig {
@@ -72,6 +74,8 @@ interface menuSceneConfig {
     config?: menuItemConfig,
     id: string,
     selectableScene?: boolean,
+    scrollIntoView?: boolean,
+    scrollOffset? : number,
     heading?: menuItemConfig,
     items: Array<menuItemConfig>,
     element?: HTMLElement
@@ -105,6 +109,11 @@ interface videoData {
     engine?: number
 }
 
+interface mangaData extends extensionMangaSource{
+    engine: number,
+    ogURL: string,
+}
+
 interface videoDoubleTapEvent extends CustomEvent {
     detail: {
         DTType: string
@@ -125,23 +134,29 @@ interface videoChangedFillModeEvent extends CustomEvent {
 
 interface cordovaWindow extends Window {
     cordova: any,
-    makeLocalRequest(method: string, url: string): Promise<string>,
+    makeLocalRequest: Function,
+    normalise: Function,
     apiCall: Function,
     returnExtensionList: Function,
     XMLHttpRequest: any,
     returnExtensionNames: Function,
     returnDownloadQueue: Function,
     returnExtensionDisabled: Function,
+    returnExtensionTypes: Function,
     getAnilistTrending: Function,
     listDir: Function,
     back: Function,
+    sendBatchReqs: Function,
+    secondsToHuman: Function,
     removeDirectory: Function,
     extractKey: Function,
     saveAsImport: Function,
     saveImage: Function,
     plugins: any,
     updateImage: Function,
+    getMetaByAniID: Function,
     setFmoviesBase: Function,
+    findLastNotEpisode: Function,
     updateBackgroundBlur: Function,
     makeRequest: Function,
     MakeFetch: Function,
@@ -168,6 +183,7 @@ interface RelationCardConfig {
     id: string,
     image: string,
     name: string,
+    type?: string,
     label?: string
 }
 
@@ -183,10 +199,28 @@ interface extension {
     baseURL: string,
     searchApi: (query: string) => Promise<extensionSearch>;
     getAnimeInfo: (url: string) => Promise<extensionInfo>;
-    getLinkFromUrl: (url: any) => Promise<extensionVidSource>;
+    getLinkFromUrl: (url: any) => Promise<extensionVidSource | extensionMangaSource>;
     discover?: () => Promise<Array<extensionDiscoverData>>;
     fixTitle?: (title: string) => string;
     [key: string]: any;
+}
+
+interface extensionMangaSource {
+    pages: MangaPage[],
+    next: string | null,
+    nextTitle: string | null,
+    prev: string | null,
+    prevTitle: string | null,
+    name: string,
+    chapter: number,
+    title?: string,
+    type: "manga",
+}
+
+interface MangaPage {
+    img: string,
+    needsDescrambling?: boolean,
+    key?: number
 }
 
 interface extensionSearchData {
@@ -209,6 +243,7 @@ interface extensionInfo {
     totalPages?: number
     pageInfo?: Array<PageInfo>
     genres?: Array<string>
+    isManga?: boolean
 }
 
 interface infoError extends Error {
@@ -223,6 +258,7 @@ interface searchError extends Error {
 type ErrorPageConfig = {
     hasLink: false,
     hasReload: Boolean,
+    reloadFunc?: Function,
     customConClass?: string,
     linkClass?: string,
     isError?: Boolean,
@@ -230,6 +266,7 @@ type ErrorPageConfig = {
 } | {
     hasLink: true,
     hasReload: Boolean,
+    reloadFunc?: Function,
     clickEvent: Function,
     customConClass?: string,
     linkClass?: string,
@@ -246,9 +283,13 @@ interface extensionInfoEpisode {
     link: string,
     title: string,
     id?: string,
+    altTitle?: string,
+    altTruncatedTitle?: string,
+    sourceID?: string,
     thumbnail?: string,
     description?: string,
-    date?: Date
+    date?: Date,
+    number?: number,
 }
 
 interface extensionVidSource {
@@ -261,7 +302,8 @@ interface extensionVidSource {
     next: string | null,
     prev: string | null,
     title?: string,
-    subtitles?: Array<videoSubtitle>
+    subtitles?: Array<videoSubtitle>,
+    type?: "anime",
 }
 
 interface extensionDiscoverData {
@@ -291,7 +333,7 @@ interface flaggedShows {
 interface queueElement {
     data: string,
     anime: extensionInfo,
-    downloadInstance?: DownloadVid,
+    downloadInstance?: DownloadVid | DownloadManga,
     mainUrl: string,
     title: string,
     errored?: boolean,

@@ -85,6 +85,7 @@ class Scene {
             return;
         let sceneElem = this.element.querySelector(".scene");
         let item = this.DDMinstance.makeItem(config, isHeading, this.data.id, sceneElem);
+        this.data.items.push(config);
         sceneElem === null || sceneElem === void 0 ? void 0 : sceneElem.append(item);
         if (config.selected && config.triggerCallbackIfSelected === true)
             item.click();
@@ -138,12 +139,19 @@ class dropDownMenu {
      * @param {string} id the sceneID
      */
     open(id) {
+        var _a;
         if (id && id in this.scenes) {
             if (!this.history.length || (this.history.length && this.history[this.history.length - 1] != id))
                 this.history.push(id);
             for (const sceneID in this.scenes) {
                 if (sceneID === id) {
                     this.scenes[sceneID].element.classList.add("active");
+                    const shouldScroll = this.scenes[sceneID].data.scrollIntoView;
+                    if (shouldScroll) {
+                        const offset = this.scenes[sceneID].data.scrollOffset;
+                        (_a = this.scenes[sceneID].element.querySelector(".menuItem.selected")) === null || _a === void 0 ? void 0 : _a.scrollIntoView({ block: "center" });
+                        this.scenes[sceneID].element.scrollBy(0, offset !== null && offset !== void 0 ? offset : -100);
+                    }
                     this.menuCon.style.height = this.scenes[sceneID].element.querySelector(".scene").offsetHeight + "px";
                 }
                 else
@@ -298,7 +306,7 @@ class dropDownMenu {
             }
             inputBox.addEventListener("input", function (event) {
                 if (item.onInput)
-                    item.onInput(event);
+                    item.onInput.bind(inputBox)(event);
             });
             menuItem.append(inputBox);
         }

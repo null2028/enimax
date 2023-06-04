@@ -3,8 +3,6 @@ if (localVal != "true" && localVal != "false") {
     localStorage.setItem("local", "true");
     config.local = true;
 }
-let currentResolve;
-let currentReject;
 let wcoRef;
 let fmoviesBaseURL = !localStorage.getItem("fmoviesBaseURL") ? "fmovies.ink" : localStorage.getItem("fmoviesBaseURL");
 
@@ -43,50 +41,21 @@ String.prototype["onlyOnce"] = function (substring: string) {
 
 function extractKey(id: number, url = null, useCached = false): Promise<string> {
     return (new Promise(async function (resolve, reject) {
-        if (config.chrome || useCached) {
-            try {
-                let gitHTML = (await MakeFetch(`https://github.com/enimax-anime/key/blob/e${id}/key.txt`)) as unknown as modifiedString;
-                let key = gitHTML.substringAfter('"blob-code blob-code-inner js-file-line">').substringBefore("</td>");
-                if (!key) {
-                    key = gitHTML.substringAfter('"rawBlob":"').substringBefore("\"");
-                }
-
-                if (!key) {
-                    key = (await MakeFetch(`https://raw.githubusercontent.com/enimax-anime/key/e${id}/key.txt`)) as unknown as modifiedString;
-                }
-                resolve(key);
-            } catch (err) {
-                reject(err);
-            }
-        } else {
-            let scr;
-            if (url == null) {
-                if (id == 6) {
-                    scr = (await MakeFetch(`https://rabbitstream.net/js/player/prod/e6-player.min.js?v=${(new Date()).getTime()}`));
-                } else {
-                    scr = (await MakeFetch(`https://rabbitstream.net/js/player/prod/e4-player.min.js?v=${(new Date()).getTime()}`));
-                }
-            } else {
-                scr = (await MakeFetch(url));
+        try {
+            let gitHTML = (await MakeFetch(`https://github.com/enimax-anime/key/blob/e${id}/key.txt`)) as unknown as modifiedString;
+            let key = gitHTML.substringAfter('"blob-code blob-code-inner js-file-line">').substringBefore("</td>");
+            if (!key) {
+                key = gitHTML.substringAfter('"rawBlob":"').substringBefore("\"");
             }
 
-            // @ts-ignore
-            scr = extractKeyComp(id, scr);
-            if (scr[1]) {
-                resolve(scr[0]);
-            } else {
-                currentResolve = resolve;
-                currentReject = reject;
-
-                setTimeout(function () {
-                    reject(new Error("timeout"));
-                }, 3000);
-
-                (document.getElementById("evalScript") as HTMLIFrameElement).contentWindow.postMessage(scr[0], "*");
+            if (!key) {
+                key = (await MakeFetch(`https://raw.githubusercontent.com/enimax-anime/key/e${id}/key.txt`)) as unknown as modifiedString;
             }
+            resolve(key);
+        } catch (err) {
+            reject(err);
         }
     }));
-
 }
 
 async function MakeFetch(url: string, options = {}): Promise<string> {
@@ -215,7 +184,6 @@ function getWebviewHTML(url = "https://www.zoro.to", hidden = false, timeout: nu
         });
 
         inappRef.addEventListener('message', (result: string) => {
-            console.log(result);
             inappRef.close();
             resolve(result);
         });
@@ -249,7 +217,6 @@ async function MakeFetchZoro(url: string, options = {}): Promise<string> {
 }
 
 function removeDOM(domElem: HTMLElement) {
-    console.log("Removing", domElem);
     try {
         domElem.innerHTML = "";
         domElem.remove();
@@ -302,8 +269,8 @@ function getCurrentYear(type: "current" | "next") {
 }
 
 const anilistQueries = {
-    "info": `query ($id: Int) {
-                Media (id: $id, type: ANIME) { 
+    "info": `query ($id: Int, $type: MediaType) {
+                Media (id: $id, type: $type) { 
                     id
                     title {
                         romaji
@@ -394,9 +361,8 @@ const anilistQueries = {
                 }`
 };
 
-async function anilistAPI(type: "info" | "trending", variables = {}) {
+async function anilistAPI(query: string, variables = {}) {
 
-    const query = anilistQueries[type];
     const url = 'https://graphql.anilist.co',
         options = {
             method: 'POST',
@@ -413,18 +379,118 @@ async function anilistAPI(type: "info" | "trending", variables = {}) {
     return JSON.parse(await MakeFetch(url, options));
 }
 
-async function getAnilistInfo(type: anilistType, id: string) {
+async function getAnilistInfo(type: anilistType, id: string, mediaType: "ANIME" | "MANGA" = "ANIME") {
     const anilistID = JSON.parse(await MakeFetch(`https://raw.githubusercontent.com/MALSync/MAL-Sync-Backup/master/data/pages/${type}/${id}.json`)).aniId;
+    return (await anilistAPI(anilistQueries.info, { id: anilistID, type: mediaType })).data.Media;
+}
 
-    return (await anilistAPI("info", { id: anilistID })).data.Media;
+async function getMetaByAniID(anilistID: string, mediaType: "ANIME" | "MANGA" = "ANIME") {
+    return (await anilistAPI(anilistQueries.info, { id: anilistID, type: mediaType })).data.Media;
 }
 
 async function getAnilistTrending(type: "current" | "next") {
 
-    return (await anilistAPI("trending", {
+    return (await anilistAPI(anilistQueries.trending, {
         page: 1,
         perPage: 25,
         season: getCurrentSeason(type),
         seasonYear: getCurrentYear(type)
     })).data.Page.media;
+}
+
+function secondsToHuman(seconds: number, abbreviated: boolean = false) {
+    const d = Math.floor(seconds / (3600 * 24));
+    const h = Math.floor(seconds % (3600 * 24) / 3600);
+    const m = Math.floor(seconds % 3600 / 60);
+    const s = Math.floor(seconds % 60);
+
+    const dDisplay = d > 0 ? d + (abbreviated ? "D" : (d == 1 ? " day" : " days ")) : "";
+    const hDisplay = h > 0 ? h + (abbreviated ? "H" : (h == 1 ? " hour" : " hours ")) : "";
+    const mDisplay = m > 0 ? m + (abbreviated ? "M" : (m == 1 ? " minute" : " minutes ")) : "";
+    const sDisplay = s > 0 ? s + (abbreviated ? "s" : (s == 1 ? " second" : " seconds")) : "";
+
+    if (dDisplay) {
+        return dDisplay;
+    }
+
+    if (hDisplay) {
+        return hDisplay;
+    }
+
+    if (mDisplay) {
+        return mDisplay;
+    }
+
+    if (sDisplay) {
+        return sDisplay;
+    }
+
+}
+
+function batchConstructor(ids: Array<string>) {
+    let subQueries = "";
+    const batchReqs = [];
+    let count = 0;
+    for (let i = 0; i < ids.length; i++) {
+        const id = parseInt(ids[i]);
+        if (isNaN(id)) {
+            if (i == ids.length - 1) {
+                batchReqs.push(`query{
+                    ${subQueries}
+                }`);
+            }
+            continue;
+        }
+
+        count++;
+        subQueries += `anime${id}: Page(page: 1, perPage: 1) {
+                            media(type: ANIME, id: ${id}) {
+                                nextAiringEpisode { airingAt timeUntilAiring episode }
+                            }
+                        }`;
+        if (count >= 82 || i == ids.length - 1) {
+            batchReqs.push(`query{
+                ${subQueries}
+            }`);
+            count = 0;
+            subQueries = "";
+        }
+    }
+
+    return batchReqs;
+}
+
+async function sendBatchReqs(ids: Array<string>) {
+    const queries = batchConstructor(ids);
+    const promises = [];
+
+    for (const query of queries) {
+        promises.push(anilistAPI(query));
+    }
+
+    const responses = await Promise.all(promises);
+    const result = {};
+
+    for (let i = 0; i < responses.length; i++) {
+        for (const id in responses[i].data) {
+            result[id] = responses[i]?.data[id].media[0];
+        }
+    }
+
+    return result;
+}
+
+function loadImage(url: string): Promise<HTMLImageElement> {
+    return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.addEventListener("load", () => {
+            resolve(img);
+        }, false);
+
+        img.addEventListener("error", (err) => {
+            reject(err);
+        }, false);
+
+        img.src = url;
+    });
 }

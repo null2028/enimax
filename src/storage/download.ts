@@ -14,12 +14,13 @@ function fix_title(title: string) {
 function normalise(url: string): string {
     url = url.replace("?watch=", "");
     url = url.split("&engine=")[0];
+    url = url.split("&isManga=")[0];
     return url;
 }
 
 class DownloadVid {
     success: Function;
-    episodes: extensionInfo;
+    episodes: extensionInfoEpisode[];
     error: Function;
     engine: number;
     notiId: number;
@@ -47,7 +48,7 @@ class DownloadVid {
     controller: AbortController;
     fileEntry: FileEntry;
     message: string;
-    constructor(vidData: videoData, data: extensionInfo, success: Function, error: Function, episodes: extensionInfo, pause: boolean) {
+    constructor(vidData: videoData, data: extensionInfo, success: Function, error: Function, episodes: extensionInfoEpisode[], pause: boolean) {
         this.success = success;
         this.episodes = episodes;
         this.error = error;
@@ -149,7 +150,7 @@ class DownloadVid {
                 "body": {
                     "img": self.base64Image,
                     "name": self.name,
-                    "url": `?watch=/${self.name}`
+                    "url": `?watch=/${self.name}&engine=${self.engine}`
                 }
             }, true);
 
@@ -172,7 +173,7 @@ class DownloadVid {
             await actionSQLite[14]({
                 "body": {
                     "name": vidData.name,
-                    "url": `?watch=/${self.name}`,
+                    "url": `?watch=/${self.name}&engine=${self.engine}`,
                 }
 
             }, true);
@@ -407,7 +408,6 @@ class DownloadVid {
 
 
     async makeRequest(uri: string, typeFunc: TypeFunc, headers?): Promise<string> {
-        console.log(uri, headers);
         return new Promise(function (resolve, reject) {
             if (headers) {
                 const options = {

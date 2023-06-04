@@ -2,25 +2,20 @@ function createElement(config: createElementConfig): HTMLElement {
     let temp: HTMLElement;
     if ("element" in config) {
         temp = document.createElement(config.element!);
-
     } else {
         temp = document.createElement("div");
-
     }
 
-    let attributes = config.attributes;
+    const attributes = config.attributes;
 
     for (let value in attributes) {
         temp.setAttribute(value, attributes[value]);
     }
 
-
-
     for (let value in config.style) {
 
         temp.style[value] = config.style[value];
     }
-
 
     if ("id" in config) {
         temp.id = config.id!;
@@ -38,12 +33,18 @@ function createElement(config: createElementConfig): HTMLElement {
         temp.innerHTML = config.innerHTML!;
     }
 
-    let listeners = config.listeners;
+    const listeners = config.listeners;
 
-    for (let value in listeners) {
-        temp.addEventListener(value, function () {
-            listeners[value].bind(this)();
+    for (const value in listeners) {
+        temp.addEventListener(value, function (event) {
+            listeners[value].bind(this)(event);
         });
+    }
+
+    if (config.children) {
+        for (const child of config.children) {
+            temp.append(createElement(child));
+        }
     }
 
     return temp;
@@ -228,7 +229,11 @@ function constructErrorPage(errorCon: HTMLElement, message: string, config: Erro
         container.className = config.customConClass;
     }
     const errorMessage = createElement({});
-    const icons = createElement({});
+    const icons = createElement({
+        style: {
+            "max-width": "100%"
+        }
+    });
     const emojiVar = config.positive === true ? unicodeMojisPos : unicodeMojis;
     container.append(errorMessage);
     container.append(icons);
@@ -243,11 +248,16 @@ function constructErrorPage(errorCon: HTMLElement, message: string, config: Erro
     }
 
     if (config.hasReload) {
+        const reloadFunc = config.reloadFunc ? config.reloadFunc : function () {
+            window.location.reload()
+        };
+
+
         icons.append(createElement({
             "class": "icon reload",
             listeners: {
-                click: function () {
-                    window.location.reload()
+                click: function (event) {
+                    reloadFunc(event);
                 },
             }
         }));
@@ -265,10 +275,13 @@ function constructErrorPage(errorCon: HTMLElement, message: string, config: Erro
         innerText: config.isError ? `Something went wrong: ${message}` : message,
         style: {
             "marginBottom": "20px",
+            "white-space": "break-spaces"
         }
     }));
 
     errorCon.append(container);
+
+    return container;
 }
 
 
@@ -281,12 +294,14 @@ function openWebview(url: string) {
     }
 }
 
-const sourceExtensionID = [7, 5, 3];
-const sourceID = ["Gogoanime", "9anime", "Zoro"];
+const sourceExtensionID = [7, 5, 3, 8, 9];
+const sourceID = ["Gogoanime", "9anime", "Zoro", "Mangadex", "MangaFire"];
 const sourcesURL = {
     "Zoro": [],
     "Gogoanime": [],
-    "9anime": []
+    "9anime": [],
+    "Mangadex": [],
+    "MangaFire": []
 }
 
 function makeCross(type?: "fixed", bottom = 260) {
@@ -376,15 +391,25 @@ function makeCard(config: RelationCardConfig) {
         }));
     }
 
+    if (config.type) {
+        card.setAttribute("data-type", config.type);
+    }
+
     return card;
 }
 
-async function fetchMapping(id: string) {
+async function fetchMapping(id: string, type: string | null) {
     const noti = sendNoti([0, "", "Alert", "Fetching the mappings..."]);
-    const sourcesToCheck = ["Zoro", "9anime", "Gogoanime"];
+    const sourcesToCheck = ["Zoro", "9anime", "Gogoanime", "Mangadex", "MangaFire"];
+
+    if (type) {
+        type = (type === "MANGA" ? "manga" : "anime");
+    } else {
+        type = "anime";
+    }
 
     try {
-        const pages = JSON.parse(await (window.parent as cordovaWindow).MakeFetch(`https://raw.githubusercontent.com/MALSync/MAL-Sync-Backup/master/data/anilist/anime/${id}.json`));
+        const pages = JSON.parse(await (window.parent as cordovaWindow).MakeFetch(`https://raw.githubusercontent.com/MALSync/MAL-Sync-Backup/master/data/anilist/${type}/${id}.json`));
         noti.remove();
         sourceChoiceDOM.style.display = "flex";
 
@@ -415,25 +440,31 @@ async function fetchMapping(id: string) {
 }
 
 function makeCardCon(con: HTMLElement, nodes: any, edges?: any) {
+
+    let didAdd = false;
+
     try {
         const relationsCross = makeCross("fixed");
 
         con.append(relationsCross);
 
         for (let i = 0; i < nodes.length; i++) {
-            if (nodes[i]?.type !== "ANIME") {
+            if (nodes[i]?.type !== "ANIME" && nodes[i]?.type !== "MANGA") {
                 continue;
             }
 
+            didAdd = true;
+
             const card = makeCard({
                 id: nodes[i].id,
+                type: nodes[i]?.type,
                 image: nodes[i].coverImage.extraLarge,
                 name: nodes[i].title.english ? nodes[i].title.english : nodes[i].title.native,
                 label: edges ? fixStatus(edges[i].relationType) : nodes[i].seasonYear ? nodes[i].seasonYear : ""
             });
 
             card.addEventListener("click", function () {
-                fetchMapping(this.getAttribute("data-id"));
+                fetchMapping(this.getAttribute("data-id"), this.getAttribute("data-type"));
             });
 
 
@@ -441,6 +472,8 @@ function makeCardCon(con: HTMLElement, nodes: any, edges?: any) {
         }
     } catch (err) {
         console.error(err);
+    } finally {
+        return didAdd;
     }
 }
 

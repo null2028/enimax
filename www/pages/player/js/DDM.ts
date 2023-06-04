@@ -104,9 +104,11 @@ class Scene {
         if (!this.data) return;
 
         let sceneElem = this.element.querySelector(".scene");
-
         let item = this.DDMinstance.makeItem(config, isHeading, this.data.id, <HTMLElement>sceneElem);
+
+        this.data.items.push(config);
         sceneElem?.append(item);
+        
         if(config.selected && config.triggerCallbackIfSelected === true) item.click();
         if (this.element.classList.contains("active")) this.DDMinstance.menuCon.style.height = (this.element.querySelector<HTMLElement>(".scene")?.offsetHeight ?? 100) + "px";
     }
@@ -179,6 +181,14 @@ class dropDownMenu {
             for (const sceneID in this.scenes) {
                 if (sceneID === id) {
                     this.scenes[sceneID].element.classList.add("active");
+                    const shouldScroll = this.scenes[sceneID].data.scrollIntoView;
+
+                    if(shouldScroll){
+                        const offset = this.scenes[sceneID].data.scrollOffset;
+                        this.scenes[sceneID].element.querySelector(".menuItem.selected")?.scrollIntoView({block: "center"});
+                        this.scenes[sceneID].element.scrollBy(0, offset ?? -100);
+                    }
+
                     this.menuCon.style.height = this.scenes[sceneID].element.querySelector<HTMLElement>(".scene").offsetHeight + "px";
                 } else this.scenes[sceneID].element.classList.remove("active");
             }
@@ -370,7 +380,7 @@ class dropDownMenu {
             }
 
             inputBox.addEventListener("input", function (event) {
-                if (item.onInput) item.onInput(event);
+                if (item.onInput) item.onInput.bind(inputBox)(event);
             });
 
 

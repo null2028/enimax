@@ -16,6 +16,7 @@ let downloadedFolders = {};
 // @ts-ignore
 let pullTabArray = [];
 let flaggedShow = [];
+let homeDisplayTimeout;
 let errDOM = document.getElementById("errorCon");
 let firstLoad = true;
 let states = "";
@@ -33,6 +34,8 @@ const sourceCardsDOM = document.getElementById("sourceCards");
 const extensionList = window.parent.returnExtensionList();
 // @ts-ignore
 const extensionNames = window.parent.returnExtensionNames();
+// @ts-ignore
+const extensionDisabled = window.parent.returnExtensionDisabled();
 iniChoiceDOM(130);
 let stateAction = {
     access: () => {
@@ -69,8 +72,8 @@ function addState(id) {
     }
 }
 async function populateDownloadedArray() {
+    downloadedFolders = {};
     try {
-        downloadedFolders = {};
         let temp = await window.parent.listDir("");
         for (let i = 0; i < temp.length; i++) {
             if (temp[i].isDirectory) {
@@ -80,17 +83,31 @@ async function populateDownloadedArray() {
     }
     catch (err) {
     }
+    try {
+        let temp = await window.parent.listDir("manga");
+        for (let i = 0; i < temp.length; i++) {
+            if (temp[i].isDirectory) {
+                downloadedFolders[temp[i].name] = "manga";
+            }
+        }
+    }
+    catch (err) {
+    }
 }
 async function testIt(idx = -1) {
     let searchQuery = "odd";
     let errored = false;
+    const searchQueries = ["odd taxi", "", "friends", "odd taxi", "petezahhutt", "odd taxi", "friends", "odd taxi"];
     for (let i = 0; i < extensionList.length; i++) {
+        if (extensionDisabled[i]) {
+            continue;
+        }
         if (idx != -1 && i != idx) {
             continue;
         }
         let searchResult, episodeResult, playerResult;
         try {
-            searchResult = (await extensionList[i].searchApi((i == 2) ? "friends" : searchQuery)).data;
+            searchResult = (await extensionList[i].searchApi(searchQueries[i])).data;
         }
         catch (err) {
             errored = true;
@@ -127,46 +144,9 @@ async function testIt(idx = -1) {
     }
 }
 async function testKey() {
-    try {
-        alert(await window.parent.extractKey(4));
-    }
-    catch (err) {
-        alert("Fmovies failed");
-    }
-    try {
-        alert(await window.parent.extractKey(6));
-    }
-    catch (err) {
-        alert("zoro failed");
-    }
-    // return;
-    try {
-        let links = ["main-2022-10-11-14-00-01.js"];
-        for (let link of links) {
-            try {
-                alert(await window.parent.extractKey(4, "http://10.0.0.203/dump/e4/" + link));
-            }
-            catch (err) {
-                console.error(err);
-                alert(link + "failed");
-            }
-        }
-    }
-    catch (err) {
-        console.error(err);
-        alert("fmovies failed");
-    }
-    return;
 }
 if (localStorage.getItem("devmode") === "true") {
     document.getElementById("testExtensions").style.display = "block";
-    for (let elem of document.getElementsByClassName("testExt")) {
-        elem.style.display = "block";
-        elem.onclick = function () {
-            testIt(parseInt(this.getAttribute("data-exId")));
-        };
-    }
-    document.getElementById("testKey").style.display = "block";
     document.getElementById("testExtensions").onclick = function () {
         testIt();
     };
@@ -593,7 +573,7 @@ document.getElementById("reset").addEventListener("click", function () {
     window.parent.postMessage({ "action": 22, data: "" }, "*");
 });
 function changeServer() {
-    window.parent.postMessage({ "action": 26, data: "settings.html" }, "*");
+    window.parent.postMessage({ "action": 26, data: "/pages/settings/index.html" }, "*");
 }
 function toggleMenu(state) {
     let menuI = document.getElementById("menuIcon");
@@ -800,7 +780,8 @@ function cusRoomScroll(forced = false) {
                     temp.style.height = activeCatDOM.offsetHeight.toString();
                     temp.style.width = activeCatDOM.offsetWidth.toString();
                 }
-                setTimeout(() => {
+                clearTimeout(homeDisplayTimeout);
+                homeDisplayTimeout = setTimeout(() => {
                     var _a;
                     let foundCurrentCon = false;
                     for (let i = 0; i < tempCatDOM.length; i++) {
@@ -1085,13 +1066,15 @@ function addCustomRoom() {
         "class": `categoriesDataMain${(localStorage.getItem("currentCategory") === "room_recently") ? " active" : ""}${(isSnapSupported) ? " snappedCategoriesDataMain closed" : ""}`,
         "id": `room_recently`
     }));
-    let tempOngoing = createCat("room_-1", "Ongoing");
-    tempOngoing.id = "ongoingCat";
-    document.getElementById("categoriesCon").append(tempOngoing);
-    document.getElementById("custom_rooms").append(createElement({
-        "class": `categoriesDataMain${(localStorage.getItem("currentCategory") === "room_-1") ? " active" : ""}${(isSnapSupported) ? " snappedCategoriesDataMain closed" : ""}`,
-        "id": `room_-1`
-    }));
+    if (localStorage.getItem("offline") !== 'true') {
+        let tempOngoing = createCat("room_-1", "Ongoing");
+        tempOngoing.id = "ongoingCat";
+        document.getElementById("categoriesCon").append(tempOngoing);
+        document.getElementById("custom_rooms").append(createElement({
+            "class": `categoriesDataMain${(localStorage.getItem("currentCategory") === "room_-1") ? " active" : ""}${(isSnapSupported) ? " snappedCategoriesDataMain closed" : ""}`,
+            "id": `room_-1`
+        }));
+    }
     if (localStorage.getItem("discoverHide") !== "true" && localStorage.getItem("offline") !== 'true') {
         let tempDiscover = createCat("discoverCon", "Discover");
         tempDiscover.id = "discoverCat";
@@ -1143,6 +1126,7 @@ function addCustomRoom() {
         });
     }
     catch (err) {
+        console.warn(err);
     }
 }
 // todo
@@ -1247,9 +1231,9 @@ if (true) {
                 window.parent.apiCall("POST", { "username": username, "action": 14, "name": name, "url": main_url_prompt }, change_url_callback, [domelem]);
             }
         },
-        delete_card: (x, domelem) => {
+        delete_card: (x, domelem, isManga = false) => {
             if (confirm("Are you sure you want to delete this show from your watched list?")) {
-                window.parent.apiCall("POST", { "username": username, "action": 6, "name": x }, delete_card_callback, [domelem]);
+                window.parent.apiCall("POST", { "username": username, "action": 6, "name": x, isManga }, delete_card_callback, [domelem]);
             }
         },
         get_userinfo: () => {
@@ -1257,7 +1241,6 @@ if (true) {
             window.parent
                 .apiCall("POST", { "username": username, "action": 4 }, get_userinfo_callback, [])
                 .then(() => {
-                console.log("Success.");
             })
                 .catch((err) => {
                 const errorCon = document.getElementById("custom_rooms");
@@ -1275,7 +1258,7 @@ if (true) {
     }
     function change_url_callback(x, z) {
         x.setAttribute("data-main-link", z.data.url);
-        x.parentElement.parentElement.getElementsByClassName("s_card_title_main")[0].href = z.data.url;
+        x.parentElement.parentElement.getElementsByClassName("s_card_title_main")[0].setAttribute("data-href", z.data.url);
     }
     function delete_card_callback(x) {
         x.parentElement.parentElement.parentElement.remove();
@@ -1354,7 +1337,7 @@ if (true) {
             for (let promise of promiseResult) {
                 try {
                     if (promise === null) {
-                        sendNoti([0, "red", "Error", `Could not update ${fix_title(promiseShowData[count].name)}`]);
+                        sendNoti([5, "red", "Error", `Could not update ${fix_title(promiseShowData[count].name)}`]);
                         promiseShowData[count].dom.style.boxSizing = "border-box";
                         promiseShowData[count].dom.style.border = "3px solid grey";
                     }
@@ -1392,6 +1375,43 @@ if (true) {
     function helpUpdateLib() {
         alert("Outlines the shows that have new unwatched episodes. This is automatically updated twice a day, but you can manually do it by clicking on \"Update Library\". This may take tens of seconds.");
     }
+    async function updateNextEp(flaggedShow) {
+        var _a, _b;
+        const anilistIDs = [];
+        for (const show of flaggedShow) {
+            const id = (new URLSearchParams(show.showURL)).get("aniID");
+            anilistIDs.push(id);
+        }
+        const nextEpData = await window.parent.sendBatchReqs(anilistIDs);
+        for (const show of flaggedShow) {
+            const id = (new URLSearchParams(show.showURL)).get("aniID");
+            if (`anime${id}` in nextEpData && ((_b = (_a = nextEpData[`anime${id}`]) === null || _a === void 0 ? void 0 : _a.nextAiringEpisode) === null || _b === void 0 ? void 0 : _b.timeUntilAiring)) {
+                // (show.dom.querySelector(".s_card_play") as HTMLElement).style.bottom = "50px"; 
+                // (show.dom.querySelector(".card_menu") as HTMLElement).style.bottom = "50px"; 
+                const labelExtension = show.dom.querySelector(".card_title_extension");
+                const extensionName = labelExtension.innerText;
+                const nextEp = window.parent.secondsToHuman(nextEpData[`anime${id}`].nextAiringEpisode.timeUntilAiring, true);
+                labelExtension.style.padding = "inherit";
+                labelExtension.innerHTML = "";
+                labelExtension.appendChild(createElement({
+                    innerText: extensionName,
+                    style: {
+                        paddingLeft: "10px",
+                        display: "inline-block"
+                    }
+                }));
+                labelExtension.appendChild(createElement({
+                    innerText: nextEp,
+                    class: "s_card_next_ep",
+                    listeners: {
+                        click: function () {
+                            alert("When the next episode will air.");
+                        }
+                    }
+                }));
+            }
+        }
+    }
     async function get_userinfo_callback(response) {
         flaggedShow = [];
         document.getElementById("room_dis_child").innerHTML = "";
@@ -1417,33 +1437,35 @@ if (true) {
         let extensionNames = window.parent.returnExtensionNames();
         let extensionList = window.parent.returnExtensionList();
         if (!offlineMode) {
-            let updateLibCon = createElement({
+            document.getElementById('room_-1').append(createElement({
                 "style": {
                     "width": "100%",
                     "bottomMargin": "10px",
                     "textAlign": "center"
-                }
-            });
-            let updateLibButton = createElement({
-                "id": "updateLib",
-                "innerText": "Update Library"
-            });
-            let updateLibInfo = createElement({
-                "id": "infoBut",
-            });
-            updateLibInfo.onclick = function () {
-                helpUpdateLib();
-            };
-            updateLibButton.onclick = function () {
-                updateNewEp();
-            };
-            updateLibCon.append(updateLibButton);
-            updateLibCon.append(updateLibInfo);
-            document.getElementById('room_-1').append(updateLibCon);
+                },
+                children: [
+                    {
+                        "id": "updateLib",
+                        "innerText": "Update Library",
+                        "listeners": {
+                            "click": function () {
+                                updateNewEp();
+                            }
+                        }
+                    },
+                    {
+                        "id": "infoBut",
+                        "listeners": {
+                            "click": function () {
+                                helpUpdateLib();
+                            }
+                        }
+                    }
+                ]
+            }));
         }
         for (var i = 0; i < data.length; i++) {
             let domToAppend;
-            let findUnwatched = false;
             if (offlineMode) {
                 if (data[i][0] in downloadedFolders) {
                     delete downloadedFolders[data[i][0]];
@@ -1456,20 +1478,6 @@ if (true) {
                 domToAppend = document.getElementById('room_recently');
             }
             domToAppend.setAttribute("data-empty", "false");
-            if (parseInt(data[i][4]) == -1) {
-                findUnwatched = true;
-            }
-            let tempDiv = createElement({ "class": "s_card", "attributes": {}, "listeners": {} });
-            tempDiv.append(createElement({
-                element: "img",
-                class: "cardImage",
-                attributes: {
-                    "src": img_url(data[i][2]),
-                    "loading": "lazy",
-                }
-            }));
-            let tempDiv1 = createElement({ "class": "s_card_bg", "attributes": {}, "listeners": {} });
-            let tempDiv2 = createElement({ "class": "s_card_title", "attributes": {}, "listeners": {} });
             let currentExtensionName = "null";
             let currentExtension = null;
             try {
@@ -1485,164 +1493,215 @@ if (true) {
                 currentExtension = extensionList[engine];
             }
             catch (err) {
-                console.error(err);
-                console.error(data[i]);
+                console.warn(err);
             }
-            let tempDivEx = createElement({ "class": "card_title_extension", "attributes": {}, "listeners": {}, "innerText": currentExtensionName });
-            let tempDiv3 = document.createElement("div");
-            tempDiv3.className = "s_card_title_main";
-            tempDiv3.textContent = (currentExtension && "fixTitle" in currentExtension) ? fix_title(currentExtension.fixTitle(data[i][0])) : fix_title(data[i][0]);
-            tempDiv3.setAttribute("data-href", data[i][5]);
-            tempDiv3.setAttribute("data-current", data[i][3]);
-            tempDiv3.setAttribute("data-mainname", data[i][0]);
-            if (findUnwatched) {
+            const cardCon = createElement({
+                "class": "s_card",
+                "children": [
+                    {
+                        element: "img",
+                        class: "cardImage",
+                        attributes: {
+                            "src": img_url(data[i][2]),
+                            "loading": "lazy",
+                        }
+                    },
+                    {
+                        "class": "s_card_bg",
+                        "children": [
+                            {
+                                "class": "s_card_title",
+                                "children": [
+                                    {
+                                        "class": "s_card_title_main",
+                                        "innerText": (currentExtension && "fixTitle" in currentExtension) ? fix_title(currentExtension.fixTitle(data[i][0])) : fix_title(data[i][0]),
+                                        "attributes": {
+                                            "data-href": data[i][5],
+                                            "data-current": data[i][3],
+                                            "data-mainname": data[i][0]
+                                        },
+                                        "listeners": {
+                                            "click": function () {
+                                                localStorage.setItem("currentLink", this.getAttribute("data-current"));
+                                                window.parent.postMessage({ "action": 500, data: "pages/episode/index.html" + this.getAttribute("data-href") }, "*");
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "class": "card_ep",
+                                        "innerText": `Episode ${data[i][1]}`
+                                    }
+                                ]
+                            },
+                            {
+                                "class": "s_card_delete", "attributes": {
+                                    "data-showname": data[i][0]
+                                }
+                            },
+                            {
+                                "class": "s_card_play", "attributes": {
+                                    "data-href": data[i][3],
+                                    "data-epURL": data[i][5],
+                                    "data-mainname": data[i][0]
+                                }, "listeners": {
+                                    "click": function () {
+                                        localStorage.setItem("mainName", this.getAttribute("data-mainname"));
+                                        localStorage.setItem("epURL", this.getAttribute("data-epURL"));
+                                        window.parent.postMessage({ "action": 4, "data": this.getAttribute("data-href") }, "*");
+                                    }
+                                }, "element": "div"
+                            },
+                            {
+                                "class": "card_menu",
+                                "children": [
+                                    {
+                                        "class": "card_menu_item card_menu_icon_add", "attributes": {}, "listeners": {
+                                            "click": function () {
+                                                open_menu(this);
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "class": "card_menu_item card_menu_icon_delete", "attributes": {
+                                            "data-showname": data[i][0],
+                                            "data-href": data[i][5]
+                                        }, "listeners": {
+                                            "click": function () {
+                                                let isManga = false;
+                                                try {
+                                                    isManga = new URLSearchParams(this.getAttribute("data-href")).get("isManga") === "true";
+                                                }
+                                                catch (err) {
+                                                }
+                                                ini_api.delete_card(this.getAttribute("data-showname"), this, isManga);
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "class": "card_menu_item card_menu_icon_image", "attributes": {
+                                            "data-bg1": data[i][2],
+                                            "data-main-link": data[i][5],
+                                            "data-showname": data[i][0]
+                                        }, "listeners": {
+                                            "click": function () {
+                                                ini_api.change_image_card(this.getAttribute("data-showname"), this);
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "class": "card_menu_item card_menu_icon_watched", "attributes": {
+                                            "data-showname": data[i][0]
+                                        }, "listeners": {
+                                            "click": function () {
+                                                watched_card(this);
+                                            }
+                                        }
+                                    }
+                                ]
+                            },
+                            {
+                                "class": "card_title_extension",
+                                "innerText": currentExtensionName
+                            }
+                        ]
+                    }
+                ]
+            });
+            if (parseInt(data[i][4]) == -1) {
                 flaggedShow.push({
                     "showURL": data[i][5],
                     "currentEp": data[i][3],
-                    "dom": tempDiv,
+                    "dom": cardCon,
                     "name": data[i][0]
                 });
             }
-            tempDiv3.onclick = function () {
-                localStorage.setItem("currentLink", this.getAttribute("data-current"));
-                window.parent.postMessage({ "action": 500, data: "pages/episode/index.html" + this.getAttribute("data-href") }, "*");
-            };
-            let tempDiv4 = createElement({ "class": "card_ep", "attributes": {}, "listeners": {}, "innerText": `Episode ${data[i][1]}` });
-            let tempDiv5 = createElement({
-                "class": "s_card_delete", "attributes": {
-                    "data-showname": data[i][0]
-                }, "listeners": {
-                    "click": function () {
-                        ini_api.delete_card(this.getAttribute("data-showname"), this);
-                    }
-                }
-            });
-            let tempDiv6 = createElement({
-                "class": "s_card_play", "attributes": {
-                    "data-href": data[i][3],
-                    "data-mainname": data[i][0]
-                }, "listeners": {
-                    "click": function () {
-                        localStorage.setItem("mainName", this.getAttribute("data-mainname"));
-                        window.parent.postMessage({ "action": 4, "data": this.getAttribute("data-href") }, "*");
-                    }
-                }, "element": "div"
-            });
-            let tempDiv7 = createElement({ "class": "card_menu", "attributes": {}, "listeners": {} });
-            let tempDiv8 = createElement({
-                "class": "card_menu_item card_menu_icon_add", "attributes": {}, "listeners": {
-                    "click": function () {
-                        open_menu(this);
-                    }
-                }
-            });
-            let tempDiv9 = createElement({
-                "class": "card_menu_item card_menu_icon_delete", "attributes": {
-                    "data-showname": data[i][0]
-                }, "listeners": {
-                    "click": function () {
-                        ini_api.delete_card(this.getAttribute("data-showname"), this);
-                    }
-                }
-            });
-            let tempDiv10 = createElement({
-                "class": "card_menu_item card_menu_icon_image", "attributes": {
-                    "data-bg1": data[i][2],
-                    "data-main-link": data[i][5],
-                    "data-showname": data[i][0]
-                }, "listeners": {
-                    "click": function () {
-                        ini_api.change_image_card(this.getAttribute("data-showname"), this);
-                    }
-                }
-            });
-            let tempDiv11 = createElement({
-                "class": "card_menu_item card_menu_icon_watched", "attributes": {
-                    "data-showname": data[i][0]
-                }, "listeners": {
-                    "click": function () {
-                        watched_card(this);
-                    }
-                }
-            });
-            tempDiv7.append(tempDiv8);
-            tempDiv7.append(tempDiv9);
-            tempDiv7.append(tempDiv10);
-            tempDiv7.append(tempDiv11);
-            tempDiv2.append(tempDiv3);
-            tempDiv2.append(tempDiv4);
-            tempDiv1.append(tempDiv2);
-            tempDiv1.append(tempDiv5);
-            tempDiv1.append(tempDiv6);
-            tempDiv1.append(tempDiv7);
-            tempDiv1.append(tempDivEx);
-            tempDiv.append(tempDiv1);
             try {
                 if (data[i].length >= 7 && JSON.parse(data[i][6])[1] > 0) {
-                    let progData = JSON.parse(data[i][6]);
-                    let tempProgDiv = createElement({
+                    const progData = JSON.parse(data[i][6]);
+                    cardCon.querySelector(".s_card_bg").append(createElement({
                         "class": "episodesProgressCon",
-                    });
-                    tempProgDiv.append(createElement({
-                        "class": "episodesProgress",
-                        "style": {
-                            "width": `${100 * (parseInt(progData[0]) / parseInt(progData[1]))}%`
-                        }
+                        "children": [
+                            {
+                                "class": "episodesProgress",
+                                "style": {
+                                    "width": `${100 * (parseInt(progData[0]) / parseInt(progData[1]))}%`
+                                }
+                            }
+                        ]
                     }));
-                    tempDiv1.append(tempProgDiv);
                 }
             }
             catch (err) {
+                console.warn(err);
             }
-            domToAppend.append(tempDiv);
+            domToAppend.append(cardCon);
         }
         pullTabArray = [];
         last_order = getCurrentOrder();
-        if (permNoti != null) {
-            if (permNoti.noti) {
-                permNoti.noti.remove();
-            }
+        if (permNoti != null && permNoti.noti) {
+            permNoti.noti.remove();
         }
         if (offlineMode) {
-            for (let showname in downloadedFolders) {
-                if (showname == "socialsharing-downloads") {
+            for (const showname in downloadedFolders) {
+                if (showname == "socialsharing-downloads" || showname == "manga") {
                     continue;
                 }
-                let domToAppend = document.getElementById('room_recently');
-                let tempDiv = createElement({ "class": "s_card", "attributes": {}, "listeners": {} });
-                tempDiv.style.backgroundImage = `url("../../assets/images/placeholder.jpg")`;
-                let tempDiv1 = createElement({ "class": "s_card_bg", "attributes": {}, "listeners": {} });
-                let tempDiv2 = createElement({ "class": "s_card_title", "attributes": {}, "listeners": {} });
-                let tempDiv3 = document.createElement("div");
-                tempDiv3.className = "s_card_title_main";
-                tempDiv3.textContent = fix_title(showname);
-                tempDiv3.setAttribute("data-href", "?watch=/" + showname);
-                let tempDiv7 = createElement({ "class": "card_menu", "attributes": {}, "listeners": {} });
-                let tempDiv9 = createElement({
-                    "class": "card_menu_item card_menu_icon_delete", "attributes": {
-                        "data-showname": showname
-                    },
-                    "listeners": {
-                        "click": async function () {
-                            try {
-                                await window.parent.removeDirectory(`${showname}`);
-                                tempDiv.remove();
-                            }
-                            catch (err) {
-                                alert("Could not delete the files. You have to manually delete it by going to the show's page.");
-                            }
-                        }
+                const isManga = downloadedFolders[showname] === "manga";
+                const domToAppend = document.getElementById('room_recently');
+                domToAppend.setAttribute("data-empty", "false");
+                const cardImage = createElement({
+                    "class": "s_card",
+                    "style": {
+                        "backgroundImage": `url("../../assets/images/placeholder.jpg")`
                     }
                 });
-                tempDiv3.onclick = function () {
-                    window.parent.postMessage({ "action": 500, data: "pages/episode/index.html" + this.getAttribute("data-href") }, "*");
-                };
-                tempDiv2.append(tempDiv3);
-                tempDiv1.append(tempDiv2);
-                tempDiv7.append(tempDiv9);
-                tempDiv1.append(tempDiv7);
-                tempDiv.append(tempDiv1);
-                domToAppend.append(tempDiv);
+                const cardContent = createElement({
+                    "class": "s_card_bg",
+                    "children": [
+                        {
+                            "class": "s_card_title",
+                            "children": [
+                                {
+                                    "class": "s_card_title_main",
+                                    "innerText": fix_title(showname),
+                                    "attributes": {
+                                        "data-href": "?watch=/" + showname
+                                    },
+                                    "listeners": {
+                                        "click": function () {
+                                            window.parent.postMessage({ "action": 500, data: `pages/episode/index.html${this.getAttribute("data-href")}${isManga ? "&isManga=true" : ""}` }, "*");
+                                        }
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "class": "card_menu",
+                            "children": [
+                                {
+                                    "class": "card_menu_item card_menu_icon_delete", "attributes": {
+                                        "data-showname": showname
+                                    },
+                                    "listeners": {
+                                        "click": async function () {
+                                            try {
+                                                if (confirm("Are you sure you want to delete this show?")) {
+                                                    await window.parent.removeDirectory(`${isManga ? "manga/" : ""}${showname}`);
+                                                    cardImage.remove();
+                                                }
+                                            }
+                                            catch (err) {
+                                                alert("Could not delete the files. You have to manually delete it by going to the show's page.");
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    ]
+                });
+                cardImage.append(cardContent);
+                domToAppend.append(cardImage);
             }
         }
         let catMainDOM = document.getElementsByClassName("categoriesDataMain");
@@ -1652,16 +1711,26 @@ if (true) {
                 continue;
             }
             if (catMainDOM[i].getAttribute("data-empty") !== "false") {
-                constructErrorPage(catMainDOM[i], "So empty. Try searching things and adding it to the library!", {
-                    hasLink: true,
-                    hasReload: false,
-                    customConClass: "absolute",
-                    isError: false,
-                    linkClass: "search",
-                    clickEvent: () => {
-                        window.parent.postMessage({ "action": 500, data: "pages/search/index.html" }, "*");
-                    }
-                });
+                if (offlineMode) {
+                    constructErrorPage(catMainDOM[i], "So empty. Try adding shows to this category!", {
+                        hasLink: false,
+                        hasReload: false,
+                        customConClass: "absolute",
+                        isError: false,
+                    });
+                }
+                else {
+                    constructErrorPage(catMainDOM[i], "So empty. Try searching things and adding it to the library!", {
+                        hasLink: true,
+                        hasReload: false,
+                        customConClass: "absolute",
+                        isError: false,
+                        linkClass: "search",
+                        clickEvent: () => {
+                            window.parent.postMessage({ "action": 500, data: "pages/search/index.html" }, "*");
+                        }
+                    });
+                }
             }
             catMainDOM[i].append(createElement({
                 "style": {
@@ -1687,6 +1756,7 @@ if (true) {
         if (!firstLoad) {
             populateDiscover();
         }
+        updateNextEp(flaggedShow);
     }
     var ini_api = api;
     if (config.local || localStorage.getItem("offline") === 'true') {
@@ -1728,15 +1798,6 @@ if (true) {
         console.error(err);
     });
 }
-function changeEngine() {
-    let val = localStorage.getItem("currentEngine");
-    if (val == null || val == "1") {
-        localStorage.setItem("currentEngine", "0");
-    }
-    else {
-        localStorage.setItem("currentEngine", '1');
-    }
-}
 for (let element of document.getElementsByClassName("menuItem")) {
     element.addEventListener("click", () => { toggleMenu(); });
 }
@@ -1756,7 +1817,7 @@ function selectTheme(index) {
         themeCount++;
     }
 }
-let menuP = new menuPull(document.getElementById("con_11"), toggleMenu);
+let menuP = new menuPull(document.getElementById("con_11"), toggleMenu, document.getElementById("custom_rooms"));
 document.getElementById("toggleMenuOpen").addEventListener("click", () => { toggleMenu(); });
 let themeCount = 0;
 for (let themeElem of document.getElementsByClassName("themesContainer")) {
@@ -1781,7 +1842,6 @@ document.getElementById("opSlider").oninput = function () {
     window.parent.postMessage({ "action": "updateOpacity", data: elem.value }, "*");
 };
 window.addEventListener("popstate", function (event) {
-    console.log(states);
     try {
         stateAction[states]();
     }

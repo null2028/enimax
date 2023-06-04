@@ -47,7 +47,7 @@ document.getElementById("sources").onchange = function () {
     localStorage.setItem("currentEngine", engineID);
 };
 
-document.getElementById("back").onclick = function() {
+document.getElementById("back").onclick = function () {
     window.parent.postMessage({ "action": 500, data: `pages/homepage/index.html` }, "*");
 };
 
@@ -181,8 +181,15 @@ function search() {
 applyTheme();
 
 
-if(searchQuery){
+if (searchQuery) {
     searchInput.value = searchQuery;
     openSearch();
     search();
 }
+
+let conElem = document.getElementById("con_11");
+
+new menuPull(conElem, () => {
+    window.parent.postMessage({ "action": 500, data: "pages/homepage/index.html" }, "*");
+    conElem.style.transform = `translateX(100px)`;
+}, document.getElementById("mainConSearch"));

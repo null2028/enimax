@@ -6,13 +6,14 @@ var fmoviesto = {
         try {
             query = query.replace(" ", "+");
             const vrf = await this.getVRF(query, "fmovies-vrf");
-            rawURL = `https://fmovies.to/search?keyword=${encodeURIComponent(query)}&vrf=${vrf[0]}`;
-            const searchHTML = await MakeFetchZoro(`https://fmovies.to/search?keyword=${encodeURIComponent(query)}&vrf=${vrf[0]}`);
+            rawURL = `https://fmovies.to/filter?keyword=${encodeURIComponent(query)}&vrf=${vrf[0]}&sort=most_relevance`;
+            const searchHTML = await MakeFetchZoro(`https://fmovies.to/filter?keyword=${encodeURIComponent(query)}&vrf=${vrf[0]}&sort=most_relevance`);
             searchDOM.innerHTML = DOMPurify.sanitize(searchHTML);
-            const searchElem = searchDOM.querySelector(".filmlist");
+            const searchElem = searchDOM.querySelector(".movies.items");
             if (!searchElem) {
                 throw new Error("No results found.");
             }
+            console.log(searchDOM);
             const searchItems = searchElem.querySelectorAll(".item");
             const response = [];
             if (searchItems.length === 0) {
@@ -20,11 +21,11 @@ var fmoviesto = {
             }
             for (let i = 0; i < searchItems.length; i++) {
                 const currentElem = searchItems[i];
+                const anchor = currentElem.querySelector(".meta").querySelector("a");
                 response.push({
-                    "id": currentElem.querySelector(".title").getAttribute('href').slice(1),
-                    "name": currentElem.querySelector(".title").innerText,
-                    "image": currentElem.querySelector("img").src,
-                    "link": "/" + currentElem.querySelector(".title").getAttribute("href").slice(1).replace("/watch/", "") + "&engine=6"
+                    "name": anchor.innerText,
+                    "image": currentElem.querySelector("img").getAttribute("data-src"),
+                    "link": "/" + anchor.getAttribute("href").slice(1).replace("/watch/", "") + "&engine=6"
                 });
             }
             return { "data": response, "status": 200 };
@@ -55,12 +56,12 @@ var fmoviesto = {
             infoDOM.innerHTML = DOMPurify.sanitize(infoHTML, {
                 "ADD_ATTR": ["itemprop"]
             });
-            const container = infoDOM.querySelector(".watch-extra");
-            response.mainName = id.replace("series/", "").replace("movie/", "");
-            response.name = container.querySelector(`h1`).innerText;
+            const container = infoDOM.querySelector("#w-info");
+            response.mainName = id.replace("series/", "").replace("movie/", "").replace("tv/", "");
+            response.name = container.querySelector(`.name`).innerText;
             response.image = container.querySelector(`img`).getAttribute("src");
-            response.description = container.querySelector("div[itemprop=\"description\"]").innerText.trim();
-            const isMovie = id.split('/')[0] !== "series";
+            response.description = container.querySelector(".description").innerText.trim();
+            const isMovie = id.split('/')[0] !== "series" && id.split('/')[0] !== "tv";
             try {
                 response.genres = [];
                 const metaCon = infoDOM.querySelector(".bmeta").querySelector(".meta");
@@ -72,16 +73,16 @@ var fmoviesto = {
                 }
             }
             catch (err) {
-                console.log(err);
+                console.error(err);
             }
             let episodes = [];
-            const uid = infoDOM.querySelector("#watch").getAttribute("data-id");
+            const uid = infoDOM.querySelector(".watch").getAttribute("data-id");
             let IDVRF = await this.getVRF(uid, "fmovies-vrf");
             let episodesHTML = "";
             try {
-                const tempResponse = JSON.parse(await MakeFetchZoro(`https://fmovies.to/ajax/film/servers?id=${uid}&vrf=${IDVRF[0]}`));
-                if (tempResponse.html) {
-                    episodesHTML = tempResponse.html;
+                const tempResponse = JSON.parse(await MakeFetchZoro(`https://fmovies.to/ajax/episode/list/${uid}?vrf=${IDVRF[0]}`));
+                if (tempResponse.result) {
+                    episodesHTML = tempResponse.result;
                 }
                 else {
                     throw new Error("Couldn't find the result");
@@ -91,7 +92,8 @@ var fmoviesto = {
                 throw new Error(`Error 9ANIME_INFO_JSON: The JSON could be be parsed. ${err.message}`);
             }
             episodesDOM.innerHTML = DOMPurify.sanitize(episodesHTML);
-            let episodeElem = episodesDOM.querySelectorAll(".episode");
+            let episodeElem = episodesDOM.querySelectorAll(".episodes a");
+            console.log(episodesDOM, episodeElem);
             response.totalPages = 0;
             response.pageInfo = [];
             if (isMovie) {
@@ -107,20 +109,25 @@ var fmoviesto = {
                 let title = "";
                 let episodeNum;
                 let season;
+                let epID;
+                let sourceID;
                 try {
                     if (isMovie) {
-                        title = curElem.innerText;
+                        title = (curElem).innerText;
                     }
                     else {
-                        title = curElem.querySelector('a').getAttribute('title');
+                        title = curElem.getAttribute("title");
                     }
                 }
                 catch (err) {
                     console.warn("Could not find the title");
                 }
+                sourceID = curElem.getAttribute("data-id");
+                const num = curElem.getAttribute('href').split('/').pop();
+                epID = num;
                 if (!isMovie) {
-                    episodeNum = parseInt(curElem.querySelector('a').getAttribute('data-kname').split('-')[1]);
-                    season = parseInt(curElem.querySelector('a').getAttribute('data-kname').split('-')[0]);
+                    episodeNum = parseInt(num.split("-")[1]);
+                    season = parseInt(num.split("-")[0]);
                     if (response.totalPages == 0 || season != lastSeason) {
                         response.pageInfo.push({
                             pageName: `Season ${season}`,
@@ -137,15 +144,19 @@ var fmoviesto = {
                     response.pageInfo[response.pageInfo.length - 1].pageSize++;
                 }
                 episodes.push({
-                    "link": (nextPrev ? "" : "?watch=") + encodeURIComponent(id) + "&ep=" + curElem.querySelector("a").getAttribute("data-kname") + "&engine=6",
-                    "id": curElem.querySelector("a").getAttribute("data-kname"),
-                    "title": (nextPrev || isMovie) ? title : `Season ${season} | Episode ${episodeNum} - ${title}`
+                    "link": (nextPrev ? "" : "?watch=") + encodeURIComponent(id) + "&ep=" + epID + "&engine=6",
+                    "id": sourceID,
+                    "sourceID": epID,
+                    "title": (nextPrev || isMovie) ? title : `Season ${season} | Episode ${episodeNum} - ${title}`,
+                    "altTruncatedTitle": `S${season} E${episodeNum}`,
+                    "altTitle": `Season ${season} Episode ${episodeNum}`
                 });
             }
             response.episodes = episodes;
             return response;
         }
         catch (err) {
+            console.log(err);
             err.url = rawURL;
             throw err;
         }
@@ -172,39 +183,31 @@ var fmoviesto = {
         try {
             const searchParams = new URLSearchParams(url);
             const sourceEp = searchParams.get("ep");
-            const isMovie = searchParams.get("watch").split('/')[0] !== "series";
+            const isMovie = searchParams.get("watch").split('/')[0] !== "series" && searchParams.get("watch").split('/')[0] !== "tv";
             const promises = [];
             const infoHTML = await MakeFetchZoro(`https://fmovies.to/${searchParams.get("watch")}`);
             infoDOM.innerHTML = DOMPurify.sanitize(infoHTML);
-            const uid = infoDOM.querySelector("#watch").getAttribute('data-id');
+            const uid = infoDOM.querySelector(".watch").getAttribute("data-id");
             const epsiodeServers = [];
-            const serverVRF = await this.getVRF(uid, "fmovies-vrf");
-            const serverHTML = JSON.parse(await MakeFetchZoro(`https://fmovies.to/ajax/film/servers?id=${uid}&vrf=${serverVRF[0]}`)).html;
+            const servers = {};
+            let epList = [];
+            epList = (await this.getAnimeInfo(`?watch=/${searchParams.get("watch")}`, true)).episodes;
+            const serverID = epList.find((x) => x.sourceID === sourceEp).id;
+            const serverVRF = await this.getVRF(serverID, "fmovies-vrf");
+            // https://fmovies.to/ajax/server/list/29303?vrf=O2F%2FYF1JRHg%3D
+            const serverHTML = JSON.parse(await MakeFetchZoro(`https://fmovies.to/ajax/server/list/${serverID}?vrf=${serverVRF[0]}`)).result;
             serverDOM.innerHTML = DOMPurify.sanitize(serverHTML, {
                 "ADD_ATTR": ["data-kname", "data-id"]
             });
-            const servers = {};
             const serverDIVs = serverDOM.querySelectorAll(".server");
             for (let i = 0; i < serverDIVs.length; i++) {
                 const curServer = serverDIVs[i];
-                const serverId = curServer.getAttribute("data-id");
-                let serverName = curServer.innerText.toLowerCase().split('server')[1].trim();
-                servers[serverId] = serverName;
-            }
-            const currentEpisode = serverDOM.querySelector(`a[data-kname="${sourceEp}"]`);
-            try {
-                const serverString = JSON.parse(currentEpisode.getAttribute("data-ep"));
-                for (const serverId in serverString) {
-                    console.log(servers, serverId);
-                    epsiodeServers.push({
-                        type: servers[serverId],
-                        id: serverString[serverId],
-                    });
-                }
-            }
-            catch (err) {
-                console.log(err);
-                throw new Error('Episode not found');
+                const serverId = curServer.getAttribute("data-link-id");
+                let serverName = curServer.innerText.toLowerCase().trim();
+                epsiodeServers.push({
+                    id: serverId,
+                    type: serverName
+                });
             }
             try {
                 const epTemp = sourceEp.split('-');
@@ -227,26 +230,16 @@ var fmoviesto = {
             catch (err) {
                 response.episode = "1";
             }
-            response.name = searchParams.get("watch").replace("series/", "").replace("movie/", "");
+            response.name = searchParams.get("watch").replace("series/", "").replace("movie/", "").replace("tv/", "");
             response.nameWSeason = response.name;
             response.status = 200;
             let sources = [];
             async function addSource(ID, self, index, extractor) {
                 try {
                     const serverVRF = await self.getVRF(ID, "fmovies-vrf");
-                    const serverData = JSON.parse(await MakeFetchZoro(`https://fmovies.to/ajax/episode/info?id=${ID}&vrf=${serverVRF[0]}`));
+                    const serverData = JSON.parse(await MakeFetchZoro(` https://fmovies.to/ajax/server/${ID}?vrf=${serverVRF[0]}`)).result;
                     const serverURL = serverData.url;
                     const sourceDecrypted = await self.decryptSource(serverURL);
-                    if (!response.subtitles) {
-                        try {
-                            // Blame Fmovies, not me
-                            const subURL = new URLSearchParams((new URLSearchParams((new URL(sourceDecrypted)).search)).get("h")).values().next().value;
-                            response.subtitles = JSON.parse(await MakeFetchZoro(subURL));
-                        }
-                        catch (err) {
-                            console.warn(err);
-                        }
-                    }
                     let source = {
                         "name": "",
                         "type": "",
@@ -263,6 +256,7 @@ var fmoviesto = {
                         sources.push(source);
                     }
                     else if (extractor == "filemoon") {
+                        console.log(sourceDecrypted);
                         const filemoonHTML = await MakeFetch(sourceDecrypted);
                         const m3u8File = await self.getFilemoonLink(filemoonHTML);
                         source = {
@@ -300,42 +294,39 @@ var fmoviesto = {
                     promises.push(addSource(epsiodeServers[i].id, this, epsiodeServers[i].type, epsiodeServers[i].type));
                 }
             }
-            let settledSupported = "allSettled" in Promise;
-            let epList = [];
-            if (settledSupported) {
-                promises.unshift(this.getAnimeInfo(`?watch=/${searchParams.get("watch")}`, true));
-                const promiseResult = await Promise.allSettled(promises);
-                if (promiseResult[0].status === "fulfilled") {
-                    epList = promiseResult[0].value.episodes;
-                }
-            }
-            else {
-                try {
-                    await Promise.all(promises);
-                    epList = (await this.getAnimeInfo(`?watch=/${searchParams.get("watch")}`, true)).episodes;
-                }
-                catch (err) {
-                    console.error(err);
-                }
-            }
             let check = false;
+            let sourceID = null;
             for (var i = 0; i < epList.length; i++) {
                 if (check === true) {
                     response.next = epList[i].link;
                     break;
                 }
-                if (epList[i].id == sourceEp) {
+                if (epList[i].sourceID == sourceEp) {
                     check = true;
+                    sourceID = epList[i].id;
                     response.title = epList[i].title ? epList[i].title.trim() : "";
                 }
                 if (check === false) {
                     response.prev = epList[i].link;
                 }
             }
+            await Promise.all(promises);
             if (!sources.length) {
                 throw new Error("No sources were found. Try again later or contact the developer.");
             }
+            if (!response.subtitles) {
+                try {
+                    const subURL = `https://fmovies.to/ajax/episode/subtitles/${sourceID}`;
+                    response.subtitles = JSON.parse(await MakeFetchZoro(subURL));
+                }
+                catch (err) {
+                    console.warn(err);
+                }
+            }
             response.sources = sources;
+            if (parseFloat(response.episode) === 0) {
+                response.episode = "0.1";
+            }
             return response;
         }
         catch (err) {
@@ -495,7 +486,7 @@ var fmoviesto = {
             const tempTitle = title.split("-");
             if (tempTitle.length > 1) {
                 tempTitle.pop();
-                title = tempTitle.join("-").toLowerCase().replace("series/", "").replace("movie/", "");
+                title = tempTitle.join("-").toLowerCase().replace("series/", "").replace("movie/", "").replace("tv/", "");
                 return title;
             }
             else {
