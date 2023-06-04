@@ -1,0 +1,5 @@
+Update version.json
+Update config.xml 
+Update /src/js/config.ts
+Change Debuggable to false
+Run make ts

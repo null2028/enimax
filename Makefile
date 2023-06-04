@@ -16,7 +16,6 @@ docker-run:
 	docker run -i -t b440a27ea6b4
 
 ts:
-	npm install typescript -g
 	-rm www -rf
 	cp src www -r
 	-cd src && tsc -p tsconfig.json
