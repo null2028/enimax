@@ -1,14 +1,25 @@
 class XMLHttpRequest2 {
+	headers: any;
+	responseHeaders: any;
+	config: any;
+	delegate: any;
+	requestHeaders: any;
+	listeners: any;
+	readyState: number;
+	responseType: string;
+	withCredentials: boolean;
+	status: number;
+	statusText: string;
+	response: any;
+	responseURL: any;
+	responseText: string;
+
 	constructor() {
 		this.headers = {};
 		this.responseHeaders = {};
 		this.config = {};
-
 		this.delegate = null;
-		this.requestHeaders = {
-
-		};
-
+		this.requestHeaders = {};
 		this.responseHeaders = {};
 		this.listeners = {};
 		this.readyState = 0;
@@ -92,14 +103,11 @@ class XMLHttpRequest2 {
 		let option = {
 			"method": this.config.method,
 			"responseType": this.responseType
-
-		}
+		} as any;
 
 		if (Object.keys(this.requestHeaders).length != 0) {
-
 			option.headers = this.requestHeaders;
 		}
-
 
 		if (data) {
 			option.body = data;
@@ -107,6 +115,8 @@ class XMLHttpRequest2 {
 
 		let self = this;
 
+		// @ts-ignore
+		// todo
 		window.parent.cordova.plugin.http.sendRequest(self.config.url, option,
 			function (response) {
 				if (self.responseType == "text") {
@@ -126,11 +136,6 @@ class XMLHttpRequest2 {
 			function (response) {
 				console.error(response);
 			});
-
-
-
-
-
 	}
 
 	abort() {
@@ -150,7 +155,4 @@ class XMLHttpRequest2 {
 			}
 		}
 	}
-
-
-
 }

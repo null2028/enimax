@@ -118,17 +118,7 @@ class DownloadVid {
                 }
             }, true);
         });
-        if (this.engine == 3 && config.sockets) {
-            let socket = io(extensionList[3].config.socketURL, { transports: ["websocket"] });
-            socket.on("connect", () => {
-                self.sid = socket.id;
-                socket.off("connect");
-                this.ini();
-            });
-        }
-        else {
-            this.ini();
-        }
+        this.ini();
     }
     getBaseUrl(url) {
         let newUrl = url.substring(0, url.indexOf("?") == -1 ? url.length : url.indexOf("?"));
@@ -137,6 +127,7 @@ class DownloadVid {
         return newUrl;
     }
     updateNoti(x_name, self, type = 0) {
+        // @ts-ignore
         if (cordova.plugins.backgroundMode.isActive() === false || localStorage.getItem("hideNotification") === "true") {
             return;
         }
@@ -163,15 +154,18 @@ class DownloadVid {
             sound: false,
         };
         if (self.sent == true) {
+            // @ts-ignore
             cordova.plugins.notification.local.update(notiConfig);
         }
         else {
+            // @ts-ignore
             cordova.plugins.notification.local.schedule(notiConfig);
         }
         self.sent = true;
     }
     ini() {
         let self = this;
+        // @ts-ignore
         window.resolveLocalFileSystemURL(cordova.file.externalDataDirectory, function (fs) {
             fs.getDirectory(`${self.name}`, { create: true, exclusive: false }, function (nameDir) {
                 self.nameDir = nameDir;
@@ -184,6 +178,7 @@ class DownloadVid {
                                 "uri": self.vidData.subtitles[i].file,
                                 "downloaded": false
                             });
+                            // @ts-ignore
                             self.vidData.subtitles[i].file = cordova.file.externalDataDirectory + `${self.name}/${btoa(self.vidData.ogURL)}/subtitle${i}`;
                         }
                     }
@@ -282,6 +277,7 @@ class DownloadVid {
                     "responseType": "text"
                 };
                 options.headers = headers;
+                // @ts-ignore
                 window.parent.cordova.plugin.http.sendRequest(uri, options, function (response) {
                     resolve(response.data);
                 }, function (error) {
@@ -334,6 +330,7 @@ class DownloadVid {
         return new Promise(function (resolve, reject) {
             self.fileDir.getFile(filename, { create: true, exclusive: false }, function (fileEntry) {
                 //todo
+                // @ts-ignore
                 var fileTransfer = new FileTransfer();
                 var fileURL = fileEntry.toURL();
                 headers.suppressProgress = true;
@@ -377,7 +374,7 @@ class DownloadVid {
                     reject(err);
                 });
             }, function (x) {
-                reject(err);
+                reject(x);
             });
         });
     }
@@ -401,12 +398,12 @@ class DownloadVid {
                         }
                     };
                     fileWriter.onerror = function (e) {
-                        self.errorHandler(self, e);
+                        self.errorHandler(self, e === null || e === void 0 ? void 0 : e.toString());
                     };
                     fileWriter.seek(fileWriter.length);
                     fileWriter.write(data);
                 }, (err) => {
-                    self.errorHandler(self, err);
+                    self.errorHandler(self, err === null || err === void 0 ? void 0 : err.toString());
                 });
             }
             else {
@@ -424,12 +421,12 @@ class DownloadVid {
                         self.check = 0;
                     };
                     fileWriter.onerror = function (e) {
-                        self.errorHandler(self, e);
+                        self.errorHandler(self, e === null || e === void 0 ? void 0 : e.toString());
                     };
                     fileWriter.seek(fileWriter.length);
                     fileWriter.write(data);
                 }, (err) => {
-                    self.errorHandler(self, err);
+                    self.errorHandler(self, err === null || err === void 0 ? void 0 : err.toString());
                 });
             }
         }
@@ -455,7 +452,7 @@ class DownloadVid {
                     clearTimeout(timeoutId);
                     self.total = parseInt(response.headers.get("content-length"));
                     if (parseInt(response.headers.get("content-length")) == self.size) {
-                        self.done();
+                        self.done(self);
                     }
                     else {
                         if (response.ok) {
@@ -507,14 +504,17 @@ class DownloadVid {
     }
     async startDownload(self) {
         try {
-            const hasConfig = !!extensionList[this.engine].config;
+            const hasConfig = !!extensionList[this.engine].getConfig;
+            let headersConfig;
             let m3u8File;
             if (hasConfig) {
-                m3u8File = await self.makeRequest(`${self.url}`, (x) => x.text(), extensionList[this.engine].config);
+                headersConfig = extensionList[this.engine].getConfig(self.url);
+                m3u8File = await self.makeRequest(`${self.url}`, (x) => x.text(), headersConfig);
             }
             else {
                 m3u8File = await self.makeRequest(`${self.url}`, (x) => x.text());
             }
+            // @ts-ignore
             let parser = new m3u8Parser.Parser();
             parser.push(m3u8File);
             parser.end();
@@ -551,7 +551,7 @@ class DownloadVid {
                 }
                 self.baseURL = self.getBaseUrl(url);
                 if (hasConfig) {
-                    m3u8File = await self.makeRequest(`${url}`, (x) => x.text(), extensionList[this.engine].config);
+                    m3u8File = await self.makeRequest(`${url}`, (x) => x.text(), headersConfig);
                 }
                 else {
                     m3u8File = await self.makeRequest(`${url}`, (x) => x.text());
@@ -597,7 +597,9 @@ class DownloadVid {
                             break;
                         }
                     }
+                    // @ts-ignore
                     temp = temp.join(",");
+                    // @ts-ignore
                     x[i] = temp;
                 }
                 else if (x[i].includes("#EXTINF")) {
@@ -652,9 +654,9 @@ class DownloadVid {
                             "user-agent": navigator.userAgent,
                         };
                         try {
-                            if (extensionList[this.engine].config) {
-                                for (let key in extensionList[this.engine].config) {
-                                    headers[key] = extensionList[this.engine].config[key];
+                            if (headersConfig) {
+                                for (let key in headersConfig) {
+                                    headers[key] = headersConfig[key];
                                 }
                             }
                         }
@@ -781,7 +783,7 @@ class DownloadVid {
         }
         self.updateNoti(`Error - Episode ${self.vidData.episode} - ${fix_title(self.name)}`, self, 2);
         self.pause = true;
-        self.message = (x);
+        self.message = x !== null && x !== void 0 ? x : "";
         self.error();
         self.error = () => { };
         self.success = () => { };

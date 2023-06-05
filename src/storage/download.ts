@@ -48,6 +48,8 @@ class DownloadVid {
     controller: AbortController;
     fileEntry: FileEntry;
     message: string;
+    base64Image: null | string;
+
     constructor(vidData: videoData, data: extensionInfo, success: Function, error: Function, episodes: extensionInfoEpisode[], pause: boolean) {
         this.success = success;
         this.episodes = episodes;
@@ -109,31 +111,21 @@ class DownloadVid {
                     vidData.sources = [vidData.sources[0]];
                 }
             }
-
-
-
-
         }
-
-
-
-
 
         this.name = data.mainName;
         this.downloaded = 0;
         this.total = 0;
-
         this.preferredResolution = localStorage.getItem("offlineQual") ? parseInt(localStorage.getItem("offlineQual")) : 720;
         this.metaData = data;
         this.baseURL = this.getBaseUrl(this.url);
         this.infoFile = null;
         this.fileDir = null;
 
-
-        function blobToBase64(blob) {
+        function blobToBase64(blob: Blob): Promise<string> {
             return new Promise((resolve, reject) => {
                 const reader = new FileReader();
-                reader.onloadend = () => resolve(reader.result);
+                reader.onloadend = () => resolve(reader.result as string);
                 reader.onerror = (err) => reject(err);
                 reader.readAsDataURL(blob);
             });
@@ -141,6 +133,7 @@ class DownloadVid {
 
         let self: DownloadVid = this;
         this.base64Image = null;
+
         fetch(this.metaData.image).then(x => x.blob()).then(blob => blobToBase64(blob)).then((img) => {
             self.base64Image = img;
         }).catch(function (err) {
@@ -167,9 +160,6 @@ class DownloadVid {
 
             }, true);
 
-
-
-
             await actionSQLite[14]({
                 "body": {
                     "name": vidData.name,
@@ -177,31 +167,9 @@ class DownloadVid {
                 }
 
             }, true);
-
-
-
-
-
-
         });
 
-
-        if (this.engine == 3 && config.sockets) {
-            let socket = io(extensionList[3].config.socketURL, { transports: ["websocket"] });
-            socket.on("connect", () => {
-                self.sid = socket.id;
-                socket.off("connect");
-                this.ini();
-
-            });
-        } else {
-            this.ini();
-        }
-
-
-
-
-
+        this.ini();
     }
 
     getBaseUrl(url: string): string {
@@ -212,6 +180,8 @@ class DownloadVid {
     }
 
     updateNoti(x_name, self, type = 0) {
+
+        // @ts-ignore
         if (cordova.plugins.backgroundMode.isActive() === false || localStorage.getItem("hideNotification") === "true") {
             return;
         }
@@ -238,8 +208,10 @@ class DownloadVid {
             sound: false,
         };
         if (self.sent == true) {
+            // @ts-ignore
             cordova.plugins.notification.local.update(notiConfig);
         } else {
+            // @ts-ignore
             cordova.plugins.notification.local.schedule(notiConfig);
         }
 
@@ -249,6 +221,7 @@ class DownloadVid {
     ini() {
 
         let self = this;
+        // @ts-ignore
         (window as unknown as cordovaWindow).resolveLocalFileSystemURL(cordova.file.externalDataDirectory, function (fs: DirectoryEntry) {
             fs.getDirectory(`${self.name}`, { create: true, exclusive: false }, function (nameDir) {
                 self.nameDir = nameDir;
@@ -265,8 +238,8 @@ class DownloadVid {
                                 }
                             );
 
+                            // @ts-ignore
                             self.vidData.subtitles[i].file = cordova.file.externalDataDirectory + `${self.name}/${btoa(self.vidData.ogURL)}/subtitle${i}`;
-
                         }
                     }
 
@@ -408,14 +381,17 @@ class DownloadVid {
 
 
     async makeRequest(uri: string, typeFunc: TypeFunc, headers?): Promise<string> {
+
         return new Promise(function (resolve, reject) {
             if (headers) {
                 const options = {
                     "method": "GET",
 			        "responseType": "text"
-                };
+                } as any;
 
                 options.headers = headers;
+
+                // @ts-ignore
                 window.parent.cordova.plugin.http.sendRequest(uri, options,
                     function (response) {
                         resolve(response.data);
@@ -483,6 +459,7 @@ class DownloadVid {
         return new Promise(function (resolve, reject) {
             self.fileDir.getFile(filename, { create: true, exclusive: false }, function (fileEntry) {
                 //todo
+                // @ts-ignore
                 var fileTransfer = new FileTransfer();
                 var fileURL = fileEntry.toURL();
                 headers.suppressProgress = true;
@@ -526,27 +503,19 @@ class DownloadVid {
     readFile(self: DownloadVid): Promise<string> {
         return new Promise(function (resolve, reject) {
             self.fileDir.getFile("downloaded.json", { create: true, exclusive: false }, function (fileEntry) {
-
                 fileEntry.file(function (file) {
                     var reader = new FileReader();
-
                     reader.onloadend = function () {
                         resolve(this.result as string);
                     };
-
                     reader.readAsText(file);
 
                 }, (err) => {
                     reject(err);
-
                 });
-
-
             }, function (x) {
-                reject(err);
+                reject(x);
             });
-
-
         });
     }
 
@@ -573,7 +542,7 @@ class DownloadVid {
                     };
 
                     fileWriter.onerror = function (e) {
-                        self.errorHandler(self, e);
+                        self.errorHandler(self, e?.toString());
                     };
 
                     fileWriter.seek(fileWriter.length);
@@ -581,7 +550,7 @@ class DownloadVid {
                     fileWriter.write(data);
 
                 }, (err) => {
-                    self.errorHandler(self, err);
+                    self.errorHandler(self, err?.toString());
                 });
             } else {
                 setTimeout(function () {
@@ -599,7 +568,7 @@ class DownloadVid {
                     };
 
                     fileWriter.onerror = function (e) {
-                        self.errorHandler(self, e);
+                        self.errorHandler(self, e?.toString());
                     };
 
                     fileWriter.seek(fileWriter.length);
@@ -607,7 +576,7 @@ class DownloadVid {
                     fileWriter.write(data);
 
                 }, (err) => {
-                    self.errorHandler(self, err);
+                    self.errorHandler(self, err?.toString());
                 });
             }
         }
@@ -639,14 +608,11 @@ class DownloadVid {
                     clearTimeout(timeoutId);
                     self.total = parseInt(response.headers.get("content-length"));
                     if (parseInt(response.headers.get("content-length")) == self.size) {
-                        self.done();
+                        self.done(self);
                     } else {
                         if (response.ok) {
                             const reader = response.body.getReader();
                             let total = 0;
-
-
-
                             return reader.read().then(function processResult(result) {
 
                                 if (result.done) {
@@ -701,14 +667,18 @@ class DownloadVid {
 
     async startDownload(self: DownloadVid) {
         try {
-            const hasConfig = !!extensionList[this.engine].config;
+            const hasConfig = !!extensionList[this.engine].getConfig;
+            let headersConfig: any;
             let m3u8File : string;
 
             if(hasConfig){
-                m3u8File = await self.makeRequest(`${self.url}`, (x) => x.text(), extensionList[this.engine].config);
+                headersConfig = extensionList[this.engine].getConfig(self.url);
+                m3u8File = await self.makeRequest(`${self.url}`, (x) => x.text(), headersConfig);
             }else{
                 m3u8File = await self.makeRequest(`${self.url}`, (x) => x.text());
             }
+
+            // @ts-ignore
             let parser = new m3u8Parser.Parser();
 
             parser.push(m3u8File);
@@ -760,7 +730,7 @@ class DownloadVid {
 
                 self.baseURL = self.getBaseUrl(url);
                 if(hasConfig){
-                    m3u8File = await self.makeRequest(`${url}`, (x) => x.text(), extensionList[this.engine].config);
+                    m3u8File = await self.makeRequest(`${url}`, (x) => x.text(), headersConfig);
                 }else{
                     m3u8File = await self.makeRequest(`${url}`, (x) => x.text());
                 }
@@ -825,7 +795,9 @@ class DownloadVid {
                         }
                     }
 
+                    // @ts-ignore
                     temp = temp.join(",");
+                    // @ts-ignore
                     x[i] = temp;
 
                 }
@@ -891,9 +863,9 @@ class DownloadVid {
                         };
 
                         try {
-                            if (extensionList[this.engine].config) {
-                                for (let key in extensionList[this.engine].config) {
-                                    headers[key] = extensionList[this.engine].config[key];
+                            if (headersConfig) {
+                                for (let key in headersConfig) {
+                                    headers[key] = headersConfig[key];
                                 }
                             }
                         } catch (err) {
@@ -1022,7 +994,6 @@ class DownloadVid {
 
         self.fileDir.getFile(`.downloaded`, { create: true, exclusive: false }, function (dir) {
             self.updateNoti(`Done - Episode ${self.vidData.episode} - ${fix_title(self.name)}`, self, 2);
-
             self.pause = true;
             self.message = "Done";
             self.success();
@@ -1043,15 +1014,11 @@ class DownloadVid {
             return;
         }
 
-
-
         self.updateNoti(`Error - Episode ${self.vidData.episode} - ${fix_title(self.name)}`, self, 2);
-
         self.pause = true;
-        self.message = (x);
+        self.message = x ?? "";
         self.error();
         self.error = () => { };
         self.success = () => { };
-
     }
 }

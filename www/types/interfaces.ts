@@ -106,7 +106,8 @@ interface videoData {
     name: string,
     nameWSeason: string,
     subtitles: Array<videoSubtitle>
-    engine?: number
+    engine?: number,
+    ogURL: string
 }
 
 interface mangaData extends extensionMangaSource{
@@ -373,7 +374,7 @@ interface EnimaxConfig {
 interface downloadMapping {
     "fileName": string,
     "uri": string,
-    "downloaded": boolean
+    "downloaded": boolean | -1
 }
 
 interface LocalMapping {
