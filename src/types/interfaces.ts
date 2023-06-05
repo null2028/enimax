@@ -197,6 +197,9 @@ interface modifiedString extends String {
 
 interface extension {
     baseURL: string,
+    disabled: boolean,
+    type: "manga" | "anime" | "tv" | "others",
+    name: string,
     searchApi: (query: string) => Promise<extensionSearch>;
     getAnimeInfo: (url: string) => Promise<extensionInfo>;
     getLinkFromUrl: (url: any) => Promise<extensionVidSource | extensionMangaSource>;

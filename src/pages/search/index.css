@@ -125,3 +125,8 @@ select {
 	overflow-x: auto;
 	left: 0;
 }
+
+#con_11{
+	display: flex;
+    flex-direction: column;
+}

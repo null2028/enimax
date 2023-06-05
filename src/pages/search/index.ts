@@ -103,9 +103,10 @@ function search() {
         currentEngine = extensionList[0];
     } else {
         currentEngine = parseInt(engineID);
-        if (currentEngine == 0) {
+        if (currentEngine == 0 || isNaN(currentEngine)) {
             currentEngine = extensionList[0];
-        } else {
+        }
+        else{
             currentEngine = extensionList[currentEngine];
         }
     }
@@ -193,3 +194,113 @@ new menuPull(conElem, () => {
     window.parent.postMessage({ "action": 500, data: "pages/homepage/index.html" }, "*");
     conElem.style.transform = `translateX(100px)`;
 }, document.getElementById("mainConSearch"));
+
+
+
+// let catCon = createElement({
+//     id: "categoriesCon",
+//     style: {
+//         position: "sticky",
+//         top: "0",
+//         zIndex: "2",
+//         margin: "0",
+//         boxSizing: "border-box",
+//         backgroundColor: "black"
+//     },
+//     innerHTML: `<div id="catActive">
+//                     <div style="position: absolute;background: red;" id="catActiveMain"></div>
+//                 <div>`
+// });
+
+// let catDataCon = createElement({
+//     style: {
+//         width: "100%",
+//         whiteSpace: "nowrap"
+//     },
+//     id: "custom_rooms",
+//     class: "snappedCustomRooms"
+// });
+
+
+// const catDataCons = [];
+// const cats = ["Anime", "TV/Movies", "K-Drama", "Others"];
+// const catIDs = ["anime", "tv", "kdrama", "others"];
+
+// for (let i = 0; i < cats.length; i++) {
+//     catCon.append(createCat(`room_${catIDs[i]}`, cats[i], 1));
+//     catDataCons.push(createElement({
+//         "class": `categoriesDataMain snappedCategoriesDataMain`,
+//         style: {
+//             "min-width": "100%"
+//         },
+//         "id": `room_${catIDs[i]}`
+//     }));
+
+//     catDataCon.append(catDataCons[catDataCons.length - 1]);
+// }
+
+
+// let scrollLastIndex;
+// let tempCatDOM = document.getElementsByClassName("categories");
+// let cusRoomDOM = document.getElementById("custom_rooms");
+// scrollSnapFunc = function (shouldScroll = true) {
+//     let unRoundedIndex = cusRoomDOM.scrollLeft / cusRoomDOM.offsetWidth;
+//     let index = Math.round(unRoundedIndex);
+
+//     if (index != scrollLastIndex) {
+//         for (let i = 0; i < tempCatDOM.length; i++) {
+//             if (i == index) {
+//                 tempCatDOM[i].classList.add("activeCat");
+//                 if (shouldScroll) {
+//                     tempCatDOM[i].scrollIntoView();
+//                 }
+//                 lastScrollElem = document.getElementById(tempCatDOM[i].getAttribute("data-id"));
+//             } else {
+//                 tempCatDOM[i].classList.remove("activeCat");
+//             }
+//         }
+
+//         let activeCatDOM = document.querySelector(".categories.activeCat") as HTMLElement;
+//         let temp = document.getElementById("catActiveMain") as HTMLElement;
+//         window.requestAnimationFrame(function () {
+//             window.requestAnimationFrame(function () {
+//                 if (temp && activeCatDOM) {
+//                     temp.style.left = (parseFloat(activeCatDOM.offsetLeft.toString()) - 10) + "px";
+//                     temp.style.height = activeCatDOM.offsetHeight.toString();
+//                     temp.style.width = activeCatDOM.offsetWidth.toString();
+//                 }
+
+//                 clearTimeout(displayTimeout);
+//                 displayTimeout = setTimeout(() => {
+//                     let foundCurrentCon = false;
+//                     for (let i = 0; i < tempCatDOM.length; i++) {
+//                         const dataCon = document.getElementById(tempCatDOM[i].getAttribute("data-id"));
+//                         const prevCon = document.getElementById(tempCatDOM[i - 1]?.getAttribute("data-id"));
+
+//                         if (i == index) {
+//                             foundCurrentCon = true;
+//                             prevCon?.classList.remove("closed");
+//                             dataCon.classList.remove("closed");
+//                         } else {
+
+//                             if (foundCurrentCon) {
+//                                 dataCon.classList.remove("closed");
+//                                 foundCurrentCon = false;
+//                             }
+//                             else if (dataCon) {
+//                                 dataCon.classList.add("closed");
+//                             }
+//                         }
+//                     }
+
+//                 }, 250);
+//             });
+//         });
+//     }
+//     scrollLastIndex = index;
+// };
+// conElem.addEventListener("scroll", () => { scrollSnapFunc() }, { "passive": true });
+
+
+// conElem.append(catCon);
+// conElem.append(catDataCon);
