@@ -17,5 +17,7 @@ Makefile.local
 
 helper/package.json
 helper/package-lock.json
+helper/.env
+.env
 
 switch.sh
