@@ -2,7 +2,16 @@ cordova:
 	cd /usr/src/
 	cordova platform add android@9.0.0
 
+release:
+	make ts
+	JAVA_HOME=/usr/src/java cordova run android --release --device
+
+emu:
+	make ts
+	JAVA_HOME=/usr/src/java cordova run android --release --emulator
+
 build-cordova:
+	npm install typescript -g
 	make ts
 	JAVA_HOME=/usr/src/java ANDROID_HOME=/usr/lib/android-sdk  cordova build --release --device --no-telemetry
 
@@ -15,8 +24,25 @@ docker-build:
 docker-run:
 	docker run -i -t b440a27ea6b4
 
+chrome2:
+	make ts
+	rm enimax-chrome-extension-v2/www -rf
+	cp www enimax-chrome-extension-v2 -r
+	touch enimax-chrome-extension-v2/www/cordova.js
+	-rm enimax-chrome-extension-v2/www/assets/config.js
+	-cp enimax-chrome-extension-v2/manifest-v2.json enimax-chrome-extension-v2/manifest.json
+	echo 'var config = {"local": localStorage.getItem("local") === "true", "remote": localStorage.getItem("remote"),"remoteWOport": localStorage.getItem("remoteWOport"), "chrome": true, "manifest": "v2", "firefox": false, "beta": false, "sockets": false}; localStorage.setItem("version", "1.3.2");if (localStorage.getItem("lastUpdate") === null) { localStorage.setItem("lastUpdate", "0");}' > enimax-chrome-extension-v2/www/assets/js/config.js
+
+chrome3:
+	make ts
+	rm enimax-chromfse-extension/www -rf
+	cp www enimax-chrome-extension -r
+	touch enimax-chrome-extension/www/cordova.js
+	-rm enimax-chrome-extension/www/assets/config.js
+	-cp enimax-chrome-extension/manifest-v3.json enimax-chrome-extension/manifest.json
+	echo 'var config = {"local": localStorage.getItem("local") === "true", "remote": localStorage.getItem("remote"),"remoteWOport": localStorage.getItem("remoteWOport"), "chrome": true, "manifest": "v3", "firefox": false, "beta": false, "sockets": false}; localStorage.setItem("version", "1.3.2");if (localStorage.getItem("lastUpdate") === null) {localStorage.setItem("lastUpdate", "0");}' > enimax-chrome-extension/www/assets/js/config.js
+
 ts:
-	npm install typescript -g
 	-rm www -rf
 	cp src www -r
 	-cd src && tsc -p tsconfig.json
