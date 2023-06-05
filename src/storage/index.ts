@@ -383,7 +383,7 @@ async function apiCall(method, form, callback, args = [], timeout = false, shoul
                     nameUm = req.body.name;
                 }
 
-                var ep = req.body.ep;
+                var ep = parseFloat(req.body.ep);
 
                 if (cur.toLowerCase().substring(0, 7) == "?watch=" && cur.toLowerCase().indexOf("javascript") == -1) {
 
@@ -828,7 +828,7 @@ async function apiCall(method, form, callback, args = [], timeout = false, shoul
 
                 }
 
-                var ep = req.body.ep;
+                var ep = parseFloat(req.body.ep);
 
                 if (cur.toLowerCase().substring(0, 7) == "?watch=" && cur.toLowerCase().indexOf("javascript") == -1) {
                     var response: any = {};

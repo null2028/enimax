@@ -332,7 +332,7 @@ async function apiCall(method, form, callback, args = [], timeout = false, shoul
                 else {
                     nameUm = req.body.name;
                 }
-                var ep = req.body.ep;
+                var ep = parseFloat(req.body.ep);
                 if (cur.toLowerCase().substring(0, 7) == "?watch=" && cur.toLowerCase().indexOf("javascript") == -1) {
                     var response = {};
                     var getdata = await mysql_query("SELECT cur_time as current, main_link as mainLink from video where ep=0 and name=? LIMIT 1", [nameUm], currentDB);
@@ -742,7 +742,7 @@ async function apiCall(method, form, callback, args = [], timeout = false, shoul
                 else {
                     nameUm = req.body.name;
                 }
-                var ep = req.body.ep;
+                var ep = parseFloat(req.body.ep);
                 if (cur.toLowerCase().substring(0, 7) == "?watch=" && cur.toLowerCase().indexOf("javascript") == -1) {
                     var response = {};
                     let getdata = await db.vid.filter((data) => (data.ep == 0 && data.name == nameUm)).toArray();
