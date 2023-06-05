@@ -422,9 +422,11 @@ function loadImage(url) {
         img.src = url;
     });
 }
-
 var wco = {
     baseURL: "https://www.wcoforever.net",
+    type: "anime",
+    disabled: false,
+    name: "WCOForever",
     searchApi: function (query) {
         let baseURL = this.baseURL;
         let tempDiv = document.createElement("div");
@@ -794,10 +796,12 @@ var wco = {
         }
     }
 };
-
 // RIP
 var animixplay = {
     baseURL: "https://animixplay.to",
+    type: "anime",
+    disabled: true,
+    name: "Animixplay",
     searchApi: async function (query) {
         const response = [];
         alert("Animixplay has been shut down.");
@@ -828,9 +832,11 @@ var animixplay = {
         };
     }
 };
-
 var fmovies = {
     baseURL: fmoviesBaseURL,
+    type: "tv",
+    disabled: false,
+    name: "FlixHQ",
     searchApi: async function (query) {
         let tempDOM = document.createElement("div");
         try {
@@ -1320,9 +1326,11 @@ var fmovies = {
         }
     }
 };
-
 var zoro = {
     baseURL: "https://zoro.to",
+    type: "anime",
+    disabled: false,
+    name: "Zoro",
     searchApi: async function (query) {
         let dom = document.createElement("div");
         try {
@@ -1724,9 +1732,11 @@ var zoro = {
         return `?watch=${url.pathname}&engine=3`;
     }
 };
-
 var twitch = {
     baseURL: "https://twitch.tv",
+    type: "others",
+    disabled: false,
+    name: "Twitch",
     searchApi: async function (query) {
         try {
             const clientId = "kimne78kx3ncx6brgo4mv6wki5h1ko";
@@ -1968,9 +1978,11 @@ var twitch = {
         return resp;
     },
 };
-
 var nineAnime = {
     baseURL: "https://9anime.to",
+    type: "anime",
+    disabled: false,
+    name: "9anime",
     searchApi: async function (query) {
         const searchDOM = document.createElement("div");
         try {
@@ -2528,9 +2540,11 @@ var nineAnime = {
         return `?watch=${url.pathname.replace("/watch", "")}&engine=5`;
     }
 };
-
 var fmoviesto = {
     baseURL: "https://fmovies.to",
+    type: "tv",
+    disabled: false,
+    name: "Fmovies.to",
     searchApi: async function (query) {
         let rawURL = "";
         let searchDOM = document.createElement("div");
@@ -3042,10 +3056,12 @@ var fmoviesto = {
         }
     }
 };
-
 var gogo = {
     baseURL: "https://gogoanime.gr",
     ajaxURL: "https://ajax.gogo-load.com/ajax",
+    type: "anime",
+    disabled: false,
+    name: "Gogo",
     keys: [
         CryptoJS.enc.Utf8.parse("37911490979715163134003223491201"),
         CryptoJS.enc.Utf8.parse("54674138327930866480207815084989"),
@@ -3327,9 +3343,11 @@ try {
 catch (err) {
     console.error(err);
 }
-
 var mangaDex = {
     baseURL: "https://api.mangadex.org",
+    type: "manga",
+    disabled: false,
+    name: "MangaDex",
     searchApi: async function (query) {
         var _a, _b;
         try {
@@ -3499,9 +3517,11 @@ var mangaDex = {
         return `?watch=/${url.pathname.replace("/title/", "")}&engine=8`;
     }
 };
-
 var mangaFire = {
     baseURL: "https://mangafire.to",
+    type: "manga",
+    disabled: false,
+    name: "MangaFire",
     searchApi: async function (query) {
         var _a, _b;
         const searchDOM = document.createElement("div");
@@ -3570,7 +3590,7 @@ var mangaFire = {
     descramble: function (imageURL, key) {
         return new Promise(async function (resolve, reject) {
             // const image = await loadImage(imageURL);
-            const worker = new Worker("./extensions/mangafireDecrambler.js");
+            const worker = new Worker("./extensions/utils/mangafireDecrambler.js");
             // const bitmap = await createImageBitmap(image);
             const timeout = setTimeout(function () {
                 try {
@@ -3701,10 +3721,11 @@ var mangaFire = {
         return `?watch=${path}&engine=9`;
     }
 };
-
 var viewAsian = {
     baseURL: "https://viewasian.co",
-    // ajaxURL: "https://ajax.gogo-load.com/ajax",
+    type: "tv",
+    disabled: false,
+    name: "viewAsian",
     keys: [
         CryptoJS.enc.Utf8.parse("93422192433952489752342908585752"),
         CryptoJS.enc.Utf8.parse("9262859232435825"),
@@ -3928,9 +3949,14 @@ catch (err) {
 
 // @ts-ignore
 const extensionList = [wco, animixplay, fmovies, zoro, twitch, nineAnime, fmoviesto, gogo, mangaDex, mangaFire, viewAsian];
+// @ts-ignore   
+const extensionNames = [];
 // @ts-ignore
-const extensionNames = ["WCOforever", "Animixplay", "FlixHQ", "Zoro", "Twitch", "9anime", "Fmovies.to", "Gogo", "MangaDex", "MangaFire", "viewAsian"];
+const extensionDisabled = [];
 // @ts-ignore
-const extensionDisabled = [false, true, false, false, false, false, false, false, false, false, false];
-// @ts-ignore
-const extensionTypes = ["", "", "", "", "", "", "", "", "manga", "manga", ""];
+const extensionTypes = [];
+for (const extension of extensionList) {
+    extensionNames.push(extension.name);
+    extensionDisabled.push(extension.disabled);
+    extensionTypes.push(extension.type);
+}

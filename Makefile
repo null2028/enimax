@@ -55,15 +55,15 @@ ts:
 	-rm www -rf
 	cp src www -r
 	-cd src && tsc -p tsconfig.json
-	cd www/extensions && printf "\n" >> index.js && cat wco.js >> index.js
-	cd www/extensions && printf "\n" >> index.js && cat animixplay.js >> index.js
-	cd www/extensions && printf "\n" >> index.js && cat fmovies.js >> index.js
-	cd www/extensions && printf "\n" >> index.js && cat zoro.js >> index.js
-	cd www/extensions && printf "\n" >> index.js && cat twitch.js >> index.js
-	cd www/extensions && printf "\n" >> index.js && cat 9anime.js >> index.js
-	cd www/extensions && printf "\n" >> index.js && cat fmoviesto.js >> index.js
-	cd www/extensions && printf "\n" >> index.js && cat gogo.js >> index.js
-	cd www/extensions && printf "\n" >> index.js && cat mangadex.js >> index.js
-	cd www/extensions && printf "\n" >> index.js && cat mangafire.js >> index.js
-	cd www/extensions && printf "\n" >> index.js && cat viewasian.js >> index.js
+	cd www/extensions/anime && printf "\n" >> index.js && cat wco.js >> ../index.js
+	cd www/extensions/anime && printf "\n" >> index.js && cat animixplay.js >> ../index.js
+	cd www/extensions/tv && printf "\n" >> index.js && cat fmovies.js >> ../index.js
+	cd www/extensions/anime && printf "\n" >> index.js && cat zoro.js >> ../index.js
+	cd www/extensions/others && printf "\n" >> index.js && cat twitch.js >> ../index.js
+	cd www/extensions/anime && printf "\n" >> index.js && cat 9anime.js >> ../index.js
+	cd www/extensions/tv && printf "\n" >> index.js && cat fmoviesto.js >> ../index.js
+	cd www/extensions/anime && printf "\n" >> index.js && cat gogo.js >> ../index.js
+	cd www/extensions/manga && printf "\n" >> index.js && cat mangadex.js >> ../index.js
+	cd www/extensions/manga && printf "\n" >> index.js && cat mangafire.js >> ../index.js
+	cd www/extensions/tv && printf "\n" >> index.js && cat viewasian.js >> ../index.js
 	cd www/extensions && printf "\n" >> index.js && cat export.js >> index.js
