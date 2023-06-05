@@ -12,6 +12,8 @@ const discordClient = new Client({
     ],
 });
 
+const data = JSON.parse(fs.readFileSync(path.join(__dirname, "./data.json")));
+
 async function ini(token, channelID, branch) {
     try {
         await discordClient.login(token);
@@ -19,12 +21,19 @@ async function ini(token, channelID, branch) {
 
         if (process.env.RELEASE === "true") {
             await channel.send({
-                content: `https://github.com/enimax-anime/enimax/releases/latest \n A new version has been released!  : \n\n ${fs.readFileSync(path.join(__dirname, "./releasenotes.txt"), "utf-8")}`,
+                content: `${data.shouldPing ? "@everyone " : ""} https://github.com/enimax-anime/enimax/releases/latest \n A new version has been released!  : \n\n ${fs.readFileSync(path.join(__dirname, "./releasenotes.txt"), "utf-8")}`,
                 files: [
                     path.join(__dirname, "../../app-release.apk"),
                 ]
             });
-        } else {
+        } else if (process.env.isBeta === "true"){
+            await channel.send({
+                content: `${data.shouldPing ? "@everyone " : ""} A new beta version has been released!\n${fs.readFileSync(path.join(__dirname, "./releasenotes.txt"), "utf-8")}`,
+                files: [
+                    path.join(__dirname, "../../app-release.apk"),
+                ]
+            });
+        }else {
             await channel.send({
                 content: `${branch} was updated: ${process.env.MESSAGE}`,
                 files: [
@@ -34,6 +43,7 @@ async function ini(token, channelID, branch) {
         }
 
     } catch (err) {
+        console.error(err)
         console.error("Something went wrong");
     } finally {
         process.exit();

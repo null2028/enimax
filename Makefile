@@ -30,4 +30,5 @@ ts:
 	cd www/extensions && printf "\n" >> index.js && cat gogo.js >> index.js
 	cd www/extensions && printf "\n" >> index.js && cat mangadex.js >> index.js
 	cd www/extensions && printf "\n" >> index.js && cat mangafire.js >> index.js
+	cd www/extensions && printf "\n" >> index.js && cat viewasian.js >> index.js
 	cd www/extensions && printf "\n" >> index.js && cat export.js >> index.js
