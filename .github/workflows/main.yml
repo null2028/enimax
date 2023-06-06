@@ -70,6 +70,13 @@ jobs:
         BRANCH:  ${{ steps.branch-name.outputs.current_branch }}
         MESSAGE: ${{ github.event.head_commit.message }}
 
+    - name: Checking if this is a beta release
+      run: | 
+        chmod +x ./enimax/helper/beta.sh && ./enimax/helper/beta.sh
+      env:
+        CHANNELID:  ${{ secrets.BETACHANNEL }}
+        TOKEN: ${{ secrets.TOKEN }}
+
     - if: steps.branch-name.outputs.current_branch == 'main'
       name: Releasing if it's the main branch
       run: | 
