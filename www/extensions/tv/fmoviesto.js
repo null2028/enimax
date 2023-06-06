@@ -149,6 +149,7 @@ var fmoviesto = {
                 episodes.push({
                     "link": (nextPrev ? "" : "?watch=") + encodeURIComponent(id) + "&ep=" + epID + "&engine=6",
                     "id": sourceID,
+                    "season": season,
                     "sourceID": epID,
                     "title": (nextPrev || isMovie) ? title : `Season ${season} | Episode ${episodeNum} - ${title}`,
                     "altTruncatedTitle": `S${season} E${episodeNum}`,
@@ -195,7 +196,9 @@ var fmoviesto = {
             const servers = {};
             let epList = [];
             epList = (await this.getAnimeInfo(`?watch=/${searchParams.get("watch")}`, true)).episodes;
-            const serverID = epList.find((x) => x.sourceID === sourceEp).id;
+            const epData = epList.find((x) => x.sourceID === sourceEp);
+            const season = isNaN(epData.season) ? 1 : epData.season;
+            const serverID = epData.id;
             const serverVRF = await this.getVRF(serverID, "fmovies-vrf");
             // https://fmovies.to/ajax/server/list/29303?vrf=O2F%2FYF1JRHg%3D
             const serverHTML = JSON.parse(await MakeFetchZoro(`https://fmovies.to/ajax/server/list/${serverID}?vrf=${serverVRF[0]}`)).result;
@@ -234,7 +237,7 @@ var fmoviesto = {
                 response.episode = "1";
             }
             response.name = searchParams.get("watch").replace("series/", "").replace("movie/", "").replace("tv/", "");
-            response.nameWSeason = response.name;
+            response.nameWSeason = response.name + "-" + season;
             response.status = 200;
             let sources = [];
             async function addSource(ID, self, index, extractor) {

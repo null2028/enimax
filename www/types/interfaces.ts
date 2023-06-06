@@ -288,6 +288,7 @@ interface extensionInfoEpisode {
     title: string,
     id?: string,
     altTitle?: string,
+    season?: number,
     altTruncatedTitle?: string,
     sourceID?: string,
     thumbnail?: string,

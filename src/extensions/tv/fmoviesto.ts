@@ -175,6 +175,7 @@ var fmoviesto: extension = {
                 episodes.push({
                     "link": (nextPrev ? "" : "?watch=") + encodeURIComponent(id) + "&ep=" + epID + "&engine=6",
                     "id": sourceID,
+                    "season": season,
                     "sourceID": epID,
                     "title": (nextPrev || isMovie) ? title : `Season ${season} | Episode ${episodeNum} - ${title}`,
                     "altTruncatedTitle": `S${season} E${episodeNum}`,
@@ -228,7 +229,9 @@ var fmoviesto: extension = {
             const servers: { [key: string]: string } = {};
             let epList: extensionInfoEpisode[] = [];
             epList = (await this.getAnimeInfo(`?watch=/${searchParams.get("watch")}`, true)).episodes;
-            const serverID = epList.find((x) => x.sourceID === sourceEp).id;
+            const epData = epList.find((x) => x.sourceID === sourceEp);
+            const season = isNaN(epData.season) ? 1 : epData.season;
+            const serverID = epData.id;
             const serverVRF = await this.getVRF(serverID, "fmovies-vrf");
 
 
@@ -272,7 +275,7 @@ var fmoviesto: extension = {
             }
 
             response.name = searchParams.get("watch").replace("series/", "").replace("movie/", "").replace("tv/", "");
-            response.nameWSeason = response.name;
+            response.nameWSeason = response.name + "-" + season;
             response.status = 200;
 
             let sources: Array<videoSource> = [];

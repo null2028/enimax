@@ -404,7 +404,7 @@ interface IFile extends Blob {
   /**
    * This export interface is the callback used to obtain a File.
    */
-  type FileCallback = (file: IFile) => void;
+  // type FileCallback = (file: IFile) => void;
   
   /**
    * This export interface is the generic callback used to indicate success of an asynchronous method.
@@ -414,7 +414,7 @@ interface IFile extends Blob {
   /**
    * When an error occurs, the following callback is made.
    */
-  type ErrorCallback = (err: FileError) => void;
+  // type ErrorCallback = (err: FileError) => void;
   
   interface RemoveResult {
     success: boolean;
