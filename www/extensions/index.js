@@ -188,24 +188,24 @@ function getCurrentSeason(type) {
     let season = "";
     const month = new Date().getMonth();
     switch (month) {
-        case 11:
         case 0:
         case 1:
+        case 2:
             season = "WINTER";
             break;
-        case 2:
         case 3:
         case 4:
+        case 5:
             season = "SPRING";
             break;
-        case 5:
         case 6:
         case 7:
+        case 8:
             season = "SUMMER";
             break;
-        case 8:
         case 9:
         case 10:
+        case 11:
             season = "FALL";
             break;
     }
