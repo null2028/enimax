@@ -1,5 +1,5 @@
 var wco = {
-    baseURL: "https://www.wcoforever.net",
+    baseURL: "https://www.wcoforever.org",
     type: "anime",
     disabled: false,
     name: "WCOForever",
@@ -130,7 +130,12 @@ var wco = {
                     animeName = animeName + "-";
                 }
                 data.episodes = animeEps;
-                data.mainName = url.replace("https://www.wcoforever.net/anime/", "") + "-";
+                try {
+                    data.mainName = (new URL(url)).pathname.replace("/anime/", "") + "-";
+                }
+                catch (err) {
+                    data.mainName = url.split("/anime/")[1] + "-";
+                }
                 resolve(data);
             }).catch(function (err) {
                 err.url = rawURL;

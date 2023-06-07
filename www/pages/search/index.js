@@ -4,82 +4,27 @@ const extensionNames = window.parent.returnExtensionNames();
 const extensionList = window.parent.returnExtensionList();
 // @ts-ignore
 const extensionDisabled = window.parent.returnExtensionDisabled();
-let sourcesNames = extensionNames;
 const queries = (new URLSearchParams(location.search));
-// @ts-ignore
-let pullTabArray = [];
-let engineID = queries.get("engine") || localStorage.getItem("currentEngine");
+const conElem = document.getElementById("con_11");
 const searchQuery = queries.get("search");
-pullTabArray.push(new pullToRefresh(document.getElementById("mainConSearch")));
-for (var i = 0; i < extensionList.length; i++) {
-    if (extensionDisabled[i]) {
-        continue;
-    }
-    let atr = {
-        "value": i.toString(),
-    };
-    if (i == parseInt(engineID) || (isNaN(parseInt(engineID)) && i == 0)) {
-        atr["selected"] = "";
-    }
-    let tempDiv = createElement({
-        "element": "option",
-        "attributes": atr,
-        "innerHTML": sourcesNames[i]
-    });
-    document.getElementById("sources").append(tempDiv);
-}
-let searchInput = document.querySelector('.searchInput');
-let searchBox = document.querySelector('.searchBox');
-let searchButton = document.querySelector('.searchButton');
-let searchClose = document.getElementById('s_c');
-document.getElementById("sources").onchange = function () {
-    engineID = this.value;
-    localStorage.setItem("currentEngine", engineID);
-};
-document.getElementById("back").onclick = function () {
-    window.parent.postMessage({ "action": 500, data: `pages/homepage/index.html` }, "*");
-};
-searchBox.onclick = function () {
-    openSearch();
-};
-searchClose.onclick = function (event) {
-    close_search(event);
-};
-constructErrorPage(document.getElementById("mainConSearch"), "Start searching by clicking on the search icon above!", {
-    hasLink: false,
-    hasReload: false,
-    isError: false,
-    customConClass: "absolute",
-    positive: true
-});
-function openSearch() {
-    searchInput.style.width = 'calc(100% - 50px)';
-    searchBox.style.width = 'calc(100% - 70px)';
-    searchClose.style.display = 'flex';
-    searchInput.style.paddingLeft = '40px';
-    searchButton.onclick = function () { search(); };
-}
-function close_search(event) {
-    searchClose.style.display = 'none';
-    searchInput.style.width = '0';
-    searchInput.style.paddingLeft = '0';
-    searchBox.style.width = '40px';
-    searchButton.onclick = function () { };
-    event.stopPropagation();
-}
-document.getElementById("searchForm").onsubmit = function (event) {
-    event.preventDefault();
-    window.parent.postMessage({ "action": 500, data: `pages/search/index.html?search=${searchInput.value}&engine=${engineID}` }, "*");
-};
+let engineID = queries.get("engine") || parseInt(localStorage.getItem("currentEngine"));
+let currentCatIndex = 0;
+// new menuPull(conElem, () => {
+//     window.parent.postMessage({ "action": 500, data: "pages/homepage/index.html" }, "*");
+//     conElem.style.transform = `translateX(100px)`;
+// }, document.getElementById("mainConSearch"));
 function search() {
-    document.getElementById("mainConSearch").innerHTML = "<div style='margin:auto;'>Loading...</div>";
+    const conID = `room_${catIDs[currentCatIndex]}`;
+    document.getElementById(conID).innerHTML = "<div style='margin:auto;'>Loading...</div>";
     let currentEngine;
     if (!engineID) {
         localStorage.setItem("currentEngine", "0");
+        engineID = 0;
+        localStorage.setItem(`search-current-${currentCatIndex}`, "0");
         currentEngine = extensionList[0];
     }
     else {
-        currentEngine = parseInt(engineID);
+        currentEngine = engineID;
         if (currentEngine == 0 || isNaN(currentEngine)) {
             currentEngine = extensionList[0];
         }
@@ -91,12 +36,15 @@ function search() {
         localStorage.setItem("devmode", "true");
     }
     currentEngine.searchApi(searchInput.value).then(function (x) {
+        var _a, _b;
         searchInput.value = searchQuery;
-        document.getElementById("sources").value = engineID;
+        // Freaking chrome
+        (_a = select.querySelector(`option[value="${engineID}"]`)) === null || _a === void 0 ? void 0 : _a.removeAttribute("selected");
+        (_b = select.querySelector(`option[value="${engineID}"]`)) === null || _b === void 0 ? void 0 : _b.setAttribute("selected", "");
         let main_div = x.data;
         if (main_div.length == 0) {
-            document.getElementById("mainConSearch").innerHTML = "";
-            constructErrorPage(document.getElementById("mainConSearch"), "No results", {
+            document.getElementById(conID).innerHTML = "";
+            constructErrorPage(document.getElementById(conID), "No results", {
                 hasLink: false,
                 hasReload: false,
                 isError: false,
@@ -104,7 +52,7 @@ function search() {
             });
         }
         else {
-            document.getElementById("mainConSearch").innerHTML = "";
+            document.getElementById(conID).innerHTML = "";
         }
         for (var i = 0; i < main_div.length; i++) {
             let tempDiv1 = createElement({ "class": "s_card" });
@@ -128,11 +76,11 @@ function search() {
             tempDiv2.append(tempDiv5);
             tempDiv1.append(tempDiv6);
             tempDiv1.append(tempDiv2);
-            document.getElementById("mainConSearch").append(tempDiv1);
+            document.getElementById(conID).append(tempDiv1);
         }
     }).catch(function (error) {
-        document.getElementById("mainConSearch").innerHTML = "";
-        constructErrorPage(document.getElementById("mainConSearch"), error.toString(), {
+        document.getElementById(conID).innerHTML = "";
+        constructErrorPage(document.getElementById(conID), error.toString(), {
             hasLink: false,
             hasReload: false,
             isError: false,
@@ -140,106 +88,203 @@ function search() {
         });
     });
 }
-applyTheme();
-if (searchQuery) {
-    searchInput.value = searchQuery;
-    openSearch();
-    search();
+let catCon = createElement({
+    id: "categoriesCon",
+    style: {
+        position: "sticky",
+        top: "0",
+        zIndex: "2",
+        margin: "0",
+        boxSizing: "border-box",
+        backgroundColor: "black"
+    },
+    innerHTML: `<div id="catActive">
+                    <div style="position: absolute;" id="catActiveMain"></div>
+                <div>`
+});
+let catDataCon = createElement({
+    style: {
+        width: "100%",
+        whiteSpace: "nowrap"
+    },
+    id: "custom_rooms",
+    class: "snappedCustomRooms"
+});
+const catDataCons = [];
+const cats = ["Anime", "Manga", "TV/Movies", "Others"];
+const catIDs = ["anime", "manga", "tv", "others"];
+conElem.append(createElement({
+    style: {
+        marginTop: "15px",
+        marginBottom: "10px"
+    },
+    children: [
+        {
+            class: "searchCon",
+            children: [
+                {
+                    id: "back",
+                    listeners: {
+                        click: function () {
+                            window.parent.postMessage({ "action": 500, data: `pages/homepage/index.html` }, "*");
+                        }
+                    }
+                },
+                {
+                    element: "form",
+                    listeners: {
+                        submit: function (event) {
+                            event.preventDefault();
+                            window.parent.postMessage({ "action": 500, data: `pages/search/index.html?search=${searchInput.value}&engine=${engineID}` }, "*");
+                        }
+                    },
+                    children: [
+                        {
+                            element: "input",
+                            class: "searchInput",
+                            attributes: {
+                                type: "text",
+                                placeholder: "Search sources"
+                            }
+                        }
+                    ]
+                },
+                {
+                    class: "searchButton",
+                    listeners: {
+                        click: function () {
+                            window.parent.postMessage({ "action": 500, data: `pages/search/index.html?search=${searchInput.value}&engine=${engineID}` }, "*");
+                        }
+                    }
+                }
+            ]
+        },
+    ]
+}));
+conElem.append(createElement({
+    element: "select"
+}));
+for (let i = 0; i < cats.length; i++) {
+    catCon.append(createCat(`room_${catIDs[i]}`, cats[i], 1));
+    catDataCons.push(createElement({
+        class: `categoriesDataMain snappedCategoriesDataMain`,
+        style: {
+            minWidth: "100%",
+        },
+        id: `room_${catIDs[i]}`,
+        children: [
+            {
+                style: {
+                    height: "100%",
+                    width: "100%"
+                }
+            }
+        ]
+    }));
+    catDataCon.append(catDataCons[catDataCons.length - 1]);
 }
-let conElem = document.getElementById("con_11");
+let scrollLastIndex;
+let tempCatDOM = catCon.querySelectorAll(".categories");
+let cusRoomDOM = catDataCon;
+const select = document.querySelector("select");
+select.onchange = function () {
+    engineID = parseInt(this.value);
+    localStorage.setItem("currentEngine", engineID.toString());
+    localStorage.setItem(`search-current-${currentCatIndex}`, engineID.toString());
+};
+scrollSnapFunc = function (shouldScroll = true, customIndex = null) {
+    let unRoundedIndex = cusRoomDOM.scrollLeft / cusRoomDOM.offsetWidth;
+    let index = Math.round(unRoundedIndex);
+    if (customIndex !== null) {
+        index = customIndex;
+    }
+    if (index != scrollLastIndex || customIndex !== null) {
+        currentCatIndex = index;
+        for (let i = 0; i < tempCatDOM.length; i++) {
+            if (i == index) {
+                tempCatDOM[i].classList.add("activeCat");
+                if (shouldScroll) {
+                    tempCatDOM[i].scrollIntoView();
+                }
+                if (customIndex !== null) {
+                    catDataCons[i].scrollIntoView();
+                }
+                select.innerHTML = "";
+                let check = false;
+                let firstIndex = -1;
+                for (let i = 0; i < extensionList.length; i++) {
+                    if (extensionDisabled[i] || extensionList[i].type != catIDs[index]) {
+                        continue;
+                    }
+                    firstIndex = i;
+                    let atr = {
+                        "value": i.toString(),
+                    };
+                    if (i == parseInt(localStorage.getItem(`search-current-${currentCatIndex}`))) {
+                        localStorage.setItem("currentEngine", i.toString());
+                        localStorage.setItem(`search-current-${currentCatIndex}`, i.toString());
+                        engineID = i;
+                        atr["selected"] = "";
+                        check = true;
+                    }
+                    let tempDiv = createElement({
+                        "element": "option",
+                        "attributes": atr,
+                        "innerHTML": extensionNames[i]
+                    });
+                    select.append(tempDiv);
+                }
+                if (check === false && customIndex === null && i != -1) {
+                    engineID = i;
+                    localStorage.setItem("currentEngine", i.toString());
+                    localStorage.setItem(`search-current-${currentCatIndex}`, i.toString());
+                }
+                lastScrollElem = document.getElementById(tempCatDOM[i].getAttribute("data-id"));
+            }
+            else {
+                tempCatDOM[i].classList.remove("activeCat");
+            }
+        }
+        let activeCatDOM = document.querySelector(".categories.activeCat");
+        let temp = document.getElementById("catActiveMain");
+        window.requestAnimationFrame(function () {
+            window.requestAnimationFrame(function () {
+                if (temp && activeCatDOM) {
+                    temp.style.left = (parseFloat(activeCatDOM.offsetLeft.toString())) + "px";
+                    temp.style.height = activeCatDOM.offsetHeight.toString();
+                    temp.style.width = activeCatDOM.offsetWidth.toString();
+                }
+            });
+        });
+    }
+    scrollLastIndex = index;
+};
+catDataCon.addEventListener("scroll", () => { scrollSnapFunc(); }, { "passive": true });
+conElem.append(catDataCon);
+conElem.append(catCon);
+engineID = parseInt(localStorage.getItem("currentEngine"));
+if (searchQuery) {
+    engineID = parseInt(queries.get("engine"));
+}
+for (let i = 0; i < catIDs.length; i++) {
+    constructErrorPage(document.getElementById(`room_${catIDs[i]}`), "Start searching by clicking on the search icon above!", {
+        hasLink: false,
+        hasReload: false,
+        isError: false,
+        customConClass: "absolute",
+        positive: true
+    });
+    new pullToRefresh(document.getElementById(`room_${catIDs[i]}`));
+    ;
+}
+const searchInput = document.querySelector(".searchInput");
+scrollSnapFunc(true, catIDs.indexOf(extensionList[engineID].type));
 new menuPull(conElem, () => {
     window.parent.postMessage({ "action": 500, data: "pages/homepage/index.html" }, "*");
     conElem.style.transform = `translateX(100px)`;
-}, document.getElementById("mainConSearch"));
-// let catCon = createElement({
-//     id: "categoriesCon",
-//     style: {
-//         position: "sticky",
-//         top: "0",
-//         zIndex: "2",
-//         margin: "0",
-//         boxSizing: "border-box",
-//         backgroundColor: "black"
-//     },
-//     innerHTML: `<div id="catActive">
-//                     <div style="position: absolute;background: red;" id="catActiveMain"></div>
-//                 <div>`
-// });
-// let catDataCon = createElement({
-//     style: {
-//         width: "100%",
-//         whiteSpace: "nowrap"
-//     },
-//     id: "custom_rooms",
-//     class: "snappedCustomRooms"
-// });
-// const catDataCons = [];
-// const cats = ["Anime", "TV/Movies", "K-Drama", "Others"];
-// const catIDs = ["anime", "tv", "kdrama", "others"];
-// for (let i = 0; i < cats.length; i++) {
-//     catCon.append(createCat(`room_${catIDs[i]}`, cats[i], 1));
-//     catDataCons.push(createElement({
-//         "class": `categoriesDataMain snappedCategoriesDataMain`,
-//         style: {
-//             "min-width": "100%"
-//         },
-//         "id": `room_${catIDs[i]}`
-//     }));
-//     catDataCon.append(catDataCons[catDataCons.length - 1]);
-// }
-// let scrollLastIndex;
-// let tempCatDOM = document.getElementsByClassName("categories");
-// let cusRoomDOM = document.getElementById("custom_rooms");
-// scrollSnapFunc = function (shouldScroll = true) {
-//     let unRoundedIndex = cusRoomDOM.scrollLeft / cusRoomDOM.offsetWidth;
-//     let index = Math.round(unRoundedIndex);
-//     if (index != scrollLastIndex) {
-//         for (let i = 0; i < tempCatDOM.length; i++) {
-//             if (i == index) {
-//                 tempCatDOM[i].classList.add("activeCat");
-//                 if (shouldScroll) {
-//                     tempCatDOM[i].scrollIntoView();
-//                 }
-//                 lastScrollElem = document.getElementById(tempCatDOM[i].getAttribute("data-id"));
-//             } else {
-//                 tempCatDOM[i].classList.remove("activeCat");
-//             }
-//         }
-//         let activeCatDOM = document.querySelector(".categories.activeCat") as HTMLElement;
-//         let temp = document.getElementById("catActiveMain") as HTMLElement;
-//         window.requestAnimationFrame(function () {
-//             window.requestAnimationFrame(function () {
-//                 if (temp && activeCatDOM) {
-//                     temp.style.left = (parseFloat(activeCatDOM.offsetLeft.toString()) - 10) + "px";
-//                     temp.style.height = activeCatDOM.offsetHeight.toString();
-//                     temp.style.width = activeCatDOM.offsetWidth.toString();
-//                 }
-//                 clearTimeout(displayTimeout);
-//                 displayTimeout = setTimeout(() => {
-//                     let foundCurrentCon = false;
-//                     for (let i = 0; i < tempCatDOM.length; i++) {
-//                         const dataCon = document.getElementById(tempCatDOM[i].getAttribute("data-id"));
-//                         const prevCon = document.getElementById(tempCatDOM[i - 1]?.getAttribute("data-id"));
-//                         if (i == index) {
-//                             foundCurrentCon = true;
-//                             prevCon?.classList.remove("closed");
-//                             dataCon.classList.remove("closed");
-//                         } else {
-//                             if (foundCurrentCon) {
-//                                 dataCon.classList.remove("closed");
-//                                 foundCurrentCon = false;
-//                             }
-//                             else if (dataCon) {
-//                                 dataCon.classList.add("closed");
-//                             }
-//                         }
-//                     }
-//                 }, 250);
-//             });
-//         });
-//     }
-//     scrollLastIndex = index;
-// };
-// conElem.addEventListener("scroll", () => { scrollSnapFunc() }, { "passive": true });
-// conElem.append(catCon);
-// conElem.append(catDataCon);
+}, document.getElementById("custom_rooms"));
+if (searchQuery) {
+    engineID = parseInt(queries.get("engine"));
+    searchInput.value = searchQuery;
+    search();
+}

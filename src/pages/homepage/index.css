@@ -236,17 +236,18 @@ input[type="color"]::-webkit-color-swatch {
 }
 
 #floatingMenu {
-    position: fixed;
-    bottom: 10px;
+    /* position: fixed; */
+    /* bottom: 10px; */
     text-align: center;
     width: 100%;
     z-index: 98;
 }
 
 #floatingMenuWrapper {
-    background: #2d292a;
+    /* background: #2d292a; */
     display: inline-block;
     padding: 10px;
+    padding-top: 3px;
     border-radius: 50px;
 }
 
@@ -597,4 +598,8 @@ input[type="color"]::-webkit-color-swatch {
     background-color: white;
     border-radius: 24px;
     vertical-align: middle;
+}
+
+#categoriesCon{
+    margin: 10px 0 0 0 !important;
 }

@@ -1441,6 +1441,7 @@ if (true) {
                 "style": {
                     "width": "100%",
                     "bottomMargin": "10px",
+                    "marginTop": "10px",
                     "textAlign": "center"
                 },
                 children: [
