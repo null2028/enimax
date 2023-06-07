@@ -1,0 +1,2 @@
+1. Fixed WCOForever
+2. UI overhaul

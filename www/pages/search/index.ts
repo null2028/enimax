@@ -261,12 +261,14 @@ scrollSnapFunc = function (shouldScroll = true, customIndex: number | null = nul
                         continue;
                     }
 
-                    firstIndex = i;
+                    if(firstIndex == -1){
+                        firstIndex = i;
+                    }
 
                     let atr: any = {
                         "value": i.toString(),
                     };
-
+                    
                     if (i == parseInt(localStorage.getItem(`search-current-${currentCatIndex}`))) {
                         localStorage.setItem("currentEngine", i.toString());
                         localStorage.setItem(`search-current-${currentCatIndex}`, i.toString());
@@ -280,14 +282,17 @@ scrollSnapFunc = function (shouldScroll = true, customIndex: number | null = nul
                         "attributes": atr,
                         "innerHTML": extensionNames[i]
                     });
+                    
 
                     select.append(tempDiv);
                 }
 
-                if (check === false && customIndex === null && i != -1) {
-                    engineID = i;
-                    localStorage.setItem("currentEngine", i.toString());
-                    localStorage.setItem(`search-current-${currentCatIndex}`, i.toString());
+                console.log(firstIndex, check, customIndex, engineID);
+
+                if (check === false && customIndex === null && firstIndex != -1) {
+                    engineID = firstIndex;
+                    localStorage.setItem("currentEngine", firstIndex.toString());
+                    localStorage.setItem(`search-current-${currentCatIndex}`, firstIndex.toString());
                 }
 
                 lastScrollElem = document.getElementById(tempCatDOM[i].getAttribute("data-id"));

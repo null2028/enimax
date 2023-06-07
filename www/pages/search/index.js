@@ -216,7 +216,9 @@ scrollSnapFunc = function (shouldScroll = true, customIndex = null) {
                     if (extensionDisabled[i] || extensionList[i].type != catIDs[index]) {
                         continue;
                     }
-                    firstIndex = i;
+                    if (firstIndex == -1) {
+                        firstIndex = i;
+                    }
                     let atr = {
                         "value": i.toString(),
                     };
@@ -234,10 +236,11 @@ scrollSnapFunc = function (shouldScroll = true, customIndex = null) {
                     });
                     select.append(tempDiv);
                 }
-                if (check === false && customIndex === null && i != -1) {
-                    engineID = i;
-                    localStorage.setItem("currentEngine", i.toString());
-                    localStorage.setItem(`search-current-${currentCatIndex}`, i.toString());
+                console.log(firstIndex, check, customIndex, engineID);
+                if (check === false && customIndex === null && firstIndex != -1) {
+                    engineID = firstIndex;
+                    localStorage.setItem("currentEngine", firstIndex.toString());
+                    localStorage.setItem(`search-current-${currentCatIndex}`, firstIndex.toString());
                 }
                 lastScrollElem = document.getElementById(tempCatDOM[i].getAttribute("data-id"));
             }
