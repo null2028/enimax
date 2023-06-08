@@ -135,6 +135,7 @@ interface videoChangedFillModeEvent extends CustomEvent {
 
 interface cordovaWindow extends Window {
     cordova: any,
+    anilist: extension,
     makeLocalRequest: Function,
     normalise: Function,
     apiCall: Function,
@@ -201,7 +202,7 @@ interface extension {
     disabled: boolean,
     type: "manga" | "anime" | "tv" | "others",
     name: string,
-    searchApi: (query: string) => Promise<extensionSearch>;
+    searchApi: (query: string, params?: { [key: string]: any }) => Promise<extensionSearch>;
     getAnimeInfo: (url: string) => Promise<extensionInfo>;
     getLinkFromUrl: (url: any) => Promise<extensionVidSource | extensionMangaSource>;
     discover?: () => Promise<Array<extensionDiscoverData>>;

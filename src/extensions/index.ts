@@ -358,6 +358,22 @@ const anilistQueries = {
                             seasonYear
                         }
                     }
+                }`,
+    "search": `query($type: MediaType, $title: String){
+                    search: Page(page: 1, perPage: 100){
+                        media (search: $title, type: $type) { 
+                            id
+                            title {
+                                romaji
+                                english
+                                native
+                            }
+                            coverImage { 
+                                extraLarge 
+                                large 
+                            }
+                        }
+                    }
                 }`
 };
 

@@ -1,18 +1,32 @@
 // @ts-ignore
-const extensionNames = window.parent.returnExtensionNames();
+const extensionNames = [...window.parent.returnExtensionNames()];
 // @ts-ignore
-const extensionList = window.parent.returnExtensionList();
+const extensionList = [...window.parent.returnExtensionList()];
 // @ts-ignore
-const extensionDisabled = window.parent.returnExtensionDisabled();
+const extensionDisabled = [...window.parent.returnExtensionDisabled()];
 const queries = (new URLSearchParams(location.search));
 const conElem = document.getElementById("con_11");
 const searchQuery = queries.get("search");
+const anilistExtension = window.parent.anilist;
+// @ts-ignore
+const backdrop = document.getElementsByClassName("backdrop")[0];
+// @ts-ignore
+const sourceChoiceDOM = document.getElementById("sourceChoice");
+// @ts-ignore
+const relationsCon = document.getElementById("relationsCon");
+// @ts-ignore
+const recomCon = document.getElementById("recomCon");
+// @ts-ignore
+const sourceCardsDOM = document.getElementById("sourceCards");
 let engineID = queries.get("engine") || parseInt(localStorage.getItem("currentEngine"));
 let currentCatIndex = 0;
 // new menuPull(conElem, () => {
 //     window.parent.postMessage({ "action": 500, data: "pages/homepage/index.html" }, "*");
 //     conElem.style.transform = `translateX(100px)`;
 // }, document.getElementById("mainConSearch"));
+function sendNoti() {
+    return document.createElement("div");
+}
 function search() {
     const conID = `room_${catIDs[currentCatIndex]}`;
     document.getElementById(conID).innerHTML = "<div style='margin:auto;'>Loading...</div>";
@@ -35,7 +49,29 @@ function search() {
     if (searchInput.value === "devmode") {
         localStorage.setItem("devmode", "true");
     }
-    currentEngine.searchApi(searchInput.value).then(function (x) {
+    const params = {
+        genres: undefined,
+        year: undefined,
+        season: undefined,
+        status: undefined,
+        type: undefined,
+        sort: undefined,
+    };
+    if (currentEngine === anilistExtension) {
+        const year = parseInt(document.querySelector(".numberBox").value);
+        params.genres = DMenu.selectedValues["genres"] ? DMenu.selectedValues["genres"] : undefined;
+        params.season = DMenu.selectedValues["season"] ? DMenu.selectedValues["season"] : undefined;
+        params.status = DMenu.selectedValues["status"] ? DMenu.selectedValues["status"] : undefined;
+        params.type = DMenu.selectedValues["type"] ? DMenu.selectedValues["type"] : undefined;
+        params.sort = DMenu.selectedValues["sort"] ? DMenu.selectedValues["sort"] : undefined;
+        params.year = isNaN(year) ? undefined : year;
+        for (const key in params) {
+            if (params[key] === "Any") {
+                params[key] = undefined;
+            }
+        }
+    }
+    currentEngine.searchApi(searchInput.value, params).then(function (x) {
         var _a, _b;
         searchInput.value = searchQuery;
         // Freaking chrome
@@ -55,6 +91,7 @@ function search() {
             document.getElementById(conID).innerHTML = "";
         }
         for (var i = 0; i < main_div.length; i++) {
+            const currentIndex = i;
             let tempDiv1 = createElement({ "class": "s_card" });
             let tempDiv2 = createElement({ "class": "s_card_bg" });
             let tempDiv3 = createElement({ "class": "s_card_title" });
@@ -66,7 +103,14 @@ function search() {
                 },
                 "listeners": {
                     "click": function () {
-                        window.parent.postMessage({ "action": 500, data: this.getAttribute("data-href") }, "*");
+                        if (anilistExtension === currentEngine) {
+                            console.log(x.type);
+                            fetchMapping(main_div[currentIndex].id, x.type);
+                            openCon(sourceChoiceDOM, "flex");
+                        }
+                        else {
+                            window.parent.postMessage({ "action": 500, data: this.getAttribute("data-href") }, "*");
+                        }
                     }
                 }
             });
@@ -156,13 +200,204 @@ conElem.append(createElement({
                             window.parent.postMessage({ "action": 500, data: `pages/search/index.html?search=${searchInput.value}&engine=${engineID}` }, "*");
                         }
                     }
+                },
+                {
+                    id: "filterIcon",
+                    class: "hasBackground",
+                    style: {
+                        height: "40px",
+                        width: "40px",
+                        display: "none",
+                        verticalAlign: "middle",
+                        marginLeft: "15px"
+                    },
+                    listeners: {
+                        click: function () {
+                            DMenu.open("initial");
+                            DMenu.openMenu();
+                        }
+                    }
                 }
             ]
         },
     ]
 }));
+const DMenu = new dropDownMenu([
+    {
+        "id": "initial",
+        "heading": {
+            "text": "Filters",
+        },
+        "items": [
+            {
+                "text": "Genres",
+                "iconID": "genreIcon",
+                "open": "genres"
+            },
+            {
+                "text": "Season",
+                "iconID": "seasonIcon",
+                "open": "season"
+            },
+            {
+                "iconID": "yearIcon",
+                "text": "Year",
+                "numberBox": true,
+                "value": localStorage.getItem("search-anilist-year"),
+                "onInput": function (event) {
+                    localStorage.setItem("search-anilist-year", event.target.value);
+                }
+            },
+            {
+                "text": "Status",
+                "iconID": "statusIcon",
+                "open": "status"
+            },
+            {
+                "text": "Type",
+                "iconID": "typeIcon",
+                "open": "type"
+            },
+            {
+                "text": "Sort by",
+                "iconID": "sortIcon",
+                "open": "sort"
+            }
+        ]
+    },
+    {
+        "id": "genres",
+        "heading": {
+            "text": "Genres",
+        },
+        "selectableScene": true,
+        "items": window.parent.anilist.genres.map((genre) => {
+            return {
+                "highlightable": true,
+                "text": genre,
+            };
+        })
+    },
+    {
+        "id": "genres",
+        "heading": {
+            "text": "Genres",
+        },
+        "selectableScene": true,
+        "items": window.parent.anilist.genres.map((genre) => {
+            return {
+                "highlightable": true,
+                "text": genre,
+                "attributes": {
+                    "data-value": genre
+                },
+                "selected": localStorage.getItem("search-anilist-genre") === genre,
+                "callback": function () {
+                    const val = this.getAttribute("data-value");
+                    localStorage.setItem("search-anilist-genre", val);
+                },
+            };
+        })
+    },
+    {
+        "id": "season",
+        "heading": {
+            "text": "Seasons",
+        },
+        "selectableScene": true,
+        "items": window.parent.anilist.seasons.map((season) => {
+            return {
+                "highlightable": true,
+                "text": season,
+                "attributes": {
+                    "data-value": season
+                },
+                "selected": localStorage.getItem("search-anilist-season") === season,
+                "callback": function () {
+                    const val = this.getAttribute("data-value");
+                    localStorage.setItem("search-anilist-season", val);
+                },
+            };
+        })
+    },
+    {
+        "id": "status",
+        "heading": {
+            "text": "Status",
+        },
+        "selectableScene": true,
+        "items": window.parent.anilist.status.map((status) => {
+            return {
+                "highlightable": true,
+                "text": status,
+                "attributes": {
+                    "data-value": status
+                },
+                "selected": localStorage.getItem("search-anilist-status") === status,
+                "callback": function () {
+                    const val = this.getAttribute("data-value");
+                    localStorage.setItem("search-anilist-status", val);
+                },
+            };
+        })
+    },
+    {
+        "id": "type",
+        "heading": {
+            "text": "Type",
+        },
+        "selectableScene": true,
+        "items": window.parent.anilist.mediaType.map((type) => {
+            return {
+                "highlightable": true,
+                "text": type,
+                "attributes": {
+                    "data-value": type
+                },
+                "selected": localStorage.getItem("search-anilist-type") ? localStorage.getItem("search-anilist-type") === type : type === "Anime",
+                "callback": function () {
+                    const val = this.getAttribute("data-value");
+                    localStorage.setItem("search-anilist-type", val);
+                },
+            };
+        })
+    },
+    {
+        "id": "sort",
+        "heading": {
+            "text": "Sort By",
+        },
+        "selectableScene": true,
+        "items": window.parent.anilist.sortBy.map((sort) => {
+            return {
+                "highlightable": true,
+                "text": sort,
+                "attributes": {
+                    "data-value": sort
+                },
+                "selected": localStorage.getItem("search-anilist-sort") === sort,
+                "callback": function () {
+                    const val = this.getAttribute("data-value");
+                    localStorage.setItem("search-anilist-sort", val);
+                },
+            };
+        })
+    },
+], document.querySelector(".menuCon"));
 conElem.append(createElement({
-    element: "select"
+    style: {
+        textAlign: "center"
+    },
+    children: [
+        {
+            element: "select",
+            style: {
+                display: "inline-block",
+                verticalAlign: "middle",
+                margin: "0"
+            }
+        }
+    ]
 }));
 for (let i = 0; i < cats.length; i++) {
     catCon.append(createCat(`room_${catIDs[i]}`, cats[i], 1));
@@ -187,8 +422,16 @@ let scrollLastIndex;
 let tempCatDOM = catCon.querySelectorAll(".categories");
 let cusRoomDOM = catDataCon;
 const select = document.querySelector("select");
+const filterIcon = document.querySelector("#filterIcon");
 select.onchange = function () {
     engineID = parseInt(this.value);
+    if (engineID !== 11) {
+        DMenu.closeMenu();
+        filterIcon.style.display = "none";
+    }
+    else {
+        filterIcon.style.display = "inline-block";
+    }
     localStorage.setItem("currentEngine", engineID.toString());
     localStorage.setItem(`search-current-${currentCatIndex}`, engineID.toString());
 };
@@ -228,6 +471,12 @@ scrollSnapFunc = function (shouldScroll = true, customIndex = null) {
                         engineID = i;
                         atr["selected"] = "";
                         check = true;
+                        if (engineID === 11) {
+                            filterIcon.style.display = "inline-block";
+                        }
+                        else {
+                            filterIcon.style.display = "none";
+                        }
                     }
                     let tempDiv = createElement({
                         "element": "option",
@@ -236,7 +485,6 @@ scrollSnapFunc = function (shouldScroll = true, customIndex = null) {
                     });
                     select.append(tempDiv);
                 }
-                console.log(firstIndex, check, customIndex, engineID);
                 if (check === false && customIndex === null && firstIndex != -1) {
                     engineID = firstIndex;
                     localStorage.setItem("currentEngine", firstIndex.toString());
@@ -278,7 +526,6 @@ for (let i = 0; i < catIDs.length; i++) {
         positive: true
     });
     new pullToRefresh(document.getElementById(`room_${catIDs[i]}`));
-    ;
 }
 const searchInput = document.querySelector(".searchInput");
 scrollSnapFunc(true, catIDs.indexOf(extensionList[engineID].type));
@@ -286,8 +533,9 @@ new menuPull(conElem, () => {
     window.parent.postMessage({ "action": 500, data: "pages/homepage/index.html" }, "*");
     conElem.style.transform = `translateX(100px)`;
 }, document.getElementById("custom_rooms"));
-if (searchQuery) {
+if (searchQuery || searchQuery === "") {
     engineID = parseInt(queries.get("engine"));
     searchInput.value = searchQuery;
     search();
 }
+iniChoiceDOM(130);

@@ -1,2 +1,1 @@
-1. Fixed WCOForever
-2. UI overhaul
+1. Added advanced anilist search

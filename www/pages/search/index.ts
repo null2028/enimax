@@ -1,12 +1,25 @@
 // @ts-ignore
-const extensionNames = (<cordovaWindow>window.parent).returnExtensionNames();
+const extensionNames = [...(<cordovaWindow>window.parent).returnExtensionNames()];
 // @ts-ignore
-const extensionList = (<cordovaWindow>window.parent).returnExtensionList();
+const extensionList = [...(<cordovaWindow>window.parent).returnExtensionList()];
 // @ts-ignore
-const extensionDisabled = (<cordovaWindow>window.parent).returnExtensionDisabled();
+const extensionDisabled = [...(<cordovaWindow>window.parent).returnExtensionDisabled()];
+
 const queries = (new URLSearchParams(location.search));
 const conElem = document.getElementById("con_11");
 const searchQuery = queries.get("search");
+
+const anilistExtension = (<cordovaWindow>window.parent).anilist;
+// @ts-ignore
+const backdrop = document.getElementsByClassName("backdrop")[0] as HTMLImageElement;
+// @ts-ignore
+const sourceChoiceDOM = document.getElementById("sourceChoice");
+// @ts-ignore
+const relationsCon = document.getElementById("relationsCon");
+// @ts-ignore
+const recomCon = document.getElementById("recomCon");
+// @ts-ignore
+const sourceCardsDOM = document.getElementById("sourceCards");
 
 let engineID = queries.get("engine") || parseInt(localStorage.getItem("currentEngine"));
 let currentCatIndex = 0;
@@ -15,6 +28,10 @@ let currentCatIndex = 0;
 //     window.parent.postMessage({ "action": 500, data: "pages/homepage/index.html" }, "*");
 //     conElem.style.transform = `translateX(100px)`;
 // }, document.getElementById("mainConSearch"));
+
+function sendNoti() {
+    return document.createElement("div");
+}
 
 function search() {
     const conID = `room_${catIDs[currentCatIndex]}`;
@@ -39,7 +56,35 @@ function search() {
     if (searchInput.value === "devmode") {
         localStorage.setItem("devmode", "true");
     }
-    currentEngine.searchApi(searchInput.value).then(function (x) {
+
+
+    const params = {
+        genres: undefined,
+        year: undefined,
+        season: undefined,
+        status: undefined,
+        type: undefined,
+        sort: undefined,
+    };
+
+    if (currentEngine === anilistExtension) {
+        const year = parseInt((document.querySelector(".numberBox") as HTMLInputElement).value);
+
+        params.genres = DMenu.selectedValues["genres"] ? DMenu.selectedValues["genres"] : undefined;
+        params.season = DMenu.selectedValues["season"] ? DMenu.selectedValues["season"] : undefined;
+        params.status = DMenu.selectedValues["status"] ? DMenu.selectedValues["status"] : undefined;
+        params.type = DMenu.selectedValues["type"] ? DMenu.selectedValues["type"] : undefined;
+        params.sort = DMenu.selectedValues["sort"] ? DMenu.selectedValues["sort"] : undefined;
+        params.year = isNaN(year) ? undefined : year;
+
+        for (const key in params) {
+            if (params[key] === "Any") {
+                params[key] = undefined;
+            }
+        }
+    }
+
+    currentEngine.searchApi(searchInput.value, params).then(function (x) {
         searchInput.value = searchQuery;
 
         // Freaking chrome
@@ -65,6 +110,9 @@ function search() {
         }
 
         for (var i = 0; i < main_div.length; i++) {
+
+            const currentIndex = i;
+
             let tempDiv1 = createElement({ "class": "s_card" });
             let tempDiv2 = createElement({ "class": "s_card_bg" });
             let tempDiv3 = createElement({ "class": "s_card_title" });
@@ -76,8 +124,13 @@ function search() {
                 },
                 "listeners": {
                     "click": function () {
-                        window.parent.postMessage({ "action": 500, data: this.getAttribute("data-href") }, "*");
-
+                        if (anilistExtension === currentEngine) {
+                            console.log(x.type);
+                            fetchMapping(main_div[currentIndex].id, x.type);
+                            openCon(sourceChoiceDOM, "flex");
+                        } else {
+                            window.parent.postMessage({ "action": 500, data: this.getAttribute("data-href") }, "*");
+                        }
                     }
                 }
             });
@@ -182,17 +235,216 @@ conElem.append(createElement({
                             window.parent.postMessage({ "action": 500, data: `pages/search/index.html?search=${searchInput.value}&engine=${engineID}` }, "*");
                         }
                     }
+                },
+                {
+                    id: "filterIcon",
+                    class: "hasBackground",
+                    style: {
+                        height: "40px",
+                        width: "40px",
+                        display: "none",
+                        verticalAlign: "middle",
+                        marginLeft: "15px"
+                    },
+                    listeners: {
+                        click: function () {
+                            DMenu.open("initial");
+                            DMenu.openMenu();
+                        }
+                    }
                 }
             ]
         },
     ]
 }));
 
+
+const DMenu = new dropDownMenu(
+    [
+        {
+            "id": "initial",
+            "heading": {
+                "text": "Filters",
+            },
+            "items": [
+                {
+                    "text": "Genres",
+                    "iconID": "genreIcon",
+                    "open": "genres"
+                },
+                {
+                    "text": "Season",
+                    "iconID": "seasonIcon",
+                    "open": "season"
+                },
+                {
+                    "iconID": "yearIcon",
+                    "text": "Year",
+                    "numberBox": true,
+                    "value": localStorage.getItem("search-anilist-year");
+                    "onInput": function (event: InputEvent) {
+                        localStorage.setItem("search-anilist-year", (event.target as HTMLInputElement).value);
+                    }
+                },
+                {
+                    "text": "Status",
+                    "iconID": "statusIcon",
+                    "open": "status"
+                },
+                {
+                    "text": "Type",
+                    "iconID": "typeIcon",
+                    "open": "type"
+                },
+                {
+                    "text": "Sort by",
+                    "iconID": "sortIcon",
+                    "open": "sort"
+                }
+            ]
+        },
+        {
+            "id": "genres",
+            "heading": {
+                "text": "Genres",
+            },
+            "selectableScene": true,
+            "items": (window.parent as cordovaWindow).anilist.genres.map((genre: string) => {
+                return {
+                    "highlightable": true,
+                    "text": genre,
+                }
+            })
+        },
+        {
+            "id": "genres",
+            "heading": {
+                "text": "Genres",
+            },
+            "selectableScene": true,
+            "items": (window.parent as cordovaWindow).anilist.genres.map((genre: string) => {
+                return {
+                    "highlightable": true,
+                    "text": genre,
+                    "attributes": {
+                        "data-value": genre
+                    },
+                    "selected": localStorage.getItem("search-anilist-genre") === genre,
+                    "callback": function () {
+                        const val = this.getAttribute("data-value");
+                        localStorage.setItem("search-anilist-genre", val);
+                    },
+                } as menuItemConfig
+            })
+        },
+        {
+            "id": "season",
+            "heading": {
+                "text": "Seasons",
+            },
+            "selectableScene": true,
+            "items": (window.parent as cordovaWindow).anilist.seasons.map((season: string) => {
+                return {
+                    "highlightable": true,
+                    "text": season,
+                    "attributes": {
+                        "data-value": season
+                    },
+                    "selected": localStorage.getItem("search-anilist-season") === season,
+                    "callback": function () {
+                        const val = this.getAttribute("data-value");
+                        localStorage.setItem("search-anilist-season", val);
+                    },
+                } as menuItemConfig
+            })
+        },
+        {
+            "id": "status",
+            "heading": {
+                "text": "Status",
+            },
+            "selectableScene": true,
+            "items": (window.parent as cordovaWindow).anilist.status.map((status: string) => {
+                return {
+                    "highlightable": true,
+                    "text": status,
+                    "attributes": {
+                        "data-value": status
+                    },
+                    "selected": localStorage.getItem("search-anilist-status") === status,
+                    "callback": function () {
+                        const val = this.getAttribute("data-value");
+                        localStorage.setItem("search-anilist-status", val);
+                    },
+                } as menuItemConfig
+            })
+        },
+        {
+            "id": "type",
+            "heading": {
+                "text": "Type",
+            },
+            "selectableScene": true,
+            "items": (window.parent as cordovaWindow).anilist.mediaType.map((type: string) => {
+                return {
+                    "highlightable": true,
+                    "text": type,
+                    "attributes": {
+                        "data-value": type
+                    },
+                    "selected": localStorage.getItem("search-anilist-type") ? localStorage.getItem("search-anilist-type") === type : type === "Anime",
+                    "callback": function () {
+                        const val = this.getAttribute("data-value");
+                        localStorage.setItem("search-anilist-type", val);
+                    },
+                } as menuItemConfig
+            })
+        },
+        {
+            "id": "sort",
+            "heading": {
+                "text": "Sort By",
+            },
+            "selectableScene": true,
+            "items": (window.parent as cordovaWindow).anilist.sortBy.map((sort: string) => {
+                return {
+                    "highlightable": true,
+                    "text": sort,
+                    "attributes": {
+                        "data-value": sort
+                    },
+                    "selected": localStorage.getItem("search-anilist-sort") === sort,
+                    "callback": function () {
+                        const val = this.getAttribute("data-value");
+                        localStorage.setItem("search-anilist-sort", val);
+                    },
+                } as menuItemConfig
+            })
+        },
+
+    ], document.querySelector(".menuCon"));
+
+
 conElem.append(
     createElement({
-        element: "select"
+        style: {
+            textAlign: "center"
+        },
+        children: [
+            {
+                element: "select",
+                style: {
+                    display: "inline-block",
+                    verticalAlign: "middle",
+                    margin: "0"
+                }
+            }
+        ]
     })
 );
+
+
+
 
 for (let i = 0; i < cats.length; i++) {
     catCon.append(createCat(`room_${catIDs[i]}`, cats[i], 1));
@@ -220,9 +472,18 @@ let scrollLastIndex;
 let tempCatDOM = catCon.querySelectorAll(".categories");
 let cusRoomDOM = catDataCon;
 const select = document.querySelector("select");
+const filterIcon = document.querySelector("#filterIcon") as HTMLElement;
 
 select.onchange = function () {
     engineID = parseInt((this as HTMLInputElement).value);
+
+    if (engineID !== 11) {
+        DMenu.closeMenu();
+        filterIcon.style.display = "none";
+    } else {
+        filterIcon.style.display = "inline-block";
+    }
+
     localStorage.setItem("currentEngine", engineID.toString());
     localStorage.setItem(`search-current-${currentCatIndex}`, engineID.toString());
 };
@@ -261,20 +522,26 @@ scrollSnapFunc = function (shouldScroll = true, customIndex: number | null = nul
                         continue;
                     }
 
-                    if(firstIndex == -1){
+                    if (firstIndex == -1) {
                         firstIndex = i;
                     }
 
                     let atr: any = {
                         "value": i.toString(),
                     };
-                    
+
                     if (i == parseInt(localStorage.getItem(`search-current-${currentCatIndex}`))) {
                         localStorage.setItem("currentEngine", i.toString());
                         localStorage.setItem(`search-current-${currentCatIndex}`, i.toString());
                         engineID = i;
                         atr["selected"] = "";
                         check = true;
+
+                        if (engineID === 11) {
+                            filterIcon.style.display = "inline-block";
+                        } else {
+                            filterIcon.style.display = "none";
+                        }
                     }
 
                     let tempDiv = createElement(<createElementConfig>{
@@ -282,12 +549,10 @@ scrollSnapFunc = function (shouldScroll = true, customIndex: number | null = nul
                         "attributes": atr,
                         "innerHTML": extensionNames[i]
                     });
-                    
+
 
                     select.append(tempDiv);
                 }
-
-                console.log(firstIndex, check, customIndex, engineID);
 
                 if (check === false && customIndex === null && firstIndex != -1) {
                     engineID = firstIndex;
@@ -339,7 +604,7 @@ for (let i = 0; i < catIDs.length; i++) {
         }
     );
 
-    new pullToRefresh(document.getElementById(`room_${catIDs[i]}`)));
+    new pullToRefresh(document.getElementById(`room_${catIDs[i]}`));
 }
 
 const searchInput = (document.querySelector(".searchInput") as HTMLInputElement);
@@ -351,8 +616,10 @@ new menuPull(conElem, () => {
 }, document.getElementById("custom_rooms"));
 
 
-if (searchQuery) {
+if (searchQuery || searchQuery === "") {
     engineID = parseInt(queries.get("engine"));
     searchInput.value = searchQuery;
     search();
 }
+
+iniChoiceDOM(130);
