@@ -1,6 +1,7 @@
 var fmovies: extension = {
     baseURL: fmoviesBaseURL,
     type: "tv",
+    disableAutoDownload: false,
     disabled: false,
     name: "FlixHQ",
     searchApi: async function (query: string): Promise<extensionSearch> {

@@ -1,6 +1,7 @@
 var fmoviesto: extension = {
     baseURL: "https://fmovies.to",
     type: "tv",
+    disableAutoDownload: false,
     disabled: false,
     name: "Fmovies.to",
     searchApi: async function (query) {

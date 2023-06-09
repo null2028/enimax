@@ -71,6 +71,26 @@ function addState(id) {
         window.history.replaceState({}, "", `?action=${id}`);
     }
 }
+function checkIfExists(localURL) {
+    return (new Promise(function (resolve, reject) {
+        let timeout = setTimeout(function () {
+            reject("timeout");
+        }, 2000);
+        window.parent.resolveLocalFileSystemURL(window.parent.cordova.file.externalDataDirectory + localURL, function (fileSystem) {
+            clearTimeout(timeout);
+            resolve("downloaded");
+        }, (err) => {
+            clearTimeout(timeout);
+            reject("notdownloaded");
+        });
+    }));
+}
+function normalise(url) {
+    url = url.replace("?watch=", "");
+    url = url.split("&engine=")[0];
+    url = url.split("&isManga=")[0];
+    return url;
+}
 async function populateDownloadedArray() {
     downloadedFolders = {};
     try {
@@ -517,6 +537,9 @@ document.getElementById("discoverHide").onchange = function () {
 document.getElementById("autoPause").onchange = function () {
     localStorage.setItem("autoPause", this.checked.toString());
 };
+document.getElementById("autoDownload").onchange = function () {
+    localStorage.setItem("autoDownload", this.checked.toString());
+};
 document.getElementById("hideNotification").onchange = function () {
     localStorage.setItem("hideNotification", this.checked.toString());
 };
@@ -564,6 +587,7 @@ document.getElementById("downloadTimeout").value = localStorage.getItem("downloa
 document.getElementById("scrollBool").checked = localStorage.getItem("scrollBool") !== "false";
 document.getElementById("discoverHide").checked = localStorage.getItem("discoverHide") === "true";
 document.getElementById("autoPause").checked = localStorage.getItem("autoPause") === "true";
+document.getElementById("autoDownload").checked = localStorage.getItem("autoDownload") === "true";
 document.getElementById("hideNotification").checked = localStorage.getItem("hideNotification") === "true";
 document.getElementById("fancyHome").checked = localStorage.getItem("fancyHome") === "true";
 document.getElementById("alwaysDown").checked = localStorage.getItem("alwaysDown") === "true";
@@ -1291,6 +1315,7 @@ if (true) {
     async function updateNewEp() {
         let updateLibNoti = sendNoti([0, null, "Message", "Updating Libary"]);
         let updatedShow = [];
+        let downloadQueue = window.parent.returnDownloadQueue();
         let extensionList = window.parent.returnExtensionList();
         let promises = [];
         let promiseShowData = [];
@@ -1313,7 +1338,10 @@ if (true) {
             promiseShowData.push({
                 "ep": currentEp,
                 "dom": show.dom,
-                "name": show.name
+                "name": show.name,
+                showURL,
+                "disableAutoDownload": currentEngine.disableAutoDownload === true,
+                "isManga": currentEngine.type === "manga"
             });
         }
         let promiseResult = [];
@@ -1342,8 +1370,37 @@ if (true) {
                         promiseShowData[count].dom.style.border = "3px solid grey";
                     }
                     else {
-                        let latestEpisode = promise.episodes;
-                        latestEpisode = latestEpisode[latestEpisode.length - 1].link;
+                        const data = promise;
+                        let episodeList = data.episodes;
+                        const latestEpisode = episodeList[episodeList.length - 1].link;
+                        const title = episodeList[episodeList.length - 1].title;
+                        const currentCount = count;
+                        if (!config.chrome && localStorage.getItem("autoDownload") === "true" && promiseShowData[currentCount].disableAutoDownload === false) {
+                            try {
+                                const isManga = promiseShowData[currentCount].isManga;
+                                if (!downloadQueue.isInQueue(downloadQueue, latestEpisode)) {
+                                    await checkIfExists(`/${isManga ? "manga/" : ""}${data.mainName}/${btoa(normalise(latestEpisode))}/.downloaded`);
+                                    console.log("hasbeendownloaded");
+                                }
+                                else {
+                                    console.warn("Already in the list");
+                                }
+                            }
+                            catch (err) {
+                                if (err === "notdownloaded") {
+                                    window.parent.postMessage({
+                                        "action": 403,
+                                        "data": latestEpisode,
+                                        "anime": promise,
+                                        "mainUrl": promiseShowData[currentCount].showURL,
+                                        "title": title
+                                    }, "*");
+                                }
+                                else {
+                                    console.error(err);
+                                }
+                            }
+                        }
                         if (promiseShowData[count].ep != latestEpisode) {
                             await showLastEpDB.lastestEp.put({ "name": promiseShowData[count].name, "latest": latestEpisode });
                             promiseShowData[count].dom.style.boxSizing = "border-box";

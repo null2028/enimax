@@ -1,6 +1,7 @@
 var nineAnime: extension = {
     baseURL: "https://9anime.to",
     type: "anime",
+    disableAutoDownload: false,
     disabled: false,
     name: "9anime",
     searchApi: async function (query) {

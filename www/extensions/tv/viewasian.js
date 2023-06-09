@@ -2,6 +2,7 @@ var viewAsian = {
     baseURL: "https://viewasian.co",
     type: "tv",
     disabled: false,
+    disableAutoDownload: false,
     name: "viewAsian",
     keys: [
         CryptoJS.enc.Utf8.parse("93422192433952489752342908585752"),

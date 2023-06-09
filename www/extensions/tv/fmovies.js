@@ -1,6 +1,7 @@
 var fmovies = {
     baseURL: fmoviesBaseURL,
     type: "tv",
+    disableAutoDownload: false,
     disabled: false,
     name: "FlixHQ",
     searchApi: async function (query) {

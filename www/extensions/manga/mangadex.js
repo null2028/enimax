@@ -1,6 +1,7 @@
 var mangaDex = {
     baseURL: "https://api.mangadex.org",
     type: "manga",
+    disableAutoDownload: false,
     disabled: false,
     name: "MangaDex",
     searchApi: async function (query) {

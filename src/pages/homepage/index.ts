@@ -81,6 +81,32 @@ function addState(id: string) {
     }
 }
 
+function checkIfExists(localURL: string): Promise<string> {
+    return (new Promise(function (resolve, reject) {
+
+        let timeout = setTimeout(function () {
+            reject("timeout");
+        }, 2000);
+
+        (<cordovaWindow>window.parent).resolveLocalFileSystemURL((<cordovaWindow>window.parent).cordova.file.externalDataDirectory + localURL, function (fileSystem) {
+            clearTimeout(timeout);
+            resolve("downloaded");
+        }, (err) => {
+            clearTimeout(timeout);
+            reject("notdownloaded");
+        });
+
+    }));
+}
+
+function normalise(url: string) {
+    url = url.replace("?watch=", "");
+    url = url.split("&engine=")[0];
+    url = url.split("&isManga=")[0];
+    return url;
+}
+
+
 async function populateDownloadedArray() {
     downloadedFolders = {};
 
@@ -665,6 +691,9 @@ document.getElementById("autoPause").onchange = function () {
     localStorage.setItem("autoPause", (this as HTMLInputElement).checked.toString());
 }
 
+document.getElementById("autoDownload").onchange = function () {
+    localStorage.setItem("autoDownload", (this as HTMLInputElement).checked.toString());
+}
 
 document.getElementById("hideNotification").onchange = function () {
     localStorage.setItem("hideNotification", (this as HTMLInputElement).checked.toString());
@@ -721,6 +750,7 @@ document.getElementById("rangeCon").addEventListener("touchmove", function (even
 (document.getElementById("scrollBool") as HTMLInputElement).checked = localStorage.getItem("scrollBool") !== "false";
 (document.getElementById("discoverHide") as HTMLInputElement).checked = localStorage.getItem("discoverHide") === "true";
 (document.getElementById("autoPause") as HTMLInputElement).checked = localStorage.getItem("autoPause") === "true";
+(document.getElementById("autoDownload") as HTMLInputElement).checked = localStorage.getItem("autoDownload") === "true";
 (document.getElementById("hideNotification") as HTMLInputElement).checked = localStorage.getItem("hideNotification") === "true";
 (document.getElementById("fancyHome") as HTMLInputElement).checked = localStorage.getItem("fancyHome") === "true";
 (document.getElementById("alwaysDown") as HTMLInputElement).checked = localStorage.getItem("alwaysDown") === "true";
@@ -1656,8 +1686,9 @@ if (true) {
     async function updateNewEp() {
         let updateLibNoti = sendNoti([0, null, "Message", "Updating Libary"]);
         let updatedShow = [];
-        let extensionList = (<cordovaWindow>window.parent).returnExtensionList();
-        let promises = [];
+        let downloadQueue = (<cordovaWindow>window.parent).returnDownloadQueue();
+        let extensionList: extension[] = (<cordovaWindow>window.parent).returnExtensionList();
+        let promises: Promise<extensionInfo>[] = [];
         let promiseShowData = [];
         let allSettled = "allSettled" in Promise;
         // let allSettled = false;
@@ -1681,7 +1712,10 @@ if (true) {
             promiseShowData.push({
                 "ep": currentEp,
                 "dom": show.dom,
-                "name": show.name
+                "name": show.name,
+                showURL,
+                "disableAutoDownload": (currentEngine as extension).disableAutoDownload === true,
+                "isManga": (currentEngine as extension).type === "manga"
             });
         }
 
@@ -1711,8 +1745,39 @@ if (true) {
                         promiseShowData[count].dom.style.boxSizing = "border-box";
                         promiseShowData[count].dom.style.border = "3px solid grey";
                     } else {
-                        let latestEpisode = promise.episodes;
-                        latestEpisode = latestEpisode[latestEpisode.length - 1].link;
+                        const data = promise as extensionInfo;
+                        let episodeList = data.episodes as extensionInfoEpisode[];
+                        const latestEpisode = episodeList[episodeList.length - 1].link;
+                        const title = episodeList[episodeList.length - 1].title;
+                        const currentCount = count;
+
+                        if (!config.chrome && localStorage.getItem("autoDownload") === "true" && promiseShowData[currentCount].disableAutoDownload === false) {
+
+                            try {
+                                const isManga = promiseShowData[currentCount].isManga;
+
+                                if (!downloadQueue.isInQueue(downloadQueue, latestEpisode)) {
+                                    await checkIfExists(`/${isManga ? "manga/" : ""}${data.mainName}/${btoa(normalise(latestEpisode))}/.downloaded`);
+                                    console.log("hasbeendownloaded");
+                                } else {
+                                    console.warn("Already in the list");
+                                }
+                            } catch (err) {
+
+                                if (err === "notdownloaded") {
+                                    window.parent.postMessage({
+                                        "action": 403,
+                                        "data": latestEpisode,
+                                        "anime": promise,
+                                        "mainUrl": promiseShowData[currentCount].showURL,
+                                        "title": title
+                                    }, "*");
+                                } else {
+                                    console.error(err);
+                                }
+                            }
+                        }
+
                         if (promiseShowData[count].ep != latestEpisode) {
                             await showLastEpDB.lastestEp.put({ "name": promiseShowData[count].name, "latest": latestEpisode });
                             promiseShowData[count].dom.style.boxSizing = "border-box";
@@ -1963,9 +2028,9 @@ if (true) {
                                         }, "listeners": {
                                             "click": function () {
                                                 let isManga = false;
-                                                try{
+                                                try {
                                                     isManga = new URLSearchParams(this.getAttribute("data-href")).get("isManga") === "true"
-                                                }catch(err){
+                                                } catch (err) {
 
                                                 }
 

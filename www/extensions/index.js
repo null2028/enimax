@@ -441,6 +441,7 @@ function loadImage(url) {
 var wco = {
     baseURL: "https://www.wcoforever.org",
     type: "anime",
+    disableAutoDownload: false,
     disabled: false,
     name: "WCOForever",
     searchApi: function (query) {
@@ -821,6 +822,7 @@ var wco = {
 var animixplay = {
     baseURL: "https://animixplay.to",
     type: "anime",
+    disableAutoDownload: false,
     disabled: true,
     name: "Animixplay",
     searchApi: async function (query) {
@@ -856,6 +858,7 @@ var animixplay = {
 var fmovies = {
     baseURL: fmoviesBaseURL,
     type: "tv",
+    disableAutoDownload: false,
     disabled: false,
     name: "FlixHQ",
     searchApi: async function (query) {
@@ -1350,6 +1353,7 @@ var fmovies = {
 var zoro = {
     baseURL: "https://zoro.to",
     type: "anime",
+    disableAutoDownload: false,
     disabled: false,
     name: "Zoro",
     searchApi: async function (query) {
@@ -1757,6 +1761,7 @@ var twitch = {
     baseURL: "https://twitch.tv",
     type: "others",
     disabled: false,
+    disableAutoDownload: true,
     name: "Twitch",
     searchApi: async function (query) {
         try {
@@ -2002,6 +2007,7 @@ var twitch = {
 var anilist = {
     baseURL: "https://graphql.anilist.co",
     type: "anime",
+    disableAutoDownload: false,
     disabled: false,
     name: "Anilist",
     searchApi: async function (query, params) {
@@ -2460,6 +2466,7 @@ var anilist = {
 var nineAnime = {
     baseURL: "https://9anime.to",
     type: "anime",
+    disableAutoDownload: false,
     disabled: false,
     name: "9anime",
     searchApi: async function (query) {
@@ -3022,6 +3029,7 @@ var nineAnime = {
 var fmoviesto = {
     baseURL: "https://fmovies.to",
     type: "tv",
+    disableAutoDownload: false,
     disabled: false,
     name: "Fmovies.to",
     searchApi: async function (query) {
@@ -3542,6 +3550,7 @@ var gogo = {
     baseURL: "https://gogoanime.gr",
     ajaxURL: "https://ajax.gogo-load.com/ajax",
     type: "anime",
+    disableAutoDownload: false,
     disabled: false,
     name: "Gogo",
     keys: [
@@ -3828,6 +3837,7 @@ catch (err) {
 var mangaDex = {
     baseURL: "https://api.mangadex.org",
     type: "manga",
+    disableAutoDownload: false,
     disabled: false,
     name: "MangaDex",
     searchApi: async function (query) {
@@ -4002,6 +4012,7 @@ var mangaDex = {
 var mangaFire = {
     baseURL: "https://mangafire.to",
     type: "manga",
+    disableAutoDownload: false,
     disabled: false,
     name: "MangaFire",
     searchApi: async function (query) {
@@ -4207,6 +4218,7 @@ var viewAsian = {
     baseURL: "https://viewasian.co",
     type: "tv",
     disabled: false,
+    disableAutoDownload: false,
     name: "viewAsian",
     keys: [
         CryptoJS.enc.Utf8.parse("93422192433952489752342908585752"),

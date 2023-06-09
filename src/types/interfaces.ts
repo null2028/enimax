@@ -200,6 +200,7 @@ interface modifiedString extends String {
 interface extension {
     baseURL: string,
     disabled: boolean,
+    disableAutoDownload: boolean,
     type: "manga" | "anime" | "tv" | "others",
     name: string,
     searchApi: (query: string, params?: { [key: string]: any }) => Promise<extensionSearch>;

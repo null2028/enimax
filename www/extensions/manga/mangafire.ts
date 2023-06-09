@@ -1,6 +1,7 @@
 var mangaFire: extension = {
     baseURL: "https://mangafire.to",
     type: "manga",
+    disableAutoDownload: false,
     disabled: false,
     name: "MangaFire",
     searchApi: async function (query: string): Promise<extensionSearch> {

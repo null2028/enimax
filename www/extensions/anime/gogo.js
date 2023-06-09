@@ -2,6 +2,7 @@ var gogo = {
     baseURL: "https://gogoanime.gr",
     ajaxURL: "https://ajax.gogo-load.com/ajax",
     type: "anime",
+    disableAutoDownload: false,
     disabled: false,
     name: "Gogo",
     keys: [

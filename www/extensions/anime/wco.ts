@@ -1,6 +1,7 @@
 var wco: extension = {
     baseURL: "https://www.wcoforever.org",
     type: "anime",
+    disableAutoDownload: false,
     disabled: false,
     name: "WCOForever",
     searchApi: function (query: string): Promise<extensionSearch> {

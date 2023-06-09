@@ -2,6 +2,7 @@
 var anilist: extension = {
     baseURL: "https://graphql.anilist.co",
     type: "anime",
+    disableAutoDownload: false,
     disabled: false,
     name: "Anilist",
     searchApi: async function (query, params) {

@@ -1,6 +1,7 @@
 var zoro = {
     baseURL: "https://zoro.to",
     type: "anime",
+    disableAutoDownload: false,
     disabled: false,
     name: "Zoro",
     searchApi: async function (query) {

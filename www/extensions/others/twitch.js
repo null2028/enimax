@@ -2,6 +2,7 @@ var twitch = {
     baseURL: "https://twitch.tv",
     type: "others",
     disabled: false,
+    disableAutoDownload: true,
     name: "Twitch",
     searchApi: async function (query) {
         try {

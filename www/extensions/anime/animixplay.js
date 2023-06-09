@@ -2,6 +2,7 @@
 var animixplay = {
     baseURL: "https://animixplay.to",
     type: "anime",
+    disableAutoDownload: false,
     disabled: true,
     name: "Animixplay",
     searchApi: async function (query) {
