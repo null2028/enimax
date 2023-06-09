@@ -236,3 +236,8 @@ form{
 .menuCenter .menuItemText{
 	margin: auto;
 }
+
+.menuCenter{
+	background-color: white !important;
+	color: black !important;
+}

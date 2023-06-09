@@ -672,7 +672,7 @@ function ini_main() {
 
 		updateCurrentTime = 0;
 		getEpCheck = 0;
-		lastUpdate = -1;
+		lastUpdate = 0;
 		updateCheck = 0;
 		int_up = 3000;
 		vidInstance.vid.currentTime = 0;
