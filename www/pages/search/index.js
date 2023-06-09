@@ -56,6 +56,7 @@ function search() {
         status: undefined,
         type: undefined,
         sort: undefined,
+        tags: undefined,
     };
     if (currentEngine === anilistExtension) {
         const year = parseInt(document.querySelector(".numberBox").value);
@@ -64,6 +65,7 @@ function search() {
         params.status = DMenu.selectedValues["status"] ? DMenu.selectedValues["status"] : undefined;
         params.type = DMenu.selectedValues["type"] ? DMenu.selectedValues["type"] : undefined;
         params.sort = DMenu.selectedValues["sort"] ? DMenu.selectedValues["sort"] : undefined;
+        params.tags = DMenu.selectedValues["tags"] ? DMenu.selectedValues["tags"] : undefined;
         params.year = isNaN(year) ? undefined : year;
         for (const key in params) {
             if (params[key] === "Any") {
@@ -231,9 +233,27 @@ const DMenu = new dropDownMenu([
         },
         "items": [
             {
+                "text": "Reset",
+                "callback": () => {
+                    DMenu.selections["genre-Any"].selectWithCallback();
+                    DMenu.selections["season-Any"].selectWithCallback();
+                    DMenu.selections["status-Any"].selectWithCallback();
+                    DMenu.selections["tags-Any"].selectWithCallback();
+                    DMenu.selections["type-Anime"].selectWithCallback();
+                    DMenu.selections["sort-Popularity"].selectWithCallback();
+                    document.querySelector(".numberBox").value = "";
+                },
+                "classes": ["menuCenter"]
+            },
+            {
                 "text": "Genres",
                 "iconID": "genreIcon",
                 "open": "genres"
+            },
+            {
+                "text": "Tags",
+                "iconID": "genreIcon",
+                "open": "tags"
             },
             {
                 "text": "Season",
@@ -288,6 +308,7 @@ const DMenu = new dropDownMenu([
         "items": window.parent.anilist.genres.map((genre) => {
             return {
                 "highlightable": true,
+                "id": genre === "Any" ? `genre-${genre}` : undefined,
                 "text": genre,
                 "attributes": {
                     "data-value": genre
@@ -309,6 +330,7 @@ const DMenu = new dropDownMenu([
         "items": window.parent.anilist.seasons.map((season) => {
             return {
                 "highlightable": true,
+                "id": season === "Any" ? `season-${season}` : undefined,
                 "text": season,
                 "attributes": {
                     "data-value": season
@@ -330,6 +352,7 @@ const DMenu = new dropDownMenu([
         "items": window.parent.anilist.status.map((status) => {
             return {
                 "highlightable": true,
+                "id": status === "Any" ? `status-${status}` : undefined,
                 "text": status,
                 "attributes": {
                     "data-value": status
@@ -351,6 +374,7 @@ const DMenu = new dropDownMenu([
         "items": window.parent.anilist.mediaType.map((type) => {
             return {
                 "highlightable": true,
+                "id": type === "Anime" ? `type-${type}` : undefined,
                 "text": type,
                 "attributes": {
                     "data-value": type
@@ -372,6 +396,7 @@ const DMenu = new dropDownMenu([
         "items": window.parent.anilist.sortBy.map((sort) => {
             return {
                 "highlightable": true,
+                "id": sort === "Popularity" ? `sort-${sort}` : undefined,
                 "text": sort,
                 "attributes": {
                     "data-value": sort
@@ -380,6 +405,28 @@ const DMenu = new dropDownMenu([
                 "callback": function () {
                     const val = this.getAttribute("data-value");
                     localStorage.setItem("search-anilist-sort", val);
+                },
+            };
+        })
+    },
+    {
+        "id": "tags",
+        "heading": {
+            "text": "Tags",
+        },
+        "selectableScene": true,
+        "items": window.parent.anilist.tags.map((tags) => {
+            return {
+                "highlightable": true,
+                "id": tags === "Any" ? `tags-${tags}` : undefined,
+                "text": tags,
+                "attributes": {
+                    "data-value": tags
+                },
+                "selected": localStorage.getItem("search-anilist-tags") === tags,
+                "callback": function () {
+                    const val = this.getAttribute("data-value");
+                    localStorage.setItem("search-anilist-tags", val);
                 },
             };
         })

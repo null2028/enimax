@@ -65,6 +65,7 @@ function search() {
         status: undefined,
         type: undefined,
         sort: undefined,
+        tags: undefined,
     };
 
     if (currentEngine === anilistExtension) {
@@ -75,6 +76,7 @@ function search() {
         params.status = DMenu.selectedValues["status"] ? DMenu.selectedValues["status"] : undefined;
         params.type = DMenu.selectedValues["type"] ? DMenu.selectedValues["type"] : undefined;
         params.sort = DMenu.selectedValues["sort"] ? DMenu.selectedValues["sort"] : undefined;
+        params.tags = DMenu.selectedValues["tags"] ? DMenu.selectedValues["tags"] : undefined;
         params.year = isNaN(year) ? undefined : year;
 
         for (const key in params) {
@@ -269,9 +271,27 @@ const DMenu = new dropDownMenu(
             },
             "items": [
                 {
+                    "text": "Reset",
+                    "callback": () => {
+                        DMenu.selections["genre-Any"].selectWithCallback();
+                        DMenu.selections["season-Any"].selectWithCallback();
+                        DMenu.selections["status-Any"].selectWithCallback();
+                        DMenu.selections["tags-Any"].selectWithCallback();
+                        DMenu.selections["type-Anime"].selectWithCallback();
+                        DMenu.selections["sort-Popularity"].selectWithCallback();
+                        (document.querySelector(".numberBox") as HTMLInputElement).value = "";
+                    },
+                    "classes": ["menuCenter"]
+                },
+                {
                     "text": "Genres",
                     "iconID": "genreIcon",
                     "open": "genres"
+                },
+                {
+                    "text": "Tags",
+                    "iconID": "genreIcon",
+                    "open": "tags"
                 },
                 {
                     "text": "Season",
@@ -326,6 +346,7 @@ const DMenu = new dropDownMenu(
             "items": (window.parent as cordovaWindow).anilist.genres.map((genre: string) => {
                 return {
                     "highlightable": true,
+                    "id": genre === "Any" ? `genre-${genre}` : undefined,
                     "text": genre,
                     "attributes": {
                         "data-value": genre
@@ -347,6 +368,7 @@ const DMenu = new dropDownMenu(
             "items": (window.parent as cordovaWindow).anilist.seasons.map((season: string) => {
                 return {
                     "highlightable": true,
+                    "id": season === "Any" ? `season-${season}` : undefined,
                     "text": season,
                     "attributes": {
                         "data-value": season
@@ -368,6 +390,7 @@ const DMenu = new dropDownMenu(
             "items": (window.parent as cordovaWindow).anilist.status.map((status: string) => {
                 return {
                     "highlightable": true,
+                    "id": status === "Any" ? `status-${status}` : undefined,
                     "text": status,
                     "attributes": {
                         "data-value": status
@@ -389,6 +412,7 @@ const DMenu = new dropDownMenu(
             "items": (window.parent as cordovaWindow).anilist.mediaType.map((type: string) => {
                 return {
                     "highlightable": true,
+                    "id": type === "Anime" ? `type-${type}` : undefined,
                     "text": type,
                     "attributes": {
                         "data-value": type
@@ -410,6 +434,7 @@ const DMenu = new dropDownMenu(
             "items": (window.parent as cordovaWindow).anilist.sortBy.map((sort: string) => {
                 return {
                     "highlightable": true,
+                    "id": sort === "Popularity" ? `sort-${sort}` : undefined,
                     "text": sort,
                     "attributes": {
                         "data-value": sort
@@ -418,6 +443,28 @@ const DMenu = new dropDownMenu(
                     "callback": function () {
                         const val = this.getAttribute("data-value");
                         localStorage.setItem("search-anilist-sort", val);
+                    },
+                } as menuItemConfig
+            })
+        },
+        {
+            "id": "tags",
+            "heading": {
+                "text": "Tags",
+            },
+            "selectableScene": true,
+            "items": (window.parent as cordovaWindow).anilist.tags.map((tags: string) => {
+                return {
+                    "highlightable": true,
+                    "id": tags === "Any" ? `tags-${tags}` : undefined,
+                    "text": tags,
+                    "attributes": {
+                        "data-value": tags
+                    },
+                    "selected": localStorage.getItem("search-anilist-tags") === tags,
+                    "callback": function () {
+                        const val = this.getAttribute("data-value");
+                        localStorage.setItem("search-anilist-tags", val);
                     },
                 } as menuItemConfig
             })
@@ -624,34 +671,34 @@ if (searchQuery || searchQuery === "") {
 }
 
 function openSettingsSemi(translateY: number) {
-	let settingCon = document.querySelector<HTMLElement>(".menuCon");
-	settingCon.style.display = "block";
-	settingCon.style.pointerEvents = "auto";
-	settingCon.style.opacity = "1";
-	if (translateY == -1) {
-		settingCon.style.transform = "translate(-50%, 0px)";
-	} else if (translateY == 0) {
-		settingCon.style.transform = "translate(-50%, 100%)";
+    let settingCon = document.querySelector<HTMLElement>(".menuCon");
+    settingCon.style.display = "block";
+    settingCon.style.pointerEvents = "auto";
+    settingCon.style.opacity = "1";
+    if (translateY == -1) {
+        settingCon.style.transform = "translate(-50%, 0px)";
+    } else if (translateY == 0) {
+        settingCon.style.transform = "translate(-50%, 100%)";
 
-	} else {
-		settingCon.style.transform = `translate(-50%, calc(100% + ${-translateY + 50}px))`;
-	}
+    } else {
+        settingCon.style.transform = `translate(-50%, calc(100% + ${-translateY + 50}px))`;
+    }
 
 }
 
 function closeSettings() {
-	let settingCon = document.querySelector<HTMLElement>(".menuCon");
-	settingCon.style.transitionDuration = "0.2s";
-	window.requestAnimationFrame(function () {
-		window.requestAnimationFrame(function () {
-			settingCon.style.transform = "translate(-50%, 100%)";
-			settingCon.style.opacity = "0";
-			settingCon.style.pointerEvents = "none";
-			setTimeout(function () {
-				settingCon.style.transitionDuration = "0s";
-			}, 200);
-		});
-	});
+    let settingCon = document.querySelector<HTMLElement>(".menuCon");
+    settingCon.style.transitionDuration = "0.2s";
+    window.requestAnimationFrame(function () {
+        window.requestAnimationFrame(function () {
+            settingCon.style.transform = "translate(-50%, 100%)";
+            settingCon.style.opacity = "0";
+            settingCon.style.pointerEvents = "none";
+            setTimeout(function () {
+                settingCon.style.transitionDuration = "0s";
+            }, 200);
+        });
+    });
 }
 
 new settingsPull(document.getElementById("settingHandlePadding"), closeSettings);

@@ -226,8 +226,13 @@ form{
 .menuCon{
 	position: fixed;
 	left: 50%;
+	max-width: 100%;
     transform: translateX(-50%);
     bottom: 0;
     top: auto !important;
     right: auto !important;
+}
+
+.menuCenter .menuItemText{
+	margin: auto;
 }
