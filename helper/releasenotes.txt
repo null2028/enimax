@@ -1,0 +1,2 @@
+1. Refined the filter menu
+2. An option to add the latest episode in the ongoing tab to the download queue. However, it will only do that after the library updates either manually (by clicking on "update library") or automatically (which happens twice a day). This setting is **disabled** by default and can be enabled by going to the Settings and then enabling **"Auto-download the latest episode in the Ongoing category"** option.
