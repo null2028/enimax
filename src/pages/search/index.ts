@@ -250,6 +250,7 @@ conElem.append(createElement({
                         click: function () {
                             DMenu.open("initial");
                             DMenu.openMenu();
+                            openSettingsSemi(-1);
                         }
                     }
                 }
@@ -621,5 +622,39 @@ if (searchQuery || searchQuery === "") {
     searchInput.value = searchQuery;
     search();
 }
+
+function openSettingsSemi(translateY: number) {
+	let settingCon = document.querySelector<HTMLElement>(".menuCon");
+	settingCon.style.display = "block";
+	settingCon.style.pointerEvents = "auto";
+	settingCon.style.opacity = "1";
+	if (translateY == -1) {
+		settingCon.style.transform = "translate(-50%, 0px)";
+	} else if (translateY == 0) {
+		settingCon.style.transform = "translate(-50%, 100%)";
+
+	} else {
+		settingCon.style.transform = `translate(-50%, calc(100% + ${-translateY + 50}px))`;
+	}
+
+}
+
+function closeSettings() {
+	let settingCon = document.querySelector<HTMLElement>(".menuCon");
+	settingCon.style.transitionDuration = "0.2s";
+	window.requestAnimationFrame(function () {
+		window.requestAnimationFrame(function () {
+			settingCon.style.transform = "translate(-50%, 100%)";
+			settingCon.style.opacity = "0";
+			settingCon.style.pointerEvents = "none";
+			setTimeout(function () {
+				settingCon.style.transitionDuration = "0s";
+			}, 200);
+		});
+	});
+}
+
+new settingsPull(document.getElementById("settingHandlePadding"), closeSettings);
+new settingsPull(document.querySelector(".menuCon"), closeSettings, true);
 
 iniChoiceDOM(130);

@@ -260,6 +260,22 @@ interface searchError extends Error {
     url: string,
 }
 
+// type BasePageConfig = {
+//     hasReload: Boolean,
+//     reloadFunc  ?: Function,
+//     customConClass?: string,
+//     linkClass?: string,
+//     isError?: Boolean,
+//     positive?: Boolean
+// }
+
+// type ErrorPageConfig = BasePageConfig & ({
+//     hasLink: false,
+// } | {
+//     hasLink: true,
+//     clickEvent: Function,
+// });
+
 type ErrorPageConfig = {
     hasLink: false,
     hasReload: Boolean,
