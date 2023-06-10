@@ -444,6 +444,7 @@ var wco = {
     disableAutoDownload: false,
     disabled: false,
     name: "WCOForever",
+    shortenedName: "WCO",
     searchApi: function (query) {
         let baseURL = this.baseURL;
         let tempDiv = document.createElement("div");
@@ -825,6 +826,7 @@ var animixplay = {
     disableAutoDownload: false,
     disabled: true,
     name: "Animixplay",
+    shortenedName: "Animix",
     searchApi: async function (query) {
         const response = [];
         alert("Animixplay has been shut down.");
@@ -861,6 +863,7 @@ var fmovies = {
     disableAutoDownload: false,
     disabled: false,
     name: "FlixHQ",
+    shortenedName: "Flix",
     searchApi: async function (query) {
         let tempDOM = document.createElement("div");
         try {
@@ -1356,6 +1359,7 @@ var zoro = {
     disableAutoDownload: false,
     disabled: false,
     name: "Zoro",
+    shortenedName: "Zoro",
     searchApi: async function (query) {
         let dom = document.createElement("div");
         try {
@@ -1763,6 +1767,7 @@ var twitch = {
     disabled: false,
     disableAutoDownload: true,
     name: "Twitch",
+    shortenedName: "Twitch",
     searchApi: async function (query) {
         try {
             const clientId = "kimne78kx3ncx6brgo4mv6wki5h1ko";
@@ -2010,6 +2015,7 @@ var anilist = {
     disableAutoDownload: false,
     disabled: false,
     name: "Anilist",
+    shortenedName: "Ani",
     searchApi: async function (query, params) {
         var _a;
         let gqlQuery = `query($type: MediaType`;
@@ -2469,6 +2475,7 @@ var nineAnime = {
     disableAutoDownload: false,
     disabled: false,
     name: "9anime",
+    shortenedName: "9anime",
     searchApi: async function (query) {
         const searchDOM = document.createElement("div");
         try {
@@ -3032,6 +3039,7 @@ var fmoviesto = {
     disableAutoDownload: false,
     disabled: false,
     name: "Fmovies.to",
+    shortenedName: "Fmovies",
     searchApi: async function (query) {
         let rawURL = "";
         let searchDOM = document.createElement("div");
@@ -3552,7 +3560,8 @@ var gogo = {
     type: "anime",
     disableAutoDownload: false,
     disabled: false,
-    name: "Gogo",
+    name: "GogoAnime",
+    shortenedName: "Gogo",
     keys: [
         CryptoJS.enc.Utf8.parse("37911490979715163134003223491201"),
         CryptoJS.enc.Utf8.parse("54674138327930866480207815084989"),
@@ -3840,6 +3849,7 @@ var mangaDex = {
     disableAutoDownload: false,
     disabled: false,
     name: "MangaDex",
+    shortenedName: "MDex",
     searchApi: async function (query) {
         var _a, _b;
         try {
@@ -4015,6 +4025,7 @@ var mangaFire = {
     disableAutoDownload: false,
     disabled: false,
     name: "MangaFire",
+    shortenedName: "MFire",
     searchApi: async function (query) {
         var _a, _b;
         const searchDOM = document.createElement("div");
@@ -4220,6 +4231,7 @@ var viewAsian = {
     disabled: false,
     disableAutoDownload: false,
     name: "viewAsian",
+    shortenedName: "viewAsian",
     keys: [
         CryptoJS.enc.Utf8.parse("93422192433952489752342908585752"),
         CryptoJS.enc.Utf8.parse("9262859232435825"),

@@ -4,6 +4,7 @@ var wco: extension = {
     disableAutoDownload: false,
     disabled: false,
     name: "WCOForever",
+    shortenedName: "WCO",
     searchApi: function (query: string): Promise<extensionSearch> {
         let baseURL = this.baseURL;
         let tempDiv = document.createElement("div");

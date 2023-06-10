@@ -4,6 +4,7 @@ var mangaDex: extension = {
     disableAutoDownload: false,
     disabled: false,
     name: "MangaDex",
+    shortenedName: "MDex",
     searchApi: async function (query: string): Promise<extensionSearch> {
         try {
             const res = JSON.parse(await MakeFetchZoro(

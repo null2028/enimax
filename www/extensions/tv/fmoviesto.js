@@ -4,6 +4,7 @@ var fmoviesto = {
     disableAutoDownload: false,
     disabled: false,
     name: "Fmovies.to",
+    shortenedName: "Fmovies",
     searchApi: async function (query) {
         let rawURL = "";
         let searchDOM = document.createElement("div");

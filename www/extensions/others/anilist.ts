@@ -5,6 +5,7 @@ var anilist: extension = {
     disableAutoDownload: false,
     disabled: false,
     name: "Anilist",
+    shortenedName: "Ani",
     searchApi: async function (query, params) {
         let gqlQuery = `query($type: MediaType`;
         let mediaQuery = `media(type: $type`;

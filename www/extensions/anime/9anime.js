@@ -4,6 +4,7 @@ var nineAnime = {
     disableAutoDownload: false,
     disabled: false,
     name: "9anime",
+    shortenedName: "9anime",
     searchApi: async function (query) {
         const searchDOM = document.createElement("div");
         try {

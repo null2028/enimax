@@ -4,6 +4,7 @@ var mangaFire: extension = {
     disableAutoDownload: false,
     disabled: false,
     name: "MangaFire",
+    shortenedName: "MFire",
     searchApi: async function (query: string): Promise<extensionSearch> {
         const searchDOM = document.createElement("div");
 

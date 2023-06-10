@@ -4,6 +4,7 @@ var fmovies: extension = {
     disableAutoDownload: false,
     disabled: false,
     name: "FlixHQ",
+    shortenedName: "Flix",
     searchApi: async function (query: string): Promise<extensionSearch> {
         let tempDOM = document.createElement("div");
 

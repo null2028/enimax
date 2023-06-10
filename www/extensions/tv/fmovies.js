@@ -4,6 +4,7 @@ var fmovies = {
     disableAutoDownload: false,
     disabled: false,
     name: "FlixHQ",
+    shortenedName: "Flix",
     searchApi: async function (query) {
         let tempDOM = document.createElement("div");
         try {

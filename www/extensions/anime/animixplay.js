@@ -5,6 +5,7 @@ var animixplay = {
     disableAutoDownload: false,
     disabled: true,
     name: "Animixplay",
+    shortenedName: "Animix",
     searchApi: async function (query) {
         const response = [];
         alert("Animixplay has been shut down.");

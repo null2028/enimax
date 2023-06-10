@@ -4,7 +4,8 @@ var gogo: extension = {
     type: "anime",
     disableAutoDownload: false,
     disabled: false,
-    name: "Gogo",
+    name: "GogoAnime",
+    shortenedName: "Gogo",
     keys: [
         CryptoJS.enc.Utf8.parse("37911490979715163134003223491201"),
         CryptoJS.enc.Utf8.parse("54674138327930866480207815084989"),

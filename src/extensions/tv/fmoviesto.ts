@@ -4,6 +4,7 @@ var fmoviesto: extension = {
     disableAutoDownload: false,
     disabled: false,
     name: "Fmovies.to",
+    shortenedName: "Fmovies",
     searchApi: async function (query) {
 
         let rawURL = "";

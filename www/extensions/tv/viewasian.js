@@ -4,6 +4,7 @@ var viewAsian = {
     disabled: false,
     disableAutoDownload: false,
     name: "viewAsian",
+    shortenedName: "viewAsian",
     keys: [
         CryptoJS.enc.Utf8.parse("93422192433952489752342908585752"),
         CryptoJS.enc.Utf8.parse("9262859232435825"),

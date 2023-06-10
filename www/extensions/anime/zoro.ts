@@ -4,6 +4,7 @@ var zoro: extension = {
     disableAutoDownload: false,
     disabled: false,
     name: "Zoro",
+    shortenedName: "Zoro",
     searchApi: async function (query: string): Promise<extensionSearch> {
         let dom = document.createElement("div");
 

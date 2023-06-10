@@ -4,6 +4,7 @@ var mangaFire = {
     disableAutoDownload: false,
     disabled: false,
     name: "MangaFire",
+    shortenedName: "MFire",
     searchApi: async function (query) {
         var _a, _b;
         const searchDOM = document.createElement("div");

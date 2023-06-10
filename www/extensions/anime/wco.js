@@ -4,6 +4,7 @@ var wco = {
     disableAutoDownload: false,
     disabled: false,
     name: "WCOForever",
+    shortenedName: "WCO",
     searchApi: function (query) {
         let baseURL = this.baseURL;
         let tempDiv = document.createElement("div");

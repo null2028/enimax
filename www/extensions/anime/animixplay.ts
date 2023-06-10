@@ -5,6 +5,7 @@ var animixplay: extension = {
     disableAutoDownload: false,
     disabled: true,
     name: "Animixplay",
+    shortenedName: "Animix",
     searchApi: async function (query: string) {
         const response: Array<extensionSearchData> = [];
         alert("Animixplay has been shut down.");

@@ -5,6 +5,7 @@ var twitch: extension = {
     disabled: false,
     disableAutoDownload: true,
     name: "Twitch",
+    shortenedName: "Twitch",
     searchApi: async function (query) {
         try {
             const clientId = "kimne78kx3ncx6brgo4mv6wki5h1ko";
