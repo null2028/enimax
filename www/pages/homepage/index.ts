@@ -882,7 +882,7 @@ function open_menu(x) {
         x.parentElement.setAttribute("data-state-menu", "closed");
         x.style.transform = "rotate(0deg)";
     } else {
-        x.parentElement.style.height = "auto";
+        x.parentElement.style.height = "175px";
         x.parentElement.style.zIndex = "99";
         x.parentElement.setAttribute("data-state-menu", "open");
         x.style.transform = "rotate(45deg)";
@@ -2086,7 +2086,7 @@ if (true) {
                                     "padding" : "inherit"
                                 },
                                 "listeners": {
-                                    "click": function (event) {
+                                    "click": function (event: Event) {
                                         event.stopPropagation();
                                     }
                                 },

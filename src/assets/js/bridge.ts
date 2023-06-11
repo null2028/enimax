@@ -105,12 +105,13 @@ function setURL(url: string) {
     }
 
     mainIFrame.style.opacity = "0";
-    mainIFrame.style.transform = "translate(10px)";
+    mainIFrame.style.transform = "scale(0.95, 0.95)";
     setTimeout(function () {
         mainIFrame.contentWindow.location = url;
+        mainIFrame.style.transform = "scale(1.05, 1.05)";
         setTimeout(function () {
+            mainIFrame.style.transform = "scale(1, 1)";
             mainIFrame.style.opacity = "1";
-            mainIFrame.style.transform = "translate(0px)";
         }, 200);
     }, 200);
 }

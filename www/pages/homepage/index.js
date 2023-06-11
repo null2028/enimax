@@ -694,7 +694,7 @@ function open_menu(x) {
         x.style.transform = "rotate(0deg)";
     }
     else {
-        x.parentElement.style.height = "auto";
+        x.parentElement.style.height = "175px";
         x.parentElement.style.zIndex = "99";
         x.parentElement.setAttribute("data-state-menu", "open");
         x.style.transform = "rotate(45deg)";

@@ -302,7 +302,7 @@ const DMenu = new dropDownMenu(
                     "iconID": "yearIcon",
                     "text": "Year",
                     "numberBox": true,
-                    "value": localStorage.getItem("search-anilist-year");
+                    "value": localStorage.getItem("search-anilist-year"),
                     "onInput": function (event: InputEvent) {
                         localStorage.setItem("search-anilist-year", (event.target as HTMLInputElement).value);
                     }

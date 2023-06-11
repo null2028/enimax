@@ -649,14 +649,13 @@ display: inline-block;
 	line-height: 18px;
 	text-underline-offset: 1px;
 	text-overflow: ellipsis;
-
 }
 
 @supports (display: -webkit-box) and (-webkit-line-clamp: 3) and (-webkit-box-orient: vertical) {
 
 	.s_card_title_main {
 		display: -webkit-box;
-		-webkit-line-clamp: 3;
+		-webkit-line-clamp: 2;
 		-webkit-box-orient: vertical;
 		max-height: none;
 	}
