@@ -699,11 +699,6 @@ document.getElementById("hideNotification").onchange = function () {
     localStorage.setItem("hideNotification", (this as HTMLInputElement).checked.toString());
 }
 
-document.getElementById("fancyHome").onchange = function () {
-    localStorage.setItem("fancyHome", (this as HTMLInputElement).checked.toString());
-    location.reload();
-}
-
 document.getElementById("alwaysDown").onchange = function () {
     localStorage.setItem("alwaysDown", (this as HTMLInputElement).checked.toString());
 }
@@ -752,7 +747,6 @@ document.getElementById("rangeCon").addEventListener("touchmove", function (even
 (document.getElementById("autoPause") as HTMLInputElement).checked = localStorage.getItem("autoPause") === "true";
 (document.getElementById("autoDownload") as HTMLInputElement).checked = localStorage.getItem("autoDownload") === "true";
 (document.getElementById("hideNotification") as HTMLInputElement).checked = localStorage.getItem("hideNotification") === "true";
-(document.getElementById("fancyHome") as HTMLInputElement).checked = localStorage.getItem("fancyHome") === "true";
 (document.getElementById("alwaysDown") as HTMLInputElement).checked = localStorage.getItem("alwaysDown") === "true";
 (document.getElementById("useImageBack") as HTMLInputElement).checked = localStorage.getItem("useImageBack") === "true";
 (document.getElementById("offline") as HTMLInputElement).checked = (localStorage.getItem("offline") === 'true');

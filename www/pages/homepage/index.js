@@ -543,10 +543,6 @@ document.getElementById("autoDownload").onchange = function () {
 document.getElementById("hideNotification").onchange = function () {
     localStorage.setItem("hideNotification", this.checked.toString());
 };
-document.getElementById("fancyHome").onchange = function () {
-    localStorage.setItem("fancyHome", this.checked.toString());
-    location.reload();
-};
 document.getElementById("alwaysDown").onchange = function () {
     localStorage.setItem("alwaysDown", this.checked.toString());
 };
@@ -589,7 +585,6 @@ document.getElementById("discoverHide").checked = localStorage.getItem("discover
 document.getElementById("autoPause").checked = localStorage.getItem("autoPause") === "true";
 document.getElementById("autoDownload").checked = localStorage.getItem("autoDownload") === "true";
 document.getElementById("hideNotification").checked = localStorage.getItem("hideNotification") === "true";
-document.getElementById("fancyHome").checked = localStorage.getItem("fancyHome") === "true";
 document.getElementById("alwaysDown").checked = localStorage.getItem("alwaysDown") === "true";
 document.getElementById("useImageBack").checked = localStorage.getItem("useImageBack") === "true";
 document.getElementById("offline").checked = (localStorage.getItem("offline") === 'true');
