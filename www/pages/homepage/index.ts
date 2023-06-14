@@ -699,11 +699,7 @@ document.getElementById("autoDownload").onchange = function () {
 document.getElementById("fullscreenMode").onchange = function () {
     const isChecked = (this as HTMLInputElement).checked;
     localStorage.setItem("fullscreenMode", isChecked.toString());
-    if(isChecked){
-        (window.parent as cordovaWindow).disableFullScreen();
-    }else{
-        (window.parent as cordovaWindow).enableFullScreen();
-    }
+    (window.parent as cordovaWindow).handleFullscreen();
 }
 
 document.getElementById("hideNotification").onchange = function () {
@@ -2565,9 +2561,24 @@ if (!!localStorage.getItem("anilist-token")) {
     document.getElementById("anilistImport").style.display = "block";
 }
 
-if(localStorage.getItem("fullscreenMode") === "true"){
-    (window.parent as cordovaWindow).disableFullScreen();
-}
+// function disableFullScreenH(count = 1){
+//     // if(count <= 0){
+//     //     return;
+//     // }
+
+//     (window.parent as cordovaWindow).enableFullScreen();
+
+//     // setTimeout(function(){
+//     //     disableFullScreenH(--count);
+//     // }, 200);
+// }
+
+// if(localStorage.getItem("fullscreenMode") !== "true" && !config.chrome){
+//     disableFullScreenH(10);
+// }
+
+(window.parent as cordovaWindow).handleFullscreen();
+
 
 for (const div of document.querySelectorAll("div")) {
     div.setAttribute("tabindex", "0");

@@ -137,8 +137,7 @@ interface videoChangedFillModeEvent extends CustomEvent {
 
 interface cordovaWindow extends Window {
     cordova: any,
-    disableFullScreen: () => void;
-    enableFullScreen: () => void;
+    handleFullscreen: () => void;
     returnAnilistStatus: () => anilistStatus[],
     changeShowStatus: (anilistID: any, status: anilistStatus) => Promise<void>,
     anilist: extension,

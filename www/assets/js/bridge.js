@@ -566,26 +566,33 @@ function onResume() {
     if (frameLocation.includes("pages/player")) {
         playerIFrame.contentWindow.postMessage({ action: "pipout" }, "*");
     }
+    if (localStorage.getItem("fullscreenMode") === "true") {
+        // disableFullScreen(10);
+    }
 }
 function back() {
     backFunction();
 }
 function disableFullScreen(count = 1) {
-    if (count <= 0) {
-        return;
-    }
-    console.log("here", count);
     // @ts-ignore
     AndroidFullScreen.showSystemUI(() => { }, () => { });
-    setTimeout(function () {
-        disableFullScreen(--count);
-    }, 200);
 }
 function enableFullScreen() {
     // @ts-ignore
     AndroidFullScreen.immersiveMode(() => { }, () => { });
 }
+function handleFullscreen() {
+    if (localStorage.getItem("fullscreenMode") === "true") {
+        // @ts-ignore
+        disableFullScreen();
+    }
+    else {
+        // @ts-ignore
+        enableFullScreen();
+    }
+}
 async function onDeviceReady() {
+    handleFullscreen();
     await SQLInit();
     await SQLInitDownloaded();
     updateImage();
@@ -656,9 +663,6 @@ async function onDeviceReady() {
     document.addEventListener("backbutton", () => { backFunction(); }, false);
     document.addEventListener("pause", onPause, false);
     document.addEventListener("resume", onResume, false);
-    if (localStorage.getItem("fullscreenMode") === "true") {
-        disableFullScreen(20);
-    }
 }
 document.addEventListener("deviceready", onDeviceReady, false);
 if (config.chrome) {
