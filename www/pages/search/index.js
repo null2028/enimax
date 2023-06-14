@@ -576,6 +576,9 @@ for (let i = 0; i < catIDs.length; i++) {
     new pullToRefresh(document.getElementById(`room_${catIDs[i]}`));
 }
 const searchInput = document.querySelector(".searchInput");
+if (isNaN(engineID)) {
+    engineID = 0;
+}
 scrollSnapFunc(true, catIDs.indexOf(extensionList[engineID].type));
 new menuPull(conElem, () => {
     window.parent.postMessage({ "action": 500, data: "pages/homepage/index.html" }, "*");

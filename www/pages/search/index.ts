@@ -656,6 +656,11 @@ for (let i = 0; i < catIDs.length; i++) {
 }
 
 const searchInput = (document.querySelector(".searchInput") as HTMLInputElement);
+
+if(isNaN(engineID)){
+    engineID = 0;
+}
+
 scrollSnapFunc(true, catIDs.indexOf(extensionList[engineID].type));
 
 new menuPull(conElem, () => {
