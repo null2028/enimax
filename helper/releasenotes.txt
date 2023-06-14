@@ -1,2 +1,0 @@
-1. Added anilist support! You can go to the menu and click on `Anilist Login` to login. One you're logged in, it will ask if you want to import your libary. This is a one time process, but it can be repeated by going to the menu and clicking on "Import anilist library".
-2. Fixed navigation on android TV. I plan on refining it even more.

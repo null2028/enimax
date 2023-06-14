@@ -6,3 +6,5 @@
 6. Refined the filter menu
 7. An option to add the latest episode in the ongoing tab to the download queue. However, it will only do that after the library updates either manually (by clicking on "update library") or automatically (which happens twice a day). This setting is **disabled** by default and can be enabled by going to the Settings and then enabling **"Auto-download the latest episode in the Ongoing category"** option.
 8. Changed homepage's card layout.
+9. Added anilist support! You can go to the menu and click on `Anilist Login` to login. Once you're logged in, it will ask if you want to import your libary. This is a one time process, but it can be repeated by going to the menu and clicking on "Import anilist library".
+10. Fixed navigation on android TV. I plan on refining it even more.
