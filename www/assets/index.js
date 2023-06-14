@@ -10,6 +10,7 @@ function createElement(config) {
     for (let value in attributes) {
         temp.setAttribute(value, attributes[value]);
     }
+    temp.setAttribute("tabindex", "0");
     for (let value in config.style) {
         temp.style[value] = config.style[value];
     }

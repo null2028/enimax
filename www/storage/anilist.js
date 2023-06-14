@@ -1,6 +1,5 @@
 async function makeAnilistReq(query, variables, accessToken) {
     try {
-        console.log(accessToken);
         const response = await fetch("https://graphql.anilist.co", {
             method: "POST",
             headers: {
@@ -83,8 +82,7 @@ async function deleteAnilistShow(anilistID) {
             await makeAnilistReq(deleteQuery, variables, accessToken);
         }
         else {
-            sendNoti([4, "red", "Alert", "Could not find the show on your anilist account"]);
-            throw Error("Couldn't not get the list ID");
+            throw Error("Could not find the show on your anilist account");
         }
         sendNoti([4, null, "Alert", "Deleted the show from your anilist account"]);
     }

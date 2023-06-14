@@ -1260,3 +1260,11 @@ if (config.local || localStorage.getItem("offline") === 'true') {
 } else {
     window.parent.postMessage({ "action": 20 }, "*");
 }
+
+for(const div of document.querySelectorAll("div")){
+    div.setAttribute("tabindex", "0");
+}
+
+for(const input of document.querySelectorAll("input")){
+    input.setAttribute("tabindex", "0");
+}

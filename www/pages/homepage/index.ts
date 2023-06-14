@@ -2026,6 +2026,12 @@ if (true) {
                             },
                             {
                                 "class": "card_menu",
+                                "listeners": {
+                                    "click": function (event) {
+                                        event.stopPropagation();
+                                        open_menu(this.children[0]);
+                                    }
+                                },
                                 "children": [
                                     {
                                         "class": "card_menu_item card_menu_icon_add", "attributes": {}, "listeners": {
@@ -2421,3 +2427,12 @@ window.addEventListener("popstate", function (event) {
         console.error(err);
     }
 });
+
+
+for(const div of document.querySelectorAll("div")){
+    div.setAttribute("tabindex", "0");
+}
+
+for(const input of document.querySelectorAll("input")){
+    input.setAttribute("tabindex", "0");
+}
