@@ -574,7 +574,33 @@ document.getElementById("rangeCon").addEventListener("touchmove", function (even
     event.stopPropagation();
 });
 document.getElementById("anilistLogin").addEventListener("click", function (event) {
-    window.parent.getWebviewHTML("https://anilist.co/api/v2/oauth/authorize?client_id=13095&response_type=token", false, null, "console.log()", true);
+    if (config.chrome) {
+        try {
+            alert("A new tab will open asking you to log in, and then you will be redirected to a new page. Copy the URL of the new page and paste it when prompted");
+            window.open("https://anilist.co/api/v2/oauth/authorize?client_id=13095&response_type=token", '_blank', 'location=yes,height=570,width=520,scrollbars=yes,status=yes');
+            const url = prompt("Enter the copied URL here");
+            const accessToken = new URLSearchParams((new URL(url)).hash.substring(1)).get("access_token");
+            localStorage.setItem("anilist-token", accessToken);
+            if (accessToken) {
+                const shouldUpdate = confirm("Logged in! Do you want to import your library? if you don't want to do that right now, you can do that later by going to the menu.");
+                if (shouldUpdate) {
+                    window.parent.getAllItems();
+                }
+            }
+            else {
+                alert("Seems like something went wrong.");
+            }
+        }
+        catch (err) {
+            alert(err);
+        }
+    }
+    else {
+        window.parent.getWebviewHTML("https://anilist.co/api/v2/oauth/authorize?client_id=13095&response_type=token", false, null, "console.log()", true);
+    }
+});
+document.getElementById("anilistImport").addEventListener("click", function (event) {
+    window.parent.getAllItems();
 });
 document.getElementById("outlineColor").value = localStorage.getItem("outlineColor");
 document.getElementById("outlineWidth").value = localStorage.getItem("outlineWidth");
@@ -1969,6 +1995,9 @@ window.addEventListener("popstate", function (event) {
         console.error(err);
     }
 });
+if (!!localStorage.getItem("anilist-token")) {
+    document.getElementById("anilistImport").style.display = "block";
+}
 for (const div of document.querySelectorAll("div")) {
     div.setAttribute("tabindex", "0");
 }

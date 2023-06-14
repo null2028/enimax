@@ -465,7 +465,7 @@ function ini() {
                     };
 
                     anilistDOM.onclick = function () {
-                        openWebview(`https://anilist.co/anime/${metaData.id}`);
+                        openWebview(`https://anilist.co/${data.isManga ? "manga" : "anime"}/${metaData.id}`);
                     };
 
                     if (!search.has("aniID")) {

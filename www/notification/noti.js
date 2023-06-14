@@ -60,4 +60,12 @@ class notification {
             console.error(err);
         }
     }
+    updateBody(newData) {
+        try {
+            this.elem.querySelector(".noti_data").innerText = newData;
+        }
+        catch (err) {
+            console.error(err);
+        }
+    }
 }

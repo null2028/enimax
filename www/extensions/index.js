@@ -144,8 +144,11 @@ function getWebviewHTML(url = "https://www.zoro.to", hidden = false, timeout = 1
                 if (event.url.includes("enimax-anime.github.io/anilist")) {
                     const accessToken = new URLSearchParams((new URL(event.url)).hash.substring(1)).get("access_token");
                     localStorage.setItem("anilist-token", accessToken);
-                    alert("Logged in!");
                     inappRef.close();
+                    const shouldUpdate = confirm("Logged in! Do you want to import your library? if you don't want to do that right now, you can do that later by going to the menu");
+                    if (shouldUpdate) {
+                        getAllItems();
+                    }
                     resolve("Done");
                 }
                 else if ((new URL(event.url)).hostname === "anilist.co") {
@@ -4096,6 +4099,7 @@ var mangaFire = {
                 linkSplit.shift();
                 response.episodes.push({
                     title: episodeLI.querySelector("a").querySelector("span").innerText,
+                    number: parseFloat(episodeLI.getAttribute("data-number")),
                     link: `?watch=/read/${linkSplit.join("/read/")}&chap=${episodeLI.getAttribute("data-number")}&engine=9`,
                 });
             }

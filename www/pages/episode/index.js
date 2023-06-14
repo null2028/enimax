@@ -393,7 +393,7 @@ function ini() {
                         openWebview(`https://myanimelist.net/anime/${metaData.idMal}`);
                     };
                     anilistDOM.onclick = function () {
-                        openWebview(`https://anilist.co/anime/${metaData.id}`);
+                        openWebview(`https://anilist.co/${data.isManga ? "manga" : "anime"}/${metaData.id}`);
                     };
                     if (!search.has("aniID")) {
                         window.parent.apiCall("POST", { "username": username, "action": 14, "name": data.mainName, "url": `${location.search}&aniID=${metaData.id}` }, () => { });

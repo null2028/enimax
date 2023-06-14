@@ -735,7 +735,32 @@ document.getElementById("rangeCon").addEventListener("touchmove", function (even
 });
 
 document.getElementById("anilistLogin").addEventListener("click", function (event) {
-    (window.parent as cordovaWindow).getWebviewHTML("https://anilist.co/api/v2/oauth/authorize?client_id=13095&response_type=token", false, null, "console.log()", true);
+    if (config.chrome) {
+        try {
+            alert("A new tab will open asking you to log in, and then you will be redirected to a new page. Copy the URL of the new page and paste it when prompted");
+            window.open("https://anilist.co/api/v2/oauth/authorize?client_id=13095&response_type=token", '_blank', 'location=yes,height=570,width=520,scrollbars=yes,status=yes');
+            const url = prompt("Enter the copied URL here");
+            const accessToken = new URLSearchParams((new URL(url)).hash.substring(1)).get("access_token");
+            localStorage.setItem("anilist-token", accessToken);
+
+            if(accessToken){
+                const shouldUpdate = confirm("Logged in! Do you want to import your library? if you don't want to do that right now, you can do that later by going to the menu.");
+                if(shouldUpdate){
+                    (window.parent as cordovaWindow).getAllItems();
+                }
+            }else{
+                alert("Seems like something went wrong.");
+            }
+        } catch (err) {
+            alert(err);
+        }
+    } else {
+        (window.parent as cordovaWindow).getWebviewHTML("https://anilist.co/api/v2/oauth/authorize?client_id=13095&response_type=token", false, null, "console.log()", true);
+    }
+});
+
+document.getElementById("anilistImport").addEventListener("click", function (event) {
+    (window.parent as cordovaWindow).getAllItems();
 });
 
 (document.getElementById("outlineColor") as HTMLInputElement).value = localStorage.getItem("outlineColor");
@@ -1969,14 +1994,14 @@ if (true) {
                             "data-href": data[i][3],
                             "data-epURL": data[i][5],
                             "data-mainname": data[i][0]
-                        }, 
+                        },
                         "listeners": {
                             "click": function () {
                                 localStorage.setItem("mainName", this.getAttribute("data-mainname"));
                                 localStorage.setItem("epURL", this.getAttribute("data-epURL"));
                                 window.parent.postMessage({ "action": 4, "data": this.getAttribute("data-href") }, "*");
                             }
-                        }, 
+                        },
                         "children": [
                             {
                                 "class": "s_card_title_new",
@@ -2006,19 +2031,19 @@ if (true) {
                                 }
                             },
                             {
-                                "class": "s_card_play", 
+                                "class": "s_card_play",
                                 "attributes": {
                                     "data-href": data[i][3],
                                     "data-epURL": data[i][5],
                                     "data-mainname": data[i][0]
-                                }, 
+                                },
                                 "listeners": {
                                     "click": function () {
                                         localStorage.setItem("mainName", this.getAttribute("data-mainname"));
                                         localStorage.setItem("epURL", this.getAttribute("data-epURL"));
                                         window.parent.postMessage({ "action": 4, "data": this.getAttribute("data-href") }, "*");
                                     }
-                                }, 
+                                },
                                 "element": "div",
                                 "style": {
                                     "opacity": "0"
@@ -2055,16 +2080,16 @@ if (true) {
                                                     isManga = new URLSearchParams(this.getAttribute("data-href")).get("isManga") === "true";
                                                     aniID = parseInt(new URLSearchParams(this.getAttribute("data-href")).get("aniID"));
 
-                                                    if(!isNaN(aniID) && !!localStorage.getItem("anilist-token")){
+                                                    if (!isNaN(aniID) && !!localStorage.getItem("anilist-token")) {
                                                         const shouldDelete = confirm("Do you want to delete this show from your anilist account?");
-                                                        if(shouldDelete){
+                                                        if (shouldDelete) {
                                                             (window.parent as cordovaWindow).deleteAnilistShow(aniID);
                                                         }
                                                     }
                                                 } catch (err) {
 
                                                 }
-                                                
+
 
                                                 ini_api.delete_card(this.getAttribute("data-showname"), this, isManga);
                                             }
@@ -2097,7 +2122,7 @@ if (true) {
                             {
                                 "class": "card_title_extension",
                                 "style": {
-                                    "padding" : "inherit"
+                                    "padding": "inherit"
                                 },
                                 "listeners": {
                                     "click": function (event: Event) {
@@ -2428,11 +2453,15 @@ window.addEventListener("popstate", function (event) {
     }
 });
 
+if (!!localStorage.getItem("anilist-token")) {
+    document.getElementById("anilistImport").style.display = "block";
+}
 
-for(const div of document.querySelectorAll("div")){
+
+for (const div of document.querySelectorAll("div")) {
     div.setAttribute("tabindex", "0");
 }
 
-for(const input of document.querySelectorAll("input")){
+for (const input of document.querySelectorAll("input")) {
     input.setAttribute("tabindex", "0");
 }

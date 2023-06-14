@@ -58,6 +58,7 @@ var mangaFire = {
                 linkSplit.shift();
                 response.episodes.push({
                     title: episodeLI.querySelector("a").querySelector("span").innerText,
+                    number: parseFloat(episodeLI.getAttribute("data-number")),
                     link: `?watch=/read/${linkSplit.join("/read/")}&chap=${episodeLI.getAttribute("data-number")}&engine=9`,
                 });
             }
