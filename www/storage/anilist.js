@@ -55,33 +55,40 @@ async function updateEpWatched(anilistID, epNum) {
 }
 async function deleteAnilistShow(anilistID) {
     var _a, _b, _c, _d;
-    const accessToken = localStorage.getItem("anilist-token");
-    if (!accessToken || isNaN(parseInt(anilistID))) {
-        return;
-    }
-    const query = `query($mediaId:Int){
+    try {
+        const accessToken = localStorage.getItem("anilist-token");
+        if (!accessToken || isNaN(parseInt(anilistID))) {
+            return;
+        }
+        const query = `query($mediaId:Int){
                         Media(id:$mediaId){
                             mediaListEntry{
                                 id
                             }
                         }
                     }`;
-    const getIDvariables = {
-        mediaId: anilistID
-    };
-    const listID = (_d = (_c = (_b = (_a = JSON.parse(await makeAnilistReq(query, getIDvariables, accessToken))) === null || _a === void 0 ? void 0 : _a.data) === null || _b === void 0 ? void 0 : _b.Media) === null || _c === void 0 ? void 0 : _c.mediaListEntry) === null || _d === void 0 ? void 0 : _d.id;
-    if (listID) {
-        const deleteQuery = `mutation ($id: Int) {
+        const getIDvariables = {
+            mediaId: anilistID
+        };
+        const listID = (_d = (_c = (_b = (_a = JSON.parse(await makeAnilistReq(query, getIDvariables, accessToken))) === null || _a === void 0 ? void 0 : _a.data) === null || _b === void 0 ? void 0 : _b.Media) === null || _c === void 0 ? void 0 : _c.mediaListEntry) === null || _d === void 0 ? void 0 : _d.id;
+        if (listID) {
+            const deleteQuery = `mutation ($id: Int) {
                         DeleteMediaListEntry (id: $id) {
                             deleted
                         }
                    }`;
-        const variables = {
-            id: listID
-        };
-        await makeAnilistReq(deleteQuery, variables, accessToken);
+            const variables = {
+                id: listID
+            };
+            await makeAnilistReq(deleteQuery, variables, accessToken);
+        }
+        else {
+            sendNoti([4, "red", "Alert", "Could not find the show on your anilist account"]);
+            throw Error("Couldn't not get the list ID");
+        }
+        sendNoti([4, null, "Alert", "Deleted the show from your anilist account"]);
     }
-    else {
-        throw Error("Couldn't not get the list ID");
+    catch (err) {
+        sendNoti([4, "red", "Alert", err]);
     }
 }
