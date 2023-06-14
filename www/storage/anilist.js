@@ -1,3 +1,7 @@
+const anilistStatus = ["CURRENT", "PLANNING", "COMPLETED", "DROPPED", "PAUSED", "REPEATING"];
+function returnAnilistStatus() {
+    return anilistStatus;
+}
 async function makeAnilistReq(query, variables, accessToken) {
     try {
         const response = await fetch("https://graphql.anilist.co", {
@@ -119,6 +123,23 @@ async function addShowToLib(data) {
         }, () => { });
     });
 }
+async function changeShowStatus(anilistID, status) {
+    const accessToken = localStorage.getItem("anilist-token");
+    if (!accessToken || isNaN(parseInt(anilistID))) {
+        return;
+    }
+    const query = `mutation($mediaId: Int, $status: MediaListStatus) {
+                        SaveMediaListEntry (mediaId: $mediaId, status: $status) {
+                            id
+                            status
+                        }
+                    }`;
+    const variables = {
+        mediaId: anilistID,
+        status
+    };
+    await makeAnilistReq(query, variables, accessToken);
+}
 async function getAllItems() {
     const accessToken = localStorage.getItem("anilist-token");
     if (!accessToken) {
@@ -186,10 +207,14 @@ async function getAllItems() {
                     permNoti.updateBody(`Trying to get the info for ${link.link}`);
                     const currentInfo = await currentExtension.getAnimeInfo(link.link.replace("?watch=/", ""));
                     let currentEp = currentInfo.episodes.find((ep) => {
-                        return parseFloat(ep[numberKey]) === link.progress;
+                        console.log(parseFloat(ep[numberKey]), link.progress);
+                        return parseFloat(ep[numberKey]) >= link.progress;
                     });
                     if (!currentEp) {
                         currentEp = currentInfo.episodes[0];
+                    }
+                    if (currentInfo.episodes[currentInfo.episodes.length - 1][numberKey] < link.progress) {
+                        currentEp = currentInfo.episodes[currentInfo.episodes.length - 1];
                     }
                     addShowToLib({
                         name: currentInfo.mainName,

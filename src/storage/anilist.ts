@@ -1,3 +1,9 @@
+const anilistStatus = ["CURRENT", "PLANNING", "COMPLETED", "DROPPED", "PAUSED", "REPEATING"];
+
+function returnAnilistStatus(){
+    return anilistStatus;
+}
+
 async function makeAnilistReq(query: string, variables: any, accessToken: string) {
     try {
         const response = await fetch("https://graphql.anilist.co", {
@@ -141,6 +147,27 @@ async function addShowToLib(data: { name: string, img: string, url: string, curr
     });
 }
 
+async function changeShowStatus(anilistID: any, status: anilistStatus) {
+    const accessToken = localStorage.getItem("anilist-token");
+
+    if (!accessToken || isNaN(parseInt(anilistID))) {
+        return;
+    }
+
+    const query = `mutation($mediaId: Int, $status: MediaListStatus) {
+                        SaveMediaListEntry (mediaId: $mediaId, status: $status) {
+                            id
+                            status
+                        }
+                    }`;
+
+    const variables = {
+        mediaId: anilistID,
+        status
+    };
+
+    await makeAnilistReq(query, variables, accessToken);
+}
 
 async function getAllItems() {
     const accessToken = localStorage.getItem("anilist-token");
@@ -149,7 +176,7 @@ async function getAllItems() {
     }
 
     const permNoti = sendNoti([0, null, "Alert", "Importing your anilist library. This may take a few minutes"]);
-    
+
     try {
         for (let typeIndex = 0; typeIndex <= 1; typeIndex++) {
 
@@ -226,12 +253,17 @@ async function getAllItems() {
 
                     const currentInfo = await currentExtension.getAnimeInfo(link.link.replace("?watch=/", ""));
                     let currentEp: extensionInfoEpisode = currentInfo.episodes.find((ep) => {
-                        return parseFloat(ep[numberKey]) === link.progress;
+                        console.log(parseFloat(ep[numberKey]), link.progress);
+                        return parseFloat(ep[numberKey]) >= link.progress;
                     });
 
 
                     if (!currentEp) {
                         currentEp = currentInfo.episodes[0];
+                    }
+
+                    if(currentInfo.episodes[currentInfo.episodes.length - 1][numberKey] < link.progress){
+                        currentEp = currentInfo.episodes[currentInfo.episodes.length - 1];
                     }
 
                     addShowToLib({

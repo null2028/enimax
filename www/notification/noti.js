@@ -30,10 +30,12 @@ class notification {
             this.parentElement.remove();
         };
         newElem.append(dot);
-        let timer = document.createElement("div");
-        timer.className = "timer";
-        timer.style.animationDuration = this.data.perm + "s";
-        newElem.append(timer);
+        this.timer = document.createElement("div");
+        if (this.data.perm != 0) {
+            this.timer.className = "timer";
+            this.timer.style.animationDuration = this.data.perm + "s";
+        }
+        newElem.append(this.timer);
         let notiHead = document.createElement("div");
         notiHead.className = "noti_head";
         notiHead.innerText = this.data.head;
@@ -67,5 +69,13 @@ class notification {
         catch (err) {
             console.error(err);
         }
+    }
+    notiTimeout(timeout) {
+        const self = this;
+        this.timer.className = "timer";
+        this.timer.style.animationDuration = (timeout / 1000) + "s";
+        setTimeout(function () {
+            self.remove();
+        }, timeout);
     }
 }

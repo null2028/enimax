@@ -4,6 +4,7 @@ class notification {
 	elem: any;
 	className: string;
 	noti: HTMLDivElement;
+	timer: HTMLDivElement;
 	constructor(DomElem: HTMLElement, data: notiConfig) {
 		this.data = data;
 		this.elem = DomElem;
@@ -41,10 +42,14 @@ class notification {
 
 		newElem.append(dot);
 
-		let timer = document.createElement("div");
-		timer.className = "timer";
-		timer.style.animationDuration = this.data.perm + "s";
-		newElem.append(timer);
+		this.timer = document.createElement("div");
+
+		if (this.data.perm != 0) {
+			this.timer.className = "timer";
+			this.timer.style.animationDuration = this.data.perm + "s";
+		}
+
+		newElem.append(this.timer);
 
 		let notiHead = document.createElement("div");
 		notiHead.className = "noti_head";
@@ -90,4 +95,14 @@ class notification {
 		}
 	}
 
+	notiTimeout(timeout: number){
+		const self = this;
+
+		this.timer.className = "timer";
+		this.timer.style.animationDuration = (timeout / 1000) + "s";
+
+		setTimeout(function () {
+			self.remove();
+		}, timeout);
+	}
 }

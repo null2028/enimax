@@ -2,6 +2,7 @@ type ExitFullscreen = typeof document.exitFullscreen
 type RequestFullscreen = typeof document.documentElement.requestFullscreen
 type TypeFunc = (res: Response) => Promise<string>
 type anilistType = "9anime" | "Zoro" | "Gogoanime" | "Mangadex" | "MangaFire"
+type anilistStatus = "CURRENT" | "PLANNING" | "COMPLETED" | "DROPPED" | "PAUSED" | "REPEATING";
 
 interface Document {
     webkitExitFullscreen: ExitFullscreen;
@@ -23,6 +24,7 @@ interface DiscoverData {
 }
 
 interface createElementConfig {
+    shouldAdd?: boolean,
     element?: string,
     attributes?: { [key: string]: string },
     style?: { [key: string]: string },
@@ -135,6 +137,8 @@ interface videoChangedFillModeEvent extends CustomEvent {
 
 interface cordovaWindow extends Window {
     cordova: any,
+    returnAnilistStatus: () => anilistStatus[],
+    changeShowStatus: (anilistID: any, status: anilistStatus) => Promise<void>,
     anilist: extension,
     makeLocalRequest: Function,
     normalise: Function,

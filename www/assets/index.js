@@ -1,4 +1,7 @@
 function createElement(config) {
+    if (config.shouldAdd === false) {
+        return;
+    }
     let temp;
     if ("element" in config) {
         temp = document.createElement(config.element);

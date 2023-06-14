@@ -743,12 +743,12 @@ document.getElementById("anilistLogin").addEventListener("click", function (even
             const accessToken = new URLSearchParams((new URL(url)).hash.substring(1)).get("access_token");
             localStorage.setItem("anilist-token", accessToken);
 
-            if(accessToken){
+            if (accessToken) {
                 const shouldUpdate = confirm("Logged in! Do you want to import your library? if you don't want to do that right now, you can do that later by going to the menu.");
-                if(shouldUpdate){
+                if (shouldUpdate) {
                     (window.parent as cordovaWindow).getAllItems();
                 }
-            }else{
+            } else {
                 alert("Seems like something went wrong.");
             }
         } catch (err) {
@@ -905,7 +905,7 @@ function open_menu(x) {
         x.parentElement.setAttribute("data-state-menu", "closed");
         x.style.transform = "rotate(0deg)";
     } else {
-        x.parentElement.style.height = "175px";
+        x.parentElement.style.height = `${x.getAttribute("data-full") === "true" ? 220 : 175}px`;
         x.parentElement.style.zIndex = "99";
         x.parentElement.setAttribute("data-state-menu", "open");
         x.style.transform = "rotate(45deg)";
@@ -1977,6 +1977,14 @@ if (true) {
             }
 
 
+            let aniID: number = NaN;
+
+            try {
+                aniID = parseInt(new URLSearchParams(data[i][5]).get("aniID"));
+            } catch (err) {
+
+            }
+
             const cardCon = createElement({
                 "class": "s_card",
                 "children": [
@@ -2059,7 +2067,11 @@ if (true) {
                                 },
                                 "children": [
                                     {
-                                        "class": "card_menu_item card_menu_icon_add", "attributes": {}, "listeners": {
+                                        "class": "card_menu_item card_menu_icon_add",
+                                        "attributes": {
+                                            "data-full": (!isNaN(aniID) && hasAnilistToken).toString()
+                                        },
+                                        "listeners": {
                                             "click": function (event) {
                                                 event.stopPropagation();
                                                 open_menu(this);
@@ -2075,12 +2087,9 @@ if (true) {
                                                 event.stopPropagation();
 
                                                 let isManga = false;
-                                                let aniID: number = NaN;
                                                 try {
                                                     isManga = new URLSearchParams(this.getAttribute("data-href")).get("isManga") === "true";
-                                                    aniID = parseInt(new URLSearchParams(this.getAttribute("data-href")).get("aniID"));
-
-                                                    if (!isNaN(aniID) && !!localStorage.getItem("anilist-token")) {
+                                                    if (!isNaN(aniID) && hasAnilistToken) {
                                                         const shouldDelete = confirm("Do you want to delete this show from your anilist account?");
                                                         if (shouldDelete) {
                                                             (window.parent as cordovaWindow).deleteAnilistShow(aniID);
@@ -2114,6 +2123,62 @@ if (true) {
                                             "click": function (event) {
                                                 event.stopPropagation();
                                                 watched_card(this);
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "class": "card_menu_item card_menu_icon_anilist",
+                                        "attributes": {},
+                                        "shouldAdd": !isNaN(aniID) && hasAnilistToken,
+                                        "listeners": {
+                                            "click": async function (event) {
+                                                event.stopPropagation();
+
+                                                const statuses = (window.parent as cordovaWindow).returnAnilistStatus();
+                                                let promptString = "";
+
+                                                for (let i = 0; i < statuses.length; i++) {
+                                                    promptString += `${i}. ${statuses[i]}${i == statuses.length - 1 ? "" : "\n"}`;
+                                                }
+
+                                                const whatStatus = prompt(promptString, "0");
+                                                let status: anilistStatus;
+
+                                                if (isNaN(parseInt(whatStatus))) {
+                                                    if (statuses.includes(whatStatus.toUpperCase() as anilistStatus)) {
+                                                        status = whatStatus.toUpperCase() as anilistStatus;
+                                                    } else {
+                                                        alert("Unexpected reply. Aborting.");
+                                                    }
+                                                } else {
+                                                    const index = parseInt(whatStatus);
+                                                    if (index >= 0 && index < statuses.length) {
+                                                        status = statuses[index];
+                                                    } else {
+                                                        alert("Unexpected reply. Aborting.");
+                                                    }
+                                                }
+
+
+                                                let permNoti: notification;
+
+                                                try {
+                                                    permNoti = sendNoti([0, null, "Alert", "Trying to update the status..."]);
+                                                    await (window.parent as cordovaWindow).changeShowStatus(aniID, status);
+                                                    permNoti.updateBody("Updated!");
+                                                    permNoti.notiTimeout(4000);
+                                                } catch (err) {
+                                                    permNoti.remove();
+                                                    sendNoti([4, "red", "Alert", err]);
+                                                }
+
+
+                                                // if (!isNaN(aniID) && hasAnilistToken) {
+                                                //     const shouldDelete = confirm("Do you want to delete this show from your anilist account?");
+                                                //     if (shouldDelete) {
+                                                //         (window.parent as cordovaWindow).deleteAnilistShow(aniID);
+                                                //     }
+                                                // }
                                             }
                                         }
                                     }
