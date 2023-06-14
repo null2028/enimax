@@ -62,14 +62,15 @@ async function updateEpWatched(anilistID: any, epNum: any) {
 }
 
 async function deleteAnilistShow(anilistID: any) {
-    const accessToken = localStorage.getItem("anilist-token");
+    try {
+        const accessToken = localStorage.getItem("anilist-token");
 
-    if (!accessToken || isNaN(parseInt(anilistID))) {
-        return;
-    }
+        if (!accessToken || isNaN(parseInt(anilistID))) {
+            return;
+        }
 
 
-    const query = `query($mediaId:Int){
+        const query = `query($mediaId:Int){
                         Media(id:$mediaId){
                             mediaListEntry{
                                 id
@@ -77,25 +78,31 @@ async function deleteAnilistShow(anilistID: any) {
                         }
                     }`;
 
-    const getIDvariables = {
-        mediaId: anilistID
-    };
+        const getIDvariables = {
+            mediaId: anilistID
+        };
 
-    const listID = JSON.parse(await makeAnilistReq(query, getIDvariables, accessToken))?.data?.Media?.mediaListEntry?.id;
+        const listID = JSON.parse(await makeAnilistReq(query, getIDvariables, accessToken))?.data?.Media?.mediaListEntry?.id;
 
-    if (listID) {
-        const deleteQuery = `mutation ($id: Int) {
+        if (listID) {
+            const deleteQuery = `mutation ($id: Int) {
                         DeleteMediaListEntry (id: $id) {
                             deleted
                         }
                    }`;
 
-        const variables = {
-            id: listID
-        };
+            const variables = {
+                id: listID
+            };
 
-        await makeAnilistReq(deleteQuery, variables, accessToken);
-    } else {
-        throw Error("Couldn't not get the list ID");
+            await makeAnilistReq(deleteQuery, variables, accessToken);
+        } else {
+            sendNoti([4, "red", "Alert", "Could not find the show on your anilist account"])
+            throw Error("Couldn't not get the list ID");
+        }
+
+        sendNoti([4, null, "Alert", "Deleted the show from your anilist account"]);
+    } catch (err) {
+        sendNoti([4, "red", "Alert", err])
     }
 }
