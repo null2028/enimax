@@ -132,15 +132,29 @@ if (config && config.chrome) {
         });
     };
 }
-function getWebviewHTML(url = "https://www.zoro.to", hidden = false, timeout = 15000, code = false) {
+function getWebviewHTML(url = "https://www.zoro.to", hidden = false, timeout = 15000, code = false, isAnilist = false) {
     return new Promise((resolve, reject) => {
         // @ts-ignore
         const inappRef = cordova.InAppBrowser.open(url, '_blank', hidden ? "hidden=true" : "");
-        inappRef.addEventListener('loadstop', () => {
-            inappRef.executeScript({
-                'code': code === false ? `let resultInApp={'status':200,'data':document.body.innerText};
+        inappRef.addEventListener('loadstop', (event) => {
+            if (isAnilist) {
+                if (event.url.includes("enimax-anime.github.io/anilist")) {
+                    const accessToken = new URLSearchParams((new URL(event.url)).hash.substring(1)).get("access_token");
+                    localStorage.setItem("anilist-token", accessToken);
+                    alert("Logged in!");
+                    inappRef.close();
+                    resolve("Done");
+                }
+                else if ((new URL(event.url)).hostname === "anilist.co") {
+                    inappRef.show();
+                }
+            }
+            else {
+                inappRef.executeScript({
+                    'code': code === false ? `let resultInApp={'status':200,'data':document.body.innerText};
                         webkit.messageHandlers.cordova_iab.postMessage(JSON.stringify(resultInApp));` : code
-            });
+                });
+            }
         });
         inappRef.addEventListener('loaderror', (err) => {
             inappRef.show();

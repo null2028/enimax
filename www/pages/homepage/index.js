@@ -572,6 +572,9 @@ document.getElementById("useImageBack").onchange = function () {
 document.getElementById("rangeCon").addEventListener("touchmove", function (event) {
     event.stopPropagation();
 });
+document.getElementById("anilistIcon").addEventListener("click", function (event) {
+    window.parent.getWebviewHTML("https://anilist.co/api/v2/oauth/authorize?client_id=13095&response_type=token", false, null, "console.log()", true);
+});
 document.getElementById("outlineColor").value = localStorage.getItem("outlineColor");
 document.getElementById("outlineWidth").value = localStorage.getItem("outlineWidth");
 document.getElementById("backgroundBlur").value = localStorage.getItem("backgroundBlur");

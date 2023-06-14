@@ -147,6 +147,8 @@ interface cordovaWindow extends Window {
     returnExtensionTypes: Function,
     getAnilistTrending: Function,
     listDir: Function,
+    updateEpWatched: Function,
+    getWebviewHTML: Function,
     back: Function,
     sendBatchReqs: Function,
     secondsToHuman: Function,

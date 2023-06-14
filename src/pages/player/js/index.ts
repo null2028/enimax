@@ -711,6 +711,17 @@ async function update(shouldCheck: number) {
 
 	updateCheck = 1;
 
+	try{
+		const aniID = new URLSearchParams(localStorage.getItem("epURL")).get("aniID");
+		const identifier = `${aniID}-${currentVidData.episode}`;
+		if(aniID && vidInstance.vid.duration > 0 && (vidInstance.vid.currentTime + 120) > vidInstance.vid.duration && localStorage.getItem("anilist-last") != identifier){
+			await (window.parent as cordovaWindow).updateEpWatched(aniID, currentVidData.episode);
+			localStorage.setItem("anilist-last", identifier);
+		}
+	}catch(err){
+		console.warn(err);
+	}
+
 	(<cordovaWindow>window.parent).apiCall("POST", { "username": username, "action": 1, "time": currentTime, "ep": currentVidData.episode, "name": currentVidData.nameWSeason, "nameUm": currentVidData.name, "prog": currentDuration }, () => { }, [], true, false).then(function (response: any) {
 		try {
 			if (response.status == 200) {

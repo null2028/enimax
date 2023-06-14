@@ -733,6 +733,9 @@ document.getElementById("rangeCon").addEventListener("touchmove", function (even
     event.stopPropagation();
 });
 
+document.getElementById("anilistIcon").addEventListener("click", function (event) {
+    (window.parent as cordovaWindow).getWebviewHTML("https://anilist.co/api/v2/oauth/authorize?client_id=13095&response_type=token", false, null, "console.log()", true);
+});
 
 (document.getElementById("outlineColor") as HTMLInputElement).value = localStorage.getItem("outlineColor");
 (document.getElementById("outlineWidth") as HTMLInputElement).value = localStorage.getItem("outlineWidth");
