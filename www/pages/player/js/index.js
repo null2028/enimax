@@ -621,16 +621,21 @@ async function update(shouldCheck) {
         return;
     }
     updateCheck = 1;
-    try {
-        const aniID = new URLSearchParams(localStorage.getItem("epURL")).get("aniID");
-        const identifier = `${aniID}-${currentVidData.episode}`;
-        if (aniID && vidInstance.vid.duration > 0 && (vidInstance.vid.currentTime + 120) > vidInstance.vid.duration && localStorage.getItem("anilist-last") != identifier) {
-            await window.parent.updateEpWatched(aniID, currentVidData.episode);
-            localStorage.setItem("anilist-last", identifier);
+    if (!downloaded) {
+        try {
+            const aniID = new URLSearchParams(localStorage.getItem("epURL")).get("aniID");
+            const identifier = `${aniID}-${currentVidData.episode}`;
+            if (aniID &&
+                vidInstance.vid.duration > 0 &&
+                (vidInstance.vid.currentTime + 120) > vidInstance.vid.duration &&
+                localStorage.getItem("anilist-last") != identifier) {
+                await window.parent.updateEpWatched(aniID, currentVidData.episode);
+                localStorage.setItem("anilist-last", identifier);
+            }
         }
-    }
-    catch (err) {
-        console.warn(err);
+        catch (err) {
+            console.warn(err);
+        }
     }
     window.parent.apiCall("POST", { "username": username, "action": 1, "time": currentTime, "ep": currentVidData.episode, "name": currentVidData.nameWSeason, "nameUm": currentVidData.name, "prog": currentDuration }, () => { }, [], true, false).then(function (response) {
         try {
@@ -1001,6 +1006,7 @@ async function getEp(x = 0) {
         }, () => { });
         document.getElementById("ep_dis").innerHTML = currentVidData.episode.toString();
         clearInterval(updateCurrentTime);
+        localStorage.removeItem("anilist-last-error");
         updateCurrentTime = window.setInterval(update, int_up);
         let skipTo = 0;
         if (localStorage.getItem("rewatch") == "true") {

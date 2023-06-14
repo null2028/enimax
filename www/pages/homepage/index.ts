@@ -23,6 +23,7 @@ let homeDisplayTimeout: any;
 let errDOM: HTMLElement = document.getElementById("errorCon");
 let firstLoad = true;
 let states: string = "";
+const hasAnilistToken = !!localStorage.getItem("anilist-token");
 
 // @ts-ignore
 const backdrop = document.getElementsByClassName("backdrop")[0] as HTMLImageElement;
@@ -733,7 +734,7 @@ document.getElementById("rangeCon").addEventListener("touchmove", function (even
     event.stopPropagation();
 });
 
-document.getElementById("anilistIcon").addEventListener("click", function (event) {
+document.getElementById("anilistLogin").addEventListener("click", function (event) {
     (window.parent as cordovaWindow).getWebviewHTML("https://anilist.co/api/v2/oauth/authorize?client_id=13095&response_type=token", false, null, "console.log()", true);
 });
 
@@ -2043,11 +2044,21 @@ if (true) {
                                                 event.stopPropagation();
 
                                                 let isManga = false;
+                                                let aniID: number = NaN;
                                                 try {
-                                                    isManga = new URLSearchParams(this.getAttribute("data-href")).get("isManga") === "true"
+                                                    isManga = new URLSearchParams(this.getAttribute("data-href")).get("isManga") === "true";
+                                                    aniID = parseInt(new URLSearchParams(this.getAttribute("data-href")).get("aniID"));
+
+                                                    if(!isNaN(aniID) && !!localStorage.getItem("anilist-token")){
+                                                        const shouldDelete = confirm("Do you want to delete this show from your anilist account?");
+                                                        if(shouldDelete){
+                                                            (window.parent as cordovaWindow).deleteAnilistShow(aniID);
+                                                        }
+                                                    }
                                                 } catch (err) {
 
                                                 }
+                                                
 
                                                 ini_api.delete_card(this.getAttribute("data-showname"), this, isManga);
                                             }

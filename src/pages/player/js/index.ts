@@ -498,7 +498,7 @@ window.addEventListener("videoStartInterval", () => {
 function normalise(url: string): string {
 	url = url.replace("?watch=", "");
 	url = url.split("&engine=")[0];
-    url = url.split("&isManga=")[0];
+	url = url.split("&isManga=")[0];
 	return url;
 }
 
@@ -711,15 +711,24 @@ async function update(shouldCheck: number) {
 
 	updateCheck = 1;
 
-	try{
-		const aniID = new URLSearchParams(localStorage.getItem("epURL")).get("aniID");
-		const identifier = `${aniID}-${currentVidData.episode}`;
-		if(aniID && vidInstance.vid.duration > 0 && (vidInstance.vid.currentTime + 120) > vidInstance.vid.duration && localStorage.getItem("anilist-last") != identifier){
-			await (window.parent as cordovaWindow).updateEpWatched(aniID, currentVidData.episode);
-			localStorage.setItem("anilist-last", identifier);
+	if (!downloaded) {
+
+		try {
+			const aniID = new URLSearchParams(localStorage.getItem("epURL")).get("aniID");
+			const identifier = `${aniID}-${currentVidData.episode}`;
+
+			if (
+				aniID &&
+				vidInstance.vid.duration > 0 &&
+				(vidInstance.vid.currentTime + 120) > vidInstance.vid.duration &&
+				localStorage.getItem("anilist-last") != identifier
+			) {
+				await (window.parent as cordovaWindow).updateEpWatched(aniID, currentVidData.episode);
+				localStorage.setItem("anilist-last", identifier);
+			}
+		} catch (err) {
+			console.warn(err);
 		}
-	}catch(err){
-		console.warn(err);
 	}
 
 	(<cordovaWindow>window.parent).apiCall("POST", { "username": username, "action": 1, "time": currentTime, "ep": currentVidData.episode, "name": currentVidData.nameWSeason, "nameUm": currentVidData.name, "prog": currentDuration }, () => { }, [], true, false).then(function (response: any) {
@@ -1171,6 +1180,7 @@ async function getEp(x = 0) {
 
 		document.getElementById("ep_dis").innerHTML = currentVidData.episode.toString();
 		clearInterval(updateCurrentTime);
+		localStorage.removeItem("anilist-last-error");
 		updateCurrentTime = window.setInterval(update, int_up);
 
 		let skipTo = 0;

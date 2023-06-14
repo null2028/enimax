@@ -142,6 +142,7 @@ interface cordovaWindow extends Window {
     returnExtensionList: Function,
     XMLHttpRequest: any,
     returnExtensionNames: Function,
+    deleteAnilistShow: Function,
     returnDownloadQueue: Function,
     returnExtensionDisabled: Function,
     returnExtensionTypes: Function,

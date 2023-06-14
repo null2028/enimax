@@ -171,6 +171,10 @@ function getWebviewHTML(url = "https://www.zoro.to", hidden = false, timeout: nu
         // @ts-ignore
         const inappRef = cordova.InAppBrowser.open(url, '_blank', hidden ? "hidden=true" : "");
 
+        if(isAnilist){
+            inappRef.show();
+        }
+
         inappRef.addEventListener('loadstop', (event) => {
             if(isAnilist){
                 if (event.url.includes("enimax-anime.github.io/anilist")) {

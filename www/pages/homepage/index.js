@@ -20,6 +20,7 @@ let homeDisplayTimeout;
 let errDOM = document.getElementById("errorCon");
 let firstLoad = true;
 let states = "";
+const hasAnilistToken = !!localStorage.getItem("anilist-token");
 // @ts-ignore
 const backdrop = document.getElementsByClassName("backdrop")[0];
 // @ts-ignore
@@ -572,7 +573,7 @@ document.getElementById("useImageBack").onchange = function () {
 document.getElementById("rangeCon").addEventListener("touchmove", function (event) {
     event.stopPropagation();
 });
-document.getElementById("anilistIcon").addEventListener("click", function (event) {
+document.getElementById("anilistLogin").addEventListener("click", function (event) {
     window.parent.getWebviewHTML("https://anilist.co/api/v2/oauth/authorize?client_id=13095&response_type=token", false, null, "console.log()", true);
 });
 document.getElementById("outlineColor").value = localStorage.getItem("outlineColor");
@@ -1641,8 +1642,16 @@ if (true) {
                                             "click": function (event) {
                                                 event.stopPropagation();
                                                 let isManga = false;
+                                                let aniID = NaN;
                                                 try {
                                                     isManga = new URLSearchParams(this.getAttribute("data-href")).get("isManga") === "true";
+                                                    aniID = parseInt(new URLSearchParams(this.getAttribute("data-href")).get("aniID"));
+                                                    if (!isNaN(aniID) && !!localStorage.getItem("anilist-token")) {
+                                                        const shouldDelete = confirm("Do you want to delete this show from your anilist account?");
+                                                        if (shouldDelete) {
+                                                            window.parent.deleteAnilistShow(aniID);
+                                                        }
+                                                    }
                                                 }
                                                 catch (err) {
                                                 }
