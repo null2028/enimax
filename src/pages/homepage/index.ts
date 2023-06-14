@@ -696,6 +696,16 @@ document.getElementById("autoDownload").onchange = function () {
     localStorage.setItem("autoDownload", (this as HTMLInputElement).checked.toString());
 }
 
+document.getElementById("fullscreenMode").onchange = function () {
+    const isChecked = (this as HTMLInputElement).checked;
+    localStorage.setItem("fullscreenMode", isChecked.toString());
+    if(isChecked){
+        (window.parent as cordovaWindow).disableFullScreen();
+    }else{
+        (window.parent as cordovaWindow).enableFullScreen();
+    }
+}
+
 document.getElementById("hideNotification").onchange = function () {
     localStorage.setItem("hideNotification", (this as HTMLInputElement).checked.toString());
 }
@@ -775,6 +785,7 @@ document.getElementById("anilistImport").addEventListener("click", function (eve
 (document.getElementById("discoverHide") as HTMLInputElement).checked = localStorage.getItem("discoverHide") === "true";
 (document.getElementById("autoPause") as HTMLInputElement).checked = localStorage.getItem("autoPause") === "true";
 (document.getElementById("autoDownload") as HTMLInputElement).checked = localStorage.getItem("autoDownload") === "true";
+(document.getElementById("fullscreenMode") as HTMLInputElement).checked = localStorage.getItem("fullscreenMode") === "true";
 (document.getElementById("hideNotification") as HTMLInputElement).checked = localStorage.getItem("hideNotification") === "true";
 (document.getElementById("alwaysDown") as HTMLInputElement).checked = localStorage.getItem("alwaysDown") === "true";
 (document.getElementById("useImageBack") as HTMLInputElement).checked = localStorage.getItem("useImageBack") === "true";
@@ -2554,6 +2565,9 @@ if (!!localStorage.getItem("anilist-token")) {
     document.getElementById("anilistImport").style.display = "block";
 }
 
+if(localStorage.getItem("fullscreenMode") === "true"){
+    (window.parent as cordovaWindow).disableFullScreen();
+}
 
 for (const div of document.querySelectorAll("div")) {
     div.setAttribute("tabindex", "0");

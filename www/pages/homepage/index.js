@@ -541,6 +541,16 @@ document.getElementById("autoPause").onchange = function () {
 document.getElementById("autoDownload").onchange = function () {
     localStorage.setItem("autoDownload", this.checked.toString());
 };
+document.getElementById("fullscreenMode").onchange = function () {
+    const isChecked = this.checked;
+    localStorage.setItem("fullscreenMode", isChecked.toString());
+    if (isChecked) {
+        window.parent.disableFullScreen();
+    }
+    else {
+        window.parent.enableFullScreen();
+    }
+};
 document.getElementById("hideNotification").onchange = function () {
     localStorage.setItem("hideNotification", this.checked.toString());
 };
@@ -614,6 +624,7 @@ document.getElementById("scrollBool").checked = localStorage.getItem("scrollBool
 document.getElementById("discoverHide").checked = localStorage.getItem("discoverHide") === "true";
 document.getElementById("autoPause").checked = localStorage.getItem("autoPause") === "true";
 document.getElementById("autoDownload").checked = localStorage.getItem("autoDownload") === "true";
+document.getElementById("fullscreenMode").checked = localStorage.getItem("fullscreenMode") === "true";
 document.getElementById("hideNotification").checked = localStorage.getItem("hideNotification") === "true";
 document.getElementById("alwaysDown").checked = localStorage.getItem("alwaysDown") === "true";
 document.getElementById("useImageBack").checked = localStorage.getItem("useImageBack") === "true";
@@ -2088,6 +2099,9 @@ window.addEventListener("popstate", function (event) {
 });
 if (!!localStorage.getItem("anilist-token")) {
     document.getElementById("anilistImport").style.display = "block";
+}
+if (localStorage.getItem("fullscreenMode") === "true") {
+    window.parent.disableFullScreen();
 }
 for (const div of document.querySelectorAll("div")) {
     div.setAttribute("tabindex", "0");

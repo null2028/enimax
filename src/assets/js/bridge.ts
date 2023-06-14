@@ -619,6 +619,9 @@ function executeAction(message: MessageAction, reqSource: Window) {
         }
 
         if (!config.chrome) {
+
+            enableFullScreen();
+
             let checkLock = 0;
 
             setTimeout(function () {
@@ -683,8 +686,26 @@ function back() {
     backFunction();
 }
 
-async function onDeviceReady() {
+function disableFullScreen(count = 1){
+    if(count <= 0){
+        return;
+    }
 
+    // @ts-ignore
+    AndroidFullScreen.showSystemUI(() => {}, () => {});
+
+    setTimeout(function(){
+        disableFullScreen(--count);
+    }, 200);
+}
+
+function enableFullScreen(){
+    // @ts-ignore
+    AndroidFullScreen.immersiveMode(() => {}, () => {});
+}
+
+async function onDeviceReady() {
+    
     await SQLInit();
     await SQLInitDownloaded();
 
@@ -719,6 +740,11 @@ async function onDeviceReady() {
 
         const homePageOpen = frameLocation.pathname.indexOf("www/pages/homepage/index.html") > -1;
         if (homePageOpen || frameWasOpen) {
+
+            if(!config.chrome && localStorage.getItem("fullscreenMode") === "true"){
+                disableFullScreen();
+            }
+
             playerIFrame.contentWindow.location.replace("fallback.html");
             playerIFrame.classList.remove("pop");
             playerIFrame.style.display = "none";
@@ -763,6 +789,9 @@ async function onDeviceReady() {
     document.addEventListener("pause", onPause, false);
     document.addEventListener("resume", onResume, false);
 
+    if(localStorage.getItem("fullscreenMode") === "true"){
+        disableFullScreen(20);
+    }
 }
 
 document.addEventListener("deviceready", onDeviceReady, false);
