@@ -326,7 +326,13 @@ input[type="color"]::-webkit-color-swatch {
     width: calc(50% - 20px) !important;
     max-width: 200px !important;
     min-width: 150px !important;
+    /* transform: scale(1); */
+    transition-duration: 200ms;
 }
+
+/* .s_card:hover{
+    transform: scale(0.9);
+} */
 
 .s_card_title {
     font-size: 14px !important;

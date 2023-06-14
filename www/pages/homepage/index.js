@@ -1586,6 +1586,30 @@ if (true) {
             }
             const cardCon = createElement({
                 "class": "s_card",
+                "attributes": {
+                    "data-href": data[i][3],
+                    "data-epURL": data[i][5],
+                    "data-mainname": data[i][0]
+                },
+                "listeners": {
+                    "click": function () {
+                        localStorage.setItem("mainName", this.getAttribute("data-mainname"));
+                        localStorage.setItem("epURL", this.getAttribute("data-epURL"));
+                        window.parent.postMessage({ "action": 4, "data": this.getAttribute("data-href") }, "*");
+                    },
+                    "pointerdown": function () {
+                        this.style.transform = "scale(0.9)";
+                    },
+                    "pointerup": function () {
+                        this.style.transform = "";
+                    },
+                    "pointercancel": function () {
+                        this.style.transform = "";
+                    },
+                    "pointerout": function () {
+                        this.style.transform = "";
+                    }
+                },
                 "children": [
                     {
                         element: "img",
@@ -1597,18 +1621,6 @@ if (true) {
                     },
                     {
                         "class": "s_card_bg",
-                        "attributes": {
-                            "data-href": data[i][3],
-                            "data-epURL": data[i][5],
-                            "data-mainname": data[i][0]
-                        },
-                        "listeners": {
-                            "click": function () {
-                                localStorage.setItem("mainName", this.getAttribute("data-mainname"));
-                                localStorage.setItem("epURL", this.getAttribute("data-epURL"));
-                                window.parent.postMessage({ "action": 4, "data": this.getAttribute("data-href") }, "*");
-                            }
-                        },
                         "children": [
                             {
                                 "class": "s_card_title_new",
@@ -1626,7 +1638,11 @@ if (true) {
                                                 event.stopPropagation();
                                                 localStorage.setItem("currentLink", this.getAttribute("data-current"));
                                                 window.parent.postMessage({ "action": 500, data: "pages/episode/index.html" + this.getAttribute("data-href") }, "*");
-                                            }
+                                            },
+                                            "pointerdown": function (event) {
+                                                event.preventDefault();
+                                                event.stopPropagation();
+                                            },
                                         }
                                     },
                                 ]
@@ -1648,7 +1664,11 @@ if (true) {
                                         localStorage.setItem("mainName", this.getAttribute("data-mainname"));
                                         localStorage.setItem("epURL", this.getAttribute("data-epURL"));
                                         window.parent.postMessage({ "action": 4, "data": this.getAttribute("data-href") }, "*");
-                                    }
+                                    },
+                                    "pointerdown": function (event) {
+                                        event.preventDefault();
+                                        event.stopPropagation();
+                                    },
                                 },
                                 "element": "div",
                                 "style": {
@@ -1661,7 +1681,11 @@ if (true) {
                                     "click": function (event) {
                                         event.stopPropagation();
                                         open_menu(this.children[0]);
-                                    }
+                                    },
+                                    "pointerdown": function (event) {
+                                        event.preventDefault();
+                                        event.stopPropagation();
+                                    },
                                 },
                                 "children": [
                                     {
@@ -1673,7 +1697,7 @@ if (true) {
                                             "click": function (event) {
                                                 event.stopPropagation();
                                                 open_menu(this);
-                                            }
+                                            },
                                         }
                                     },
                                     {
@@ -1696,7 +1720,7 @@ if (true) {
                                                 catch (err) {
                                                 }
                                                 ini_api.delete_card(this.getAttribute("data-showname"), this, isManga);
-                                            }
+                                            },
                                         }
                                     },
                                     {
@@ -1782,7 +1806,11 @@ if (true) {
                                 "listeners": {
                                     "click": function (event) {
                                         event.stopPropagation();
-                                    }
+                                    },
+                                    "pointerdown": function (event) {
+                                        event.preventDefault();
+                                        event.stopPropagation();
+                                    },
                                 },
                                 "children": [
                                     {
@@ -1799,7 +1827,11 @@ if (true) {
                                             click: function (event) {
                                                 event.stopPropagation();
                                                 alert("The episode number.");
-                                            }
+                                            },
+                                            "pointerdown": function (event) {
+                                                event.preventDefault();
+                                                event.stopPropagation();
+                                            },
                                         }
                                     }
                                 ]
