@@ -582,6 +582,9 @@ function enableFullScreen() {
     AndroidFullScreen.immersiveMode(() => { }, () => { });
 }
 function handleFullscreen() {
+    if (config.chrome) {
+        return;
+    }
     if (localStorage.getItem("fullscreenMode") === "true") {
         // @ts-ignore
         disableFullScreen();

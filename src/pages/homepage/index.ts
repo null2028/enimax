@@ -745,17 +745,25 @@ document.getElementById("anilistLogin").addEventListener("click", function (even
         try {
             alert("A new tab will open asking you to log in, and then you will be redirected to a new page. Copy the URL of the new page and paste it when prompted");
             window.open("https://anilist.co/api/v2/oauth/authorize?client_id=13095&response_type=token", '_blank', 'location=yes,height=570,width=520,scrollbars=yes,status=yes');
-            const url = prompt("Enter the copied URL here");
-            const accessToken = new URLSearchParams((new URL(url)).hash.substring(1)).get("access_token");
-            localStorage.setItem("anilist-token", accessToken);
+            let url = undefined;
 
-            if (accessToken) {
-                const shouldUpdate = confirm("Logged in! Do you want to import your library? if you don't want to do that right now, you can do that later by going to the menu.");
-                if (shouldUpdate) {
-                    (window.parent as cordovaWindow).getAllItems();
+            while (!url) {
+                try {
+                    url = prompt("Enter the copied URL here");
+                    const accessToken = new URLSearchParams((new URL(url)).hash.substring(1)).get("access_token");
+                    localStorage.setItem("anilist-token", accessToken);
+
+                    if (accessToken) {
+                        const shouldUpdate = confirm("Logged in! Do you want to import your library? if you don't want to do that right now, you can do that later by going to the menu.");
+                        if (shouldUpdate) {
+                            (window.parent as cordovaWindow).getAllItems();
+                        }
+                    } else {
+                        alert("Seems like something went wrong.");
+                    }
+                } catch (err) {
+                    alert(err + "\n" + "Try again.");
                 }
-            } else {
-                alert("Seems like something went wrong.");
             }
         } catch (err) {
             alert(err);
@@ -2005,16 +2013,16 @@ if (true) {
                         localStorage.setItem("epURL", this.getAttribute("data-epURL"));
                         window.parent.postMessage({ "action": 4, "data": this.getAttribute("data-href") }, "*");
                     },
-                    "pointerdown": function() {
+                    "pointerdown": function () {
                         this.style.transform = "scale(0.9)";
                     },
-                    "pointerup": function() {
+                    "pointerup": function () {
                         this.style.transform = "";
                     },
-                    "pointercancel": function() {
+                    "pointercancel": function () {
                         this.style.transform = "";
                     },
-                    "pointerout": function() {
+                    "pointerout": function () {
                         this.style.transform = "";
                     }
                 },
@@ -2047,7 +2055,7 @@ if (true) {
                                                 localStorage.setItem("currentLink", (this as HTMLElement).getAttribute("data-current"));
                                                 window.parent.postMessage({ "action": 500, data: "pages/episode/index.html" + (this as HTMLElement).getAttribute("data-href") }, "*");
                                             },
-                                            "pointerdown": function(event: PointerEvent) {
+                                            "pointerdown": function (event: PointerEvent) {
                                                 event.preventDefault();
                                                 event.stopPropagation();
                                             },
@@ -2074,7 +2082,7 @@ if (true) {
                                         localStorage.setItem("epURL", this.getAttribute("data-epURL"));
                                         window.parent.postMessage({ "action": 4, "data": this.getAttribute("data-href") }, "*");
                                     },
-                                    "pointerdown": function(event: PointerEvent) {
+                                    "pointerdown": function (event: PointerEvent) {
                                         event.preventDefault();
                                         event.stopPropagation();
                                     },
@@ -2091,7 +2099,7 @@ if (true) {
                                         event.stopPropagation();
                                         open_menu(this.children[0]);
                                     },
-                                    "pointerdown": function(event: PointerEvent) {
+                                    "pointerdown": function (event: PointerEvent) {
                                         event.preventDefault();
                                         event.stopPropagation();
                                     },
@@ -2224,7 +2232,7 @@ if (true) {
                                     "click": function (event: Event) {
                                         event.stopPropagation();
                                     },
-                                    "pointerdown": function(event: PointerEvent) {
+                                    "pointerdown": function (event: PointerEvent) {
                                         event.preventDefault();
                                         event.stopPropagation();
                                     },
@@ -2245,7 +2253,7 @@ if (true) {
                                                 event.stopPropagation();
                                                 alert("The episode number.");
                                             },
-                                            "pointerdown": function(event: PointerEvent) {
+                                            "pointerdown": function (event: PointerEvent) {
                                                 event.preventDefault();
                                                 event.stopPropagation();
                                             },

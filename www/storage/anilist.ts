@@ -1,6 +1,6 @@
 const anilistStatus = ["CURRENT", "PLANNING", "COMPLETED", "DROPPED", "PAUSED", "REPEATING"];
 
-function returnAnilistStatus(){
+function returnAnilistStatus() {
     return anilistStatus;
 }
 
@@ -127,8 +127,41 @@ async function getUserID() {
     return JSON.parse(await makeAnilistReq(query, {}, accessToken)).data.Viewer.id;
 }
 
-async function addShowToLib(data: { name: string, img: string, url: string, currentURL: string, currentEp: number }) {
+function addRoom(roomName: string): Promise<any> {
+    return new Promise((resolve, reject) => {
 
+        setTimeout(() => {
+            reject(new Error("timeout"));
+        }, 5000);
+
+        (<cordovaWindow>window.parent).apiCall("POST", {
+            "action": 10,
+            "username": "",
+            "room": roomName
+        }, (response) => {
+            resolve(response);
+        });
+    });
+}
+
+function getUserData() {
+    return new Promise((resolve, reject) => {
+        setTimeout(() => {
+            reject(new Error("timeout"));
+        }, 5000);
+
+        (<cordovaWindow>window.parent).apiCall("POST", {
+            "action": 4,
+            "username": "",
+        }, (response) => {
+            resolve(response);
+        });
+    });
+}
+
+async function addShowToLib(data: { name: string, img: string, url: string, currentURL: string, currentEp: number, categoryID: number }) {
+    console.log(data);
+    
     apiCall("POST", {
         "username": "",
         "action": 5,
@@ -144,6 +177,17 @@ async function addShowToLib(data: { name: string, img: string, url: string, curr
                 "cur": data.currentURL,
                 "ep": data.currentEp
             }, () => { });
+
+        if (!isNaN(data.categoryID)) {
+            apiCall("POST",
+                {
+                    "username": "",
+                    "action": 7,
+                    "name": data.name,
+                    "state": data.categoryID
+                }, () => { });
+        }
+
     });
 }
 
@@ -193,18 +237,18 @@ async function getAllItems() {
 
             const userId = await getUserID();
             const query = `query ($userId: Int) {
-                        MediaListCollection (userId: $userId, type: ${type.toUpperCase()}) {
-                            lists {
-                                name
-                                entries {
-                                    progress
-                                    media {
-                                        id
+                                MediaListCollection (userId: $userId, type: ${type.toUpperCase()}) {
+                                    lists {
+                                        name
+                                        entries {
+                                            progress
+                                            media {
+                                                id
+                                            }
+                                        }
                                     }
                                 }
-                            }
-                        }
-                    }`;
+                            }`;
 
             const variables = {
                 userId
@@ -214,6 +258,9 @@ async function getAllItems() {
             const data = JSON.parse(await makeAnilistReq(query, variables, accessToken)).data;
             const anilistIDs = [];
             const anilistProgress = [];
+            const anilistCategory = [];
+            const anilistAllCats = [];
+            const categories = {};
             const lists = data.MediaListCollection.lists;
 
             for (let i = 0; i < lists.length; i++) {
@@ -222,10 +269,54 @@ async function getAllItems() {
                 for (let j = 0; j < entries.length; j++) {
                     anilistIDs.push(entries[j].media.id);
                     anilistProgress.push(entries[j].progress);
+
+                    if(!anilistCategory.includes(lists[i].name)){
+                        anilistCategory.push(lists[i].name);
+                    }
+
+                    anilistAllCats.push(lists[i].name);
                 }
             }
 
-            const links: { link: string, progress: number, aniID: number }[] = [];
+
+            try {
+
+                const userData = await getUserData() as any;
+                const categoryNames = [];
+                const categoryIDs = [];
+
+                for (let i = 0; i < userData.data[1].length; i++) {
+                    if (i % 2 === 0) {
+                        categoryNames.push(userData.data[1][i]);
+                    } else {
+                        categoryIDs.push(userData.data[1][i]);
+                    }
+                }
+
+                console.log(categoryNames);
+                console.log(categoryIDs);
+
+                for (let i = 0; i < anilistCategory.length; i++) {
+                    try {
+                        const catName = anilistCategory[i];
+                        const catIndex = categoryNames.indexOf(catName);
+                        if (catIndex > -1) {
+                            categories[catName] = categoryIDs[catIndex];
+                        } else {
+                            const response = await addRoom(catName);
+                            const roomID = response.data.lastId;
+                            categories[catName] = roomID;
+                        }
+                    } catch (err) {
+                        console.warn(err);
+                    }
+
+                }
+            } catch (err) {
+                console.warn(err);
+            }
+
+            const links: { link: string, progress: number, aniID: number, anilistCategory: string }[] = [];
 
             for (let i = 0; i < anilistIDs.length; i++) {
                 const id = anilistIDs[i];
@@ -240,29 +331,32 @@ async function getAllItems() {
                     links.push({
                         link: currentExtension.rawURLtoInfo(new URL(page[Object.keys(page)[0]].url)),
                         progress: anilistProgress[i],
-                        aniID: id
+                        aniID: id,
+                        anilistCategory: anilistAllCats[i]
                     });
                 } catch (err) {
                     console.warn(err);
                 }
             }
 
+            console.log(categories);
+
             for (const link of links) {
+
+                console.log(link.anilistCategory);
                 try {
                     permNoti.updateBody(`Trying to get the info for ${link.link}`);
 
                     const currentInfo = await currentExtension.getAnimeInfo(link.link.replace("?watch=/", ""));
                     let currentEp: extensionInfoEpisode = currentInfo.episodes.find((ep) => {
-                        console.log(parseFloat(ep[numberKey]), link.progress);
                         return parseFloat(ep[numberKey]) >= link.progress;
                     });
-
 
                     if (!currentEp) {
                         currentEp = currentInfo.episodes[0];
                     }
 
-                    if(currentInfo.episodes[currentInfo.episodes.length - 1][numberKey] < link.progress){
+                    if (currentInfo.episodes[currentInfo.episodes.length - 1][numberKey] < link.progress) {
                         currentEp = currentInfo.episodes[currentInfo.episodes.length - 1];
                     }
 
@@ -271,7 +365,8 @@ async function getAllItems() {
                         img: currentInfo.image,
                         url: link.link + "&aniID=" + link.aniID,
                         currentURL: currentEp.link,
-                        currentEp: parseFloat(currentEp[numberKey]) === 0 ? 0.1 : parseFloat(currentEp[numberKey])
+                        currentEp: parseFloat(currentEp[numberKey]) === 0 ? 0.1 : parseFloat(currentEp[numberKey]),
+                        categoryID: (link.anilistCategory in categories) ? parseInt(categories[link.anilistCategory]) : NaN,
                     });
                 } catch (err) {
                     console.warn(err);
