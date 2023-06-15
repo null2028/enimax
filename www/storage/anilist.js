@@ -134,7 +134,6 @@ function getUserData() {
     });
 }
 async function addShowToLib(data) {
-    console.log(data);
     apiCall("POST", {
         "username": "",
         "action": 5,
@@ -229,40 +228,41 @@ async function getAllItems() {
                     anilistAllCats.push(lists[i].name);
                 }
             }
-            try {
-                const userData = await getUserData();
-                const categoryNames = [];
-                const categoryIDs = [];
-                for (let i = 0; i < userData.data[1].length; i++) {
-                    if (i % 2 === 0) {
-                        categoryNames.push(userData.data[1][i]);
-                    }
-                    else {
-                        categoryIDs.push(userData.data[1][i]);
-                    }
-                }
-                console.log(categoryNames);
-                console.log(categoryIDs);
-                for (let i = 0; i < anilistCategory.length; i++) {
-                    try {
-                        const catName = anilistCategory[i];
-                        const catIndex = categoryNames.indexOf(catName);
-                        if (catIndex > -1) {
-                            categories[catName] = categoryIDs[catIndex];
+            const makeRooms = confirm("Do you want to put the shows in their respective categories?");
+            if (makeRooms) {
+                try {
+                    const userData = await getUserData();
+                    const categoryNames = [];
+                    const categoryIDs = [];
+                    for (let i = 0; i < userData.data[1].length; i++) {
+                        if (i % 2 === 0) {
+                            categoryNames.push(userData.data[1][i]);
                         }
                         else {
-                            const response = await addRoom(catName);
-                            const roomID = response.data.lastId;
-                            categories[catName] = roomID;
+                            categoryIDs.push(userData.data[1][i]);
                         }
                     }
-                    catch (err) {
-                        console.warn(err);
+                    for (let i = 0; i < anilistCategory.length; i++) {
+                        try {
+                            const catName = anilistCategory[i];
+                            const catIndex = categoryNames.indexOf(catName);
+                            if (catIndex > -1) {
+                                categories[catName] = categoryIDs[catIndex];
+                            }
+                            else {
+                                const response = await addRoom(catName);
+                                const roomID = response.data.lastId;
+                                categories[catName] = roomID;
+                            }
+                        }
+                        catch (err) {
+                            console.warn(err);
+                        }
                     }
                 }
-            }
-            catch (err) {
-                console.warn(err);
+                catch (err) {
+                    console.warn(err);
+                }
             }
             const links = [];
             for (let i = 0; i < anilistIDs.length; i++) {
@@ -281,9 +281,7 @@ async function getAllItems() {
                     console.warn(err);
                 }
             }
-            console.log(categories);
             for (const link of links) {
-                console.log(link.anilistCategory);
                 try {
                     permNoti.updateBody(`Trying to get the info for ${link.link}`);
                     const currentInfo = await currentExtension.getAnimeInfo(link.link.replace("?watch=/", ""));
@@ -302,7 +300,7 @@ async function getAllItems() {
                         url: link.link + "&aniID=" + link.aniID,
                         currentURL: currentEp.link,
                         currentEp: parseFloat(currentEp[numberKey]) === 0 ? 0.1 : parseFloat(currentEp[numberKey]),
-                        categoryID: (link.anilistCategory in categories) ? parseInt(categories[link.anilistCategory]) : NaN,
+                        categoryID: (link.anilistCategory in categories && makeRooms) ? parseInt(categories[link.anilistCategory]) : NaN,
                     });
                 }
                 catch (err) {

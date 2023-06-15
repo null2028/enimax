@@ -268,7 +268,7 @@ async function getAllItems() {
                     anilistIDs.push(entries[j].media.id);
                     anilistProgress.push(entries[j].progress);
 
-                    if(!anilistCategory.includes(lists[i].name)){
+                    if (!anilistCategory.includes(lists[i].name)) {
                         anilistCategory.push(lists[i].name);
                     }
 
@@ -276,39 +276,41 @@ async function getAllItems() {
                 }
             }
 
+            const makeRooms = confirm("Do you want to put the shows in their respective categories?");
 
-            try {
+            if (makeRooms) {
+                try {
+                    const userData = await getUserData() as any;
+                    const categoryNames = [];
+                    const categoryIDs = [];
 
-                const userData = await getUserData() as any;
-                const categoryNames = [];
-                const categoryIDs = [];
-
-                for (let i = 0; i < userData.data[1].length; i++) {
-                    if (i % 2 === 0) {
-                        categoryNames.push(userData.data[1][i]);
-                    } else {
-                        categoryIDs.push(userData.data[1][i]);
-                    }
-                }
-
-                for (let i = 0; i < anilistCategory.length; i++) {
-                    try {
-                        const catName = anilistCategory[i];
-                        const catIndex = categoryNames.indexOf(catName);
-                        if (catIndex > -1) {
-                            categories[catName] = categoryIDs[catIndex];
+                    for (let i = 0; i < userData.data[1].length; i++) {
+                        if (i % 2 === 0) {
+                            categoryNames.push(userData.data[1][i]);
                         } else {
-                            const response = await addRoom(catName);
-                            const roomID = response.data.lastId;
-                            categories[catName] = roomID;
+                            categoryIDs.push(userData.data[1][i]);
                         }
-                    } catch (err) {
-                        console.warn(err);
                     }
 
+                    for (let i = 0; i < anilistCategory.length; i++) {
+                        try {
+                            const catName = anilistCategory[i];
+                            const catIndex = categoryNames.indexOf(catName);
+                            if (catIndex > -1) {
+                                categories[catName] = categoryIDs[catIndex];
+                            } else {
+                                const response = await addRoom(catName);
+                                const roomID = response.data.lastId;
+                                categories[catName] = roomID;
+                            }
+                        } catch (err) {
+                            console.warn(err);
+                        }
+
+                    }
+                } catch (err) {
+                    console.warn(err);
                 }
-            } catch (err) {
-                console.warn(err);
             }
 
             const links: { link: string, progress: number, aniID: number, anilistCategory: string }[] = [];
@@ -357,7 +359,7 @@ async function getAllItems() {
                         url: link.link + "&aniID=" + link.aniID,
                         currentURL: currentEp.link,
                         currentEp: parseFloat(currentEp[numberKey]) === 0 ? 0.1 : parseFloat(currentEp[numberKey]),
-                        categoryID: (link.anilistCategory in categories) ? parseInt(categories[link.anilistCategory]) : NaN,
+                        categoryID: (link.anilistCategory in categories && makeRooms) ? parseInt(categories[link.anilistCategory]) : NaN,
                     });
                 } catch (err) {
                     console.warn(err);
