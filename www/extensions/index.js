@@ -1898,12 +1898,12 @@ var twitch = {
                     }
                 }
                 if (isLive && !sibling) {
-                    data.push({
+                    data.unshift({
                         "link": "?watch=" + encodeURIComponent(id) + "&id=" + "live" + "&engine=4",
                         "id": id,
                         "title": `${id} is Live!`,
                     });
-                    response.pageInfo.push({
+                    response.pageInfo.unshift({
                         pageName: "Live",
                         pageSize: 1,
                     });
