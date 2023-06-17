@@ -14,6 +14,11 @@ body {
 
 }
 
+#playbackDOM{
+    color: #857d7d;
+    display: inline-block;
+}
+
 #bar {
     width: 100%;
     height: 4px;

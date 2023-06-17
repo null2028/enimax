@@ -329,6 +329,23 @@ let DMenu = new dropDownMenu(
 			},
 			"items": [
 				{
+					"html": "Playback speed <div id=\"playbackDOM\" ></div>",
+					"slider": true,
+					"sliderConfig": {
+						"max": 5,
+						"min": 0,
+						"step": 0.1
+					},
+					"classes": ["inputItem", "sliderMenu"],
+					"value": localStorage.getItem("playback-speed") ? localStorage.getItem("playback-speed") : "1",
+					"onInput": function (event: InputEvent) {
+						const rate = (<HTMLInputElement>event.target).value;
+						playerDOM.innerText = `(${rate})`;
+						vidInstance.vid.playbackRate = isNaN(parseFloat(rate)) ? 1 : parseFloat(rate);
+						localStorage.setItem("playback-speed", rate);
+					}
+				},
+				{
 					"text": "Autoplay",
 					"toggle": true,
 					"on": localStorage.getItem("autoplay") === "true",
@@ -1009,6 +1026,7 @@ function chooseQual(config: sourceConfig) {
 				}
 
 				vidInstance.vid.currentTime = skipTo;
+				updatePlaybackSpeed();
 				vidInstance.vid.play();
 				loadHLSsource();
 			});
@@ -1024,6 +1042,7 @@ function chooseQual(config: sourceConfig) {
 			}
 
 			vidInstance.vid.currentTime = skipTo;
+			updatePlaybackSpeed();
 			vidInstance.vid.load();
 			vidInstance.vid.play();
 
@@ -1221,6 +1240,13 @@ function openSettingsSemi(translateY: number) {
 		settingCon.style.transform = `translateY(calc(100% + ${-translateY + 50}px))`;
 	}
 
+}
+
+function updatePlaybackSpeed() {
+	const localRate = localStorage.getItem("playback-speed");
+	const rate = isNaN(parseFloat(localRate)) ? 1 : parseFloat(localRate);
+	vidInstance.vid.playbackRate = rate;
+	playerDOM.innerText = `(${rate})`;
 }
 
 function closeSettings() {
@@ -1604,6 +1630,7 @@ document.getElementById("back").onclick = function () {
 
 let settingsPullInstance = new settingsPull(document.getElementById("settingHandlePadding"), closeSettings);
 let settingsPullInstanceTT = new settingsPull(document.querySelector(".menuCon"), closeSettings, true);
+const playerDOM = (document.querySelector("#playbackDOM") as HTMLElement);
 
 applyTheme();
 applySubtitleConfig();

@@ -297,7 +297,7 @@ class dropDownMenu {
                 attributes["min"] = item.sliderConfig.min;
             }
             const inputBox = createElement({
-                "element": "input",
+                "element": item.slider ? "range-slider" : "input",
                 "class": className,
                 "attributes": attributes
             });
