@@ -189,6 +189,47 @@ async function addShowToLib(data: { name: string, img: string, url: string, curr
     });
 }
 
+async function updateAnilistStatus(aniID: any) {
+    const statuses = anilistStatus as anilistStatus[];
+    let promptString = "";
+
+    for (let i = 0; i < statuses.length; i++) {
+        promptString += `${i}. ${statuses[i]}${i == statuses.length - 1 ? "" : "\n"}`;
+    }
+
+    const whatStatus = prompt(promptString, "0");
+    let status: anilistStatus;
+
+    if (isNaN(parseInt(whatStatus))) {
+        if (statuses.includes(whatStatus.toUpperCase() as anilistStatus)) {
+            status = whatStatus.toUpperCase() as anilistStatus;
+        } else {
+            alert("Unexpected reply. Aborting.");
+        }
+    } else {
+        const index = parseInt(whatStatus);
+        if (index >= 0 && index < statuses.length) {
+            status = statuses[index];
+        } else {
+            alert("Unexpected reply. Aborting.");
+        }
+    }
+
+
+    let permNoti: notification;
+
+    try {
+        permNoti = sendNoti([0, null, "Alert", "Trying to update the status..."]);
+        await(window.parent as cordovaWindow).changeShowStatus(aniID, status);
+        permNoti.updateBody("Updated!");
+        permNoti.notiTimeout(4000);
+    } catch (err) {
+        permNoti.remove();
+        sendNoti([4, "red", "Alert", err]);
+    }
+
+}
+
 async function changeShowStatus(anilistID: any, status: anilistStatus) {
     const accessToken = localStorage.getItem("anilist-token");
 

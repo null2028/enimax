@@ -2173,44 +2173,7 @@ if (true) {
                                             "click": async function (event) {
                                                 event.stopPropagation();
 
-                                                const statuses = (window.parent as cordovaWindow).returnAnilistStatus();
-                                                let promptString = "";
-
-                                                for (let i = 0; i < statuses.length; i++) {
-                                                    promptString += `${i}. ${statuses[i]}${i == statuses.length - 1 ? "" : "\n"}`;
-                                                }
-
-                                                const whatStatus = prompt(promptString, "0");
-                                                let status: anilistStatus;
-
-                                                if (isNaN(parseInt(whatStatus))) {
-                                                    if (statuses.includes(whatStatus.toUpperCase() as anilistStatus)) {
-                                                        status = whatStatus.toUpperCase() as anilistStatus;
-                                                    } else {
-                                                        alert("Unexpected reply. Aborting.");
-                                                    }
-                                                } else {
-                                                    const index = parseInt(whatStatus);
-                                                    if (index >= 0 && index < statuses.length) {
-                                                        status = statuses[index];
-                                                    } else {
-                                                        alert("Unexpected reply. Aborting.");
-                                                    }
-                                                }
-
-
-                                                let permNoti: notification;
-
-                                                try {
-                                                    permNoti = sendNoti([0, null, "Alert", "Trying to update the status..."]);
-                                                    await (window.parent as cordovaWindow).changeShowStatus(aniID, status);
-                                                    permNoti.updateBody("Updated!");
-                                                    permNoti.notiTimeout(4000);
-                                                } catch (err) {
-                                                    permNoti.remove();
-                                                    sendNoti([4, "red", "Alert", err]);
-                                                }
-
+                                                (window.parent as cordovaWindow).updateAnilistStatus(aniID);
 
                                                 // if (!isNaN(aniID) && hasAnilistToken) {
                                                 //     const shouldDelete = confirm("Do you want to delete this show from your anilist account?");

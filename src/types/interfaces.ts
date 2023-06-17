@@ -139,6 +139,9 @@ interface cordovaWindow extends Window {
     cordova: any,
     handleFullscreen: () => void;
     returnAnilistStatus: () => anilistStatus[],
+    updateAnilistStatus: Function,
+    addRoom: Function,
+    getUserData: Function,
     changeShowStatus: (anilistID: any, status: anilistStatus) => Promise<void>,
     anilist: extension,
     makeLocalRequest: Function,

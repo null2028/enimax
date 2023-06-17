@@ -987,10 +987,45 @@ addToLibrary.onclick = function () {
                     "name": showMainName,
                     "cur": firstEpURL,
                     "ep": 1
-                }, (response) => {
+                }, async (response) => {
                     addToLibrary.classList.remove("isWaiting");
                     addToLibrary.classList.remove("notInLib");
                     addToLibrary.classList.add("isInLib");
+                    const searchQuery = new URLSearchParams(location.search);
+                    if (!!localStorage.getItem("anilist-token") && searchQuery.has("aniID")) {
+                        const aniID = parseInt(searchQuery.get("aniID"));
+                        if (!isNaN(aniID)) {
+                            const shouldAdd = confirm("Do you want to add this show to your anilist library?");
+                            if (shouldAdd) {
+                                await window.parent.updateEpWatched(aniID, 1);
+                                await window.parent.updateAnilistStatus(aniID);
+                            }
+                        }
+                    }
+                    window.parent.apiCall("POST", { "username": "", "action": 4 }, (response) => {
+                        const rooms = response.data[1];
+                        if (rooms.length === 0) {
+                            return;
+                        }
+                        let promptString = "";
+                        for (let i = 0; i < rooms.length; i += 2) {
+                            promptString += `${i / 2}. ${rooms[i]}${i == rooms.length - 2 ? "" : "\n"}`;
+                        }
+                        const whatStatus = prompt(promptString, "0");
+                        let roomID = parseInt(whatStatus);
+                        if (isNaN(roomID)) {
+                            alert("Not a valid number. Aborting.");
+                        }
+                        else {
+                            roomID = rooms[roomID * 2 + 1];
+                            window.parent.apiCall("POST", {
+                                "username": "",
+                                "action": 7,
+                                "name": showMainName,
+                                "state": roomID
+                            }, () => { });
+                        }
+                    })[1];
                 });
             });
         }
@@ -1005,6 +1040,14 @@ addToLibrary.onclick = function () {
             }
             else {
                 addToLibrary.classList.remove("isWaiting");
+            }
+            const searchQuery = new URLSearchParams(location.search);
+            if (!!localStorage.getItem("anilist-token") && searchQuery.has("aniID") && searchQuery.get("aniID")) {
+                const aniID = parseInt(searchQuery.get("aniID"));
+                const shouldDelete = confirm("Do you want to delete this show from your anilist account?");
+                if (shouldDelete) {
+                    window.parent.deleteAnilistShow(aniID);
+                }
             }
         }
     }

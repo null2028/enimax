@@ -158,6 +158,43 @@ async function addShowToLib(data) {
         }
     });
 }
+async function updateAnilistStatus(aniID) {
+    const statuses = anilistStatus;
+    let promptString = "";
+    for (let i = 0; i < statuses.length; i++) {
+        promptString += `${i}. ${statuses[i]}${i == statuses.length - 1 ? "" : "\n"}`;
+    }
+    const whatStatus = prompt(promptString, "0");
+    let status;
+    if (isNaN(parseInt(whatStatus))) {
+        if (statuses.includes(whatStatus.toUpperCase())) {
+            status = whatStatus.toUpperCase();
+        }
+        else {
+            alert("Unexpected reply. Aborting.");
+        }
+    }
+    else {
+        const index = parseInt(whatStatus);
+        if (index >= 0 && index < statuses.length) {
+            status = statuses[index];
+        }
+        else {
+            alert("Unexpected reply. Aborting.");
+        }
+    }
+    let permNoti;
+    try {
+        permNoti = sendNoti([0, null, "Alert", "Trying to update the status..."]);
+        await window.parent.changeShowStatus(aniID, status);
+        permNoti.updateBody("Updated!");
+        permNoti.notiTimeout(4000);
+    }
+    catch (err) {
+        permNoti.remove();
+        sendNoti([4, "red", "Alert", err]);
+    }
+}
 async function changeShowStatus(anilistID, status) {
     const accessToken = localStorage.getItem("anilist-token");
     if (!accessToken || isNaN(parseInt(anilistID))) {
