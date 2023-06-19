@@ -24,6 +24,7 @@ interface DiscoverData {
 }
 
 interface createElementConfig {
+    isClickable?: boolean,
     shouldAdd?: boolean,
     element?: string,
     attributes?: { [key: string]: string },
@@ -314,6 +315,7 @@ interface PageInfo {
 }
 
 interface extensionInfoEpisode {
+    isFiller?: boolean,
     link: string,
     title: string,
     id?: string,

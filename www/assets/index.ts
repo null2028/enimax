@@ -17,7 +17,7 @@ function createElement(config: createElementConfig): HTMLElement {
         temp.setAttribute(value, attributes[value]);
     }
 
-    temp.setAttribute("tabindex", "0");
+    // temp.setAttribute("tabindex", "0");
 
     for (let value in config.style) {
 

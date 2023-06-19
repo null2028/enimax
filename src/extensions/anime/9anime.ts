@@ -181,6 +181,7 @@ var nineAnime: extension = {
                 }
                 
                 episodes.push({
+                    "isFiller": curElem.querySelector("a").getAttribute("class").includes("filler"),
                     "link": (nextPrev ? "" : "?watch=") + encodeURIComponent(id) + "&ep=" + curElem.querySelector("a").getAttribute("data-ids") + "&engine=5",
                     "id": curElem.querySelector("a").getAttribute("data-num"),
                     "sourceID": curElem.querySelector("a").getAttribute("data-ids"),

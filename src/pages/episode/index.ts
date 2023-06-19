@@ -686,6 +686,15 @@ function ini() {
                 tempDiv3.innerText = tempTitle;
 
                 if (animeEps[i].date) {
+
+                    if (animeEps[i].isFiller) {
+                        tempDiv3.prepend(createElement({
+                            element: "div",
+                            class: "filler",
+                            innerText: "Filler"
+                        }));
+                    }
+
                     tempDiv3.append(createElement({
                         element: "div",
                         style: {

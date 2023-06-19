@@ -1150,7 +1150,7 @@ window.onmessage = async function (message) {
                     }
                     DMenu.getScene("episodes").addItem({
                         highlightable: true,
-                        html: ep.title + (ep.date ? `<div class="menuDate">${ep.date.toLocaleString()}</div>` : ""),
+                        html: (ep.isFiller ? `<div class="filler">Filler</div>` : "") + ep.title + (ep.date ? `<div class="menuDate">${ep.date.toLocaleString()}</div>` : ""),
                         altText: truncatedTitle,
                         selected: location.search === ep.link,
                         id: ep.link,

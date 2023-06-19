@@ -1512,6 +1512,7 @@ var zoro = {
             let data = [];
             for (var i = 0; i < episodeListDOM.length; i++) {
                 let tempEp = {
+                    "isFiller": episodeListDOM[i].getAttribute("class").includes("ssl-item-filler"),
                     "link": episodeListDOM[i].getAttribute("href").replace("/watch/", "?watch=").replace("?ep=", "&ep=") + "&engine=3",
                     "id": episodeListDOM[i].getAttribute("data-number"),
                     "sourceID": episodeListDOM[i].getAttribute("data-id"),
@@ -2654,6 +2655,7 @@ var nineAnime = {
                     console.warn("Could not find the title");
                 }
                 episodes.push({
+                    "isFiller": curElem.querySelector("a").getAttribute("class").includes("filler"),
                     "link": (nextPrev ? "" : "?watch=") + encodeURIComponent(id) + "&ep=" + curElem.querySelector("a").getAttribute("data-ids") + "&engine=5",
                     "id": curElem.querySelector("a").getAttribute("data-num"),
                     "sourceID": curElem.querySelector("a").getAttribute("data-ids"),

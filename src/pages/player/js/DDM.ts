@@ -363,16 +363,25 @@ class dropDownMenu {
                 "type": type
             };
 
+            const listeners: any = {};
+
             if(item.slider){
                 attributes["max"] = item.sliderConfig.max;
                 attributes["step"] = item.sliderConfig.step;
                 attributes["min"] = item.sliderConfig.min;
+
+                listeners.click = function() {
+                    if(document.activeElement === this){
+                        this.blur();
+                    }
+                }
             }
 
             const inputBox = <HTMLInputElement>createElement({
                 "element": item.slider ? "range-slider" : "input",
                 "class": className,
-                "attributes": attributes
+                "attributes": attributes,
+                listeners
             });
 
             if (item.value) {

@@ -137,6 +137,7 @@ var zoro = {
             let data = [];
             for (var i = 0; i < episodeListDOM.length; i++) {
                 let tempEp = {
+                    "isFiller": episodeListDOM[i].getAttribute("class").includes("ssl-item-filler"),
                     "link": episodeListDOM[i].getAttribute("href").replace("/watch/", "?watch=").replace("?ep=", "&ep=") + "&engine=3",
                     "id": episodeListDOM[i].getAttribute("data-number"),
                     "sourceID": episodeListDOM[i].getAttribute("data-id"),

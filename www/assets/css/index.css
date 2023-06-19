@@ -1691,3 +1691,23 @@ input:checked+.slider:before {
 	margin: 5px;
 	display: none;
 }
+
+.filler{
+	background-color: white;
+    color: black;
+    padding: 5px;
+    border-radius: 10px;
+    display: inline-table;
+    margin-right: 5px;
+    margin-bottom: 4px;
+}
+
+.menuItem.selected .filler{
+	background-color: black;
+    color: white;
+}
+
+.episodesCon.episodesSelected .filler{
+	background-color: black;
+    color: white;
+}
