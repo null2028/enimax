@@ -211,6 +211,7 @@ interface modifiedString extends String {
 }
 
 interface extension {
+    supportsMalsync?: boolean,
     baseURL: string,
     disabled: boolean,
     disableAutoDownload: boolean,

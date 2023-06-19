@@ -1,6 +1,7 @@
 var mangaFire: extension = {
     baseURL: "https://mangafire.to",
     type: "manga",
+    supportsMalsync: true,
     disableAutoDownload: false,
     disabled: false,
     name: "MangaFire",

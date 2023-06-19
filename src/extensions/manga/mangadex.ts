@@ -1,6 +1,7 @@
 var mangaDex: extension = {
     baseURL: "https://api.mangadex.org",
     type: "manga",
+    supportsMalsync: true,
     disableAutoDownload: false,
     disabled: false,
     name: "MangaDex",

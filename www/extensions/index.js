@@ -1376,6 +1376,7 @@ var fmovies = {
 var zoro = {
     baseURL: "https://zoro.to",
     type: "anime",
+    supportsMalsync: true,
     disableAutoDownload: false,
     disabled: false,
     name: "Zoro",
@@ -2493,6 +2494,7 @@ var anilist = {
 var nineAnime = {
     baseURL: "https://9anime.to",
     type: "anime",
+    supportsMalsync: true,
     disableAutoDownload: false,
     disabled: false,
     name: "9anime",
@@ -3580,6 +3582,7 @@ var gogo = {
     baseURL: "https://gogoanime.gr",
     ajaxURL: "https://ajax.gogo-load.com/ajax",
     type: "anime",
+    supportsMalsync: true,
     disableAutoDownload: false,
     disabled: false,
     name: "GogoAnime",
@@ -3868,6 +3871,7 @@ catch (err) {
 var mangaDex = {
     baseURL: "https://api.mangadex.org",
     type: "manga",
+    supportsMalsync: true,
     disableAutoDownload: false,
     disabled: false,
     name: "MangaDex",
@@ -4044,6 +4048,7 @@ var mangaDex = {
 var mangaFire = {
     baseURL: "https://mangafire.to",
     type: "manga",
+    supportsMalsync: true,
     disableAutoDownload: false,
     disabled: false,
     name: "MangaFire",
