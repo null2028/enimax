@@ -1,0 +1,4 @@
+1. An option to disable fullscreen mode
+2. Moved twitch live streams to the start of the list
+3. Added an option to change playback speed of the video
+4. Fillers are highlighted, whenever that information is available
