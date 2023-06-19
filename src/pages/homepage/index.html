@@ -21,19 +21,6 @@
 	<div id="noti_con"></div>
 	<div id="mainCon">
 		<div id="pullTab"></div>
-
-		<div id="floatingMenu">
-			<div id="floatingMenuWrapper">
-				<div id="menuIcon" class="">
-					<div class="bar1"></div>
-					<div class="bar2"></div>
-					<div class="bar3"></div>
-				</div>
-
-				<div id="searchIcon"></div>
-			</div>
-		</div>
-
 		<div id="toggleMenuOpen"></div>
 
 		<div id="room_dis" class="con_main">
@@ -55,10 +42,20 @@
 			<div class="menuItem" id="resetSource" style="display:none;">Reset source preference</div>
 			<div class="menuItem" id="resetQuality" style="display:none;">Reset quality preference</div>
 			<div class="menuItem" id="restoreData" style="display:none">Restore Data</div>
-			<div class="menuItem" id="token">
+			<div class="menuItem" id="token" style="display: none;">
 				<div class="menuIcon" id="genToken"></div>
 				<div class="menuTitle">Open Webview</div>
 			</div>
+			<div class="menuItem" id="anilistLogin">
+				<div class="menuIcon" id="anilistIcon"></div>
+				<div class="menuTitle">Anilist Login</div>
+			</div>
+
+			<div class="menuItem" id="anilistImport" style="display: none">
+				<div class="menuIcon" id="anilistIcon"></div>
+				<div class="menuTitle">Import anilist library</div>
+			</div>
+			
 			<div class="menuItem" id="retry">
 				<div class="menuIcon" id="reloadMenu"></div>
 				<div class="menuTitle">Reload</div>
@@ -121,6 +118,8 @@
 			<div class="meta Gogoanime choice"> Gogoanime </div>
 			<div class="meta 9anime choice"> 9anime </div>
 			<div class="meta Zoro choice"> Zoro </div>
+			<div class="meta Mangadex choice"> Mangadex </div>
+			<div class="meta MangaFire choice"> MangaFire </div>
 		</div>
 		<div id="sourceCards"></div>
 
@@ -298,6 +297,25 @@
 							</div>
 						</div>
 
+						<div class="accessItem notChrome">
+							<div class="tableCell">Auto-download the latest episode in the Ongoing category</div>
+							<div class="tableCell">
+								<label class="switch access" style="vertical-align: middle;">
+									<input type="checkbox" id="autoDownload">
+									<span class="slider round"></span>
+								</label>
+							</div>
+						</div>
+
+						<div class="accessItem notChrome">
+							<div class="tableCell">Disable fullscreen mode</div>
+							<div class="tableCell">
+								<label class="switch access" style="vertical-align: middle;">
+									<input type="checkbox" id="fullscreenMode">
+									<span class="slider round"></span>
+								</label>
+							</div>
+						</div>
 
 						<div class="accessItem notChrome">
 							<div class="tableCell">Pause downloads when not on WI-FI </div>
@@ -316,16 +334,6 @@
 							<div class="tableCell">
 								<label class="switch access" style="vertical-align: middle;">
 									<input type="checkbox" id="hideNotification">
-									<span class="slider round"></span>
-								</label>
-							</div>
-						</div>
-
-						<div class="accessItem">
-							<div class="tableCell">Turn off fancy-pants homescreen</div>
-							<div class="tableCell">
-								<label class="switch access" style="vertical-align: middle;">
-									<input type="checkbox" id="fancyHome">
 									<span class="slider round"></span>
 								</label>
 							</div>
@@ -365,8 +373,20 @@
 
 
 			<div id="home">
-				<div id="categoriesCon"></div>
 				<div id="custom_rooms"></div>
+				<div id="categoriesCon" class="disableScrollBar"></div>
+
+				<div id="floatingMenu">
+					<div id="floatingMenuWrapper">
+						<div id="menuIcon" class="">
+							<div class="bar1"></div>
+							<div class="bar2"></div>
+							<div class="bar3"></div>
+						</div>
+		
+						<div id="searchIcon"></div>
+					</div>
+				</div>
 			</div>
 
 		</div>

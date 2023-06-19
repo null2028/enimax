@@ -8,28 +8,39 @@
     <link href="../../assets/css/index.css" rel="stylesheet">
     <link href="index.css" rel="stylesheet">
     <link href="../../assets/css/fonts.css" rel="stylesheet">
+    <link href="../player/css/DDM.css" rel="stylesheet">
 
     <script type="text/javascript" src="../../notification/noti.js"></script>
     <script type="text/javascript" src="../../assets/index.js"></script>
     <script type="text/javascript" src="../../assets/js/pull.js"></script>
+    <script type="text/javascript" src="../player/js/DDM.js"></script>
 
 </head>
 
 <body>
-    <div id="con_11">
-        <div id="noti_con"></div>
-        <div id="pullTab"></div>
-        <div id="back"> </div>
-        <div class="searchBox" id="searchBox">
-            <form id="searchForm">
-                <div id="s_c">&#10005;</div>
-                <input class="searchInput" type="text" placeholder="Search" id="search_x">
-                <div class="searchButton"></div>
-            </form>
+    <div class="container">
+        <div class="backdrop"></div>
+        <div id="sourceChoice">
+            <div class="meta Gogoanime choice"> Gogoanime </div>
+            <div class="meta 9anime choice"> 9anime </div>
+            <div class="meta Zoro choice"> Zoro </div>
+            <div class="meta Mangadex choice"> Mangadex </div>
+            <div class="meta MangaFire choice"> MangaFire </div>
+        </div>
+        <div id="sourceCards"></div>
+        <div id="relationsCon"></div>
+        <div id="recomCon"></div>
+
+        <div class="menuCon" data-translate="true">
+            <div id="settingHandlePadding">
+                <div id="settingHandle"></div>
+            </div>
         </div>
 
-        <select id="sources"></select>
-        <div id="mainConSearch"></div>
+        <div id="con_11">
+            <div id="noti_con"></div>
+            <div id="pullTab"></div>
+        </div>
     </div>
     <script type="text/javascript" src="../../assets/libs/purify.js"></script>
     <script type="text/javascript" src="../../assets/js/config.js"></script>

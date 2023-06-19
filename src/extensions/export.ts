@@ -1,11 +1,15 @@
 // @ts-ignore
-const extensionList: Array<extension> = [wco, animixplay, fmovies, zoro, twitch, nineAnime, fmoviesto, gogo, mangaDex, mangaFire];
+const extensionList: Array<extension> = [wco, animixplay, fmovies, zoro, twitch, nineAnime, fmoviesto, gogo, mangaDex, mangaFire, viewAsian, anilist];
 
+// @ts-ignore   
+const extensionNames = [];
 // @ts-ignore
-const extensionNames = ["WCOforever", "Animixplay", "FlixHQ", "Zoro", "Twitch", "9anime", "Fmovies.to", "Gogo", "MangaDex", "MangaFire"];
+const extensionDisabled = [];
+// @ts-ignore
+const extensionTypes = [];
 
-// @ts-ignore
-const extensionDisabled = [false, true, false, false, false, false, false, false, false, false];
-
-// @ts-ignore
-const extensionTypes = ["", "", "", "", "", "", "", "", "manga", "manga"];
+for(const extension of extensionList){
+    extensionNames.push(extension.name);
+    extensionDisabled.push(extension.disabled);
+    extensionTypes.push(extension.type);
+}

@@ -2,6 +2,7 @@ type ExitFullscreen = typeof document.exitFullscreen
 type RequestFullscreen = typeof document.documentElement.requestFullscreen
 type TypeFunc = (res: Response) => Promise<string>
 type anilistType = "9anime" | "Zoro" | "Gogoanime" | "Mangadex" | "MangaFire"
+type anilistStatus = "CURRENT" | "PLANNING" | "COMPLETED" | "DROPPED" | "PAUSED" | "REPEATING";
 
 interface Document {
     webkitExitFullscreen: ExitFullscreen;
@@ -23,6 +24,8 @@ interface DiscoverData {
 }
 
 interface createElementConfig {
+    isClickable?: boolean,
+    shouldAdd?: boolean,
     element?: string,
     attributes?: { [key: string]: string },
     style?: { [key: string]: string },
@@ -106,7 +109,8 @@ interface videoData {
     name: string,
     nameWSeason: string,
     subtitles: Array<videoSubtitle>
-    engine?: number
+    engine?: number,
+    ogURL: string
 }
 
 interface mangaData extends extensionMangaSource{
@@ -134,17 +138,28 @@ interface videoChangedFillModeEvent extends CustomEvent {
 
 interface cordovaWindow extends Window {
     cordova: any,
+    handleFullscreen: () => void;
+    returnAnilistStatus: () => anilistStatus[],
+    updateAnilistStatus: Function,
+    addRoom: Function,
+    getUserData: Function,
+    changeShowStatus: (anilistID: any, status: anilistStatus) => Promise<void>,
+    anilist: extension,
     makeLocalRequest: Function,
     normalise: Function,
     apiCall: Function,
     returnExtensionList: Function,
     XMLHttpRequest: any,
     returnExtensionNames: Function,
+    getAllItems: Function,
+    deleteAnilistShow: Function,
     returnDownloadQueue: Function,
     returnExtensionDisabled: Function,
     returnExtensionTypes: Function,
     getAnilistTrending: Function,
     listDir: Function,
+    updateEpWatched: Function,
+    getWebviewHTML: Function,
     back: Function,
     sendBatchReqs: Function,
     secondsToHuman: Function,
@@ -196,8 +211,13 @@ interface modifiedString extends String {
 }
 
 interface extension {
+    supportsMalsync?: boolean,
     baseURL: string,
-    searchApi: (query: string) => Promise<extensionSearch>;
+    disabled: boolean,
+    disableAutoDownload: boolean,
+    type: "manga" | "anime" | "tv" | "others",
+    name: string,
+    searchApi: (query: string, params?: { [key: string]: any }) => Promise<extensionSearch>;
     getAnimeInfo: (url: string) => Promise<extensionInfo>;
     getLinkFromUrl: (url: any) => Promise<extensionVidSource | extensionMangaSource>;
     discover?: () => Promise<Array<extensionDiscoverData>>;
@@ -255,6 +275,22 @@ interface searchError extends Error {
     url: string,
 }
 
+// type BasePageConfig = {
+//     hasReload: Boolean,
+//     reloadFunc  ?: Function,
+//     customConClass?: string,
+//     linkClass?: string,
+//     isError?: Boolean,
+//     positive?: Boolean
+// }
+
+// type ErrorPageConfig = BasePageConfig & ({
+//     hasLink: false,
+// } | {
+//     hasLink: true,
+//     clickEvent: Function,
+// });
+
 type ErrorPageConfig = {
     hasLink: false,
     hasReload: Boolean,
@@ -280,10 +316,12 @@ interface PageInfo {
 }
 
 interface extensionInfoEpisode {
+    isFiller?: boolean,
     link: string,
     title: string,
     id?: string,
     altTitle?: string,
+    season?: number,
     altTruncatedTitle?: string,
     sourceID?: string,
     thumbnail?: string,
@@ -370,7 +408,7 @@ interface EnimaxConfig {
 interface downloadMapping {
     "fileName": string,
     "uri": string,
-    "downloaded": boolean
+    "downloaded": boolean | -1
 }
 
 interface LocalMapping {

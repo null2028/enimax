@@ -238,6 +238,8 @@ class settingsPull {
 	hasMoved: boolean;
 	settingCon: any;
 	scrollCon: HTMLElement;
+	iniTranslate: boolean;
+
 	constructor(dom: HTMLElement, callback: Function, shouldCheck = false) {
 		this.dom = dom;
 		this.shouldCheck = shouldCheck;
@@ -266,6 +268,8 @@ class settingsPull {
 		self.shouldStart = false;
 		self.hasMoved = false;
 		self.settingCon = document.querySelector(".menuCon");
+		self.iniTranslate = self.settingCon.getAttribute("data-translate") === "true";
+		
 	}
 
 	touchStart(event: TouchEvent, self: settingsPull) {
@@ -300,7 +304,7 @@ class settingsPull {
 		let translate = -(-x + self.iniX);
 		if (translate > 0) {
 
-			self.settingCon.style.transform = `translateY(${-(-x + self.iniX)}px)`;
+			self.settingCon.style.transform = `translate(${self.iniTranslate ?  "-50%" : "0"}, ${-(-x + self.iniX)}px)`;
 			self.lastX = -x + self.iniX;
 		}
 	}
@@ -314,14 +318,14 @@ class settingsPull {
 		// }
 
 		if (self.shouldStart === false) {
-			self.settingCon.style.transform = `translateY(0)`;
+			self.settingCon.style.transform = `translate(${self.iniTranslate ?  "-50%" : "0"}, 0)`;
 			return;
 		}
 
 		if (self.lastX < -75) {
 			self.callback();
 		} else {
-			self.settingCon.style.transform = `translateY(0)`;
+			self.settingCon.style.transform = `translate(${self.iniTranslate ?  "-50%" : "0"}, 0)`;
 		}
 
 		self.settingCon.style.transitionDuration = "200ms";

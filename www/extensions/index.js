@@ -132,15 +132,35 @@ if (config && config.chrome) {
         });
     };
 }
-function getWebviewHTML(url = "https://www.zoro.to", hidden = false, timeout = 15000, code = false) {
+function getWebviewHTML(url = "https://www.zoro.to", hidden = false, timeout = 15000, code = false, isAnilist = false) {
     return new Promise((resolve, reject) => {
         // @ts-ignore
         const inappRef = cordova.InAppBrowser.open(url, '_blank', hidden ? "hidden=true" : "");
-        inappRef.addEventListener('loadstop', () => {
-            inappRef.executeScript({
-                'code': code === false ? `let resultInApp={'status':200,'data':document.body.innerText};
+        if (isAnilist) {
+            inappRef.show();
+        }
+        inappRef.addEventListener('loadstop', (event) => {
+            if (isAnilist) {
+                if (event.url.includes("enimax-anime.github.io/anilist")) {
+                    const accessToken = new URLSearchParams((new URL(event.url)).hash.substring(1)).get("access_token");
+                    localStorage.setItem("anilist-token", accessToken);
+                    inappRef.close();
+                    const shouldUpdate = confirm("Logged in! Do you want to import your library? if you don't want to do that right now, you can do that later by going to the menu");
+                    if (shouldUpdate) {
+                        getAllItems();
+                    }
+                    resolve("Done");
+                }
+                else if ((new URL(event.url)).hostname === "anilist.co") {
+                    inappRef.show();
+                }
+            }
+            else {
+                inappRef.executeScript({
+                    'code': code === false ? `let resultInApp={'status':200,'data':document.body.innerText};
                         webkit.messageHandlers.cordova_iab.postMessage(JSON.stringify(resultInApp));` : code
-            });
+                });
+            }
         });
         inappRef.addEventListener('loaderror', (err) => {
             inappRef.show();
@@ -188,24 +208,24 @@ function getCurrentSeason(type) {
     let season = "";
     const month = new Date().getMonth();
     switch (month) {
-        case 11:
         case 0:
         case 1:
+        case 2:
             season = "WINTER";
             break;
-        case 2:
         case 3:
         case 4:
+        case 5:
             season = "SPRING";
             break;
-        case 5:
         case 6:
         case 7:
+        case 8:
             season = "SUMMER";
             break;
-        case 8:
         case 9:
         case 10:
+        case 11:
             season = "FALL";
             break;
     }
@@ -309,6 +329,22 @@ const anilistQueries = {
                                 year
                             }
                             seasonYear
+                        }
+                    }
+                }`,
+    "search": `query($type: MediaType, $title: String){
+                    search: Page(page: 1, perPage: 100){
+                        media (search: $title, type: $type) { 
+                            id
+                            title {
+                                romaji
+                                english
+                                native
+                            }
+                            coverImage { 
+                                extraLarge 
+                                large 
+                            }
                         }
                     }
                 }`
@@ -422,9 +458,13 @@ function loadImage(url) {
         img.src = url;
     });
 }
-
 var wco = {
-    baseURL: "https://www.wcoforever.net",
+    baseURL: "https://www.wcoforever.org",
+    type: "anime",
+    disableAutoDownload: false,
+    disabled: false,
+    name: "WCOForever",
+    shortenedName: "WCO",
     searchApi: function (query) {
         let baseURL = this.baseURL;
         let tempDiv = document.createElement("div");
@@ -552,7 +592,12 @@ var wco = {
                     animeName = animeName + "-";
                 }
                 data.episodes = animeEps;
-                data.mainName = url.replace("https://www.wcoforever.net/anime/", "") + "-";
+                try {
+                    data.mainName = (new URL(url)).pathname.replace("/anime/", "") + "-";
+                }
+                catch (err) {
+                    data.mainName = url.split("/anime/")[1] + "-";
+                }
                 resolve(data);
             }).catch(function (err) {
                 err.url = rawURL;
@@ -794,10 +839,14 @@ var wco = {
         }
     }
 };
-
 // RIP
 var animixplay = {
     baseURL: "https://animixplay.to",
+    type: "anime",
+    disableAutoDownload: false,
+    disabled: true,
+    name: "Animixplay",
+    shortenedName: "Animix",
     searchApi: async function (query) {
         const response = [];
         alert("Animixplay has been shut down.");
@@ -828,9 +877,13 @@ var animixplay = {
         };
     }
 };
-
 var fmovies = {
     baseURL: fmoviesBaseURL,
+    type: "tv",
+    disableAutoDownload: false,
+    disabled: false,
+    name: "FlixHQ",
+    shortenedName: "Flix",
     searchApi: async function (query) {
         let tempDOM = document.createElement("div");
         try {
@@ -1320,9 +1373,14 @@ var fmovies = {
         }
     }
 };
-
 var zoro = {
     baseURL: "https://zoro.to",
+    type: "anime",
+    supportsMalsync: true,
+    disableAutoDownload: false,
+    disabled: false,
+    name: "Zoro",
+    shortenedName: "Zoro",
     searchApi: async function (query) {
         let dom = document.createElement("div");
         try {
@@ -1455,6 +1513,7 @@ var zoro = {
             let data = [];
             for (var i = 0; i < episodeListDOM.length; i++) {
                 let tempEp = {
+                    "isFiller": episodeListDOM[i].getAttribute("class").includes("ssl-item-filler"),
                     "link": episodeListDOM[i].getAttribute("href").replace("/watch/", "?watch=").replace("?ep=", "&ep=") + "&engine=3",
                     "id": episodeListDOM[i].getAttribute("data-number"),
                     "sourceID": episodeListDOM[i].getAttribute("data-id"),
@@ -1724,9 +1783,13 @@ var zoro = {
         return `?watch=${url.pathname}&engine=3`;
     }
 };
-
 var twitch = {
     baseURL: "https://twitch.tv",
+    type: "others",
+    disabled: false,
+    disableAutoDownload: true,
+    name: "Twitch",
+    shortenedName: "Twitch",
     searchApi: async function (query) {
         try {
             const clientId = "kimne78kx3ncx6brgo4mv6wki5h1ko";
@@ -1837,12 +1900,12 @@ var twitch = {
                     }
                 }
                 if (isLive && !sibling) {
-                    data.push({
+                    data.unshift({
                         "link": "?watch=" + encodeURIComponent(id) + "&id=" + "live" + "&engine=4",
                         "id": id,
                         "title": `${id} is Live!`,
                     });
-                    response.pageInfo.push({
+                    response.pageInfo.unshift({
                         pageName: "Live",
                         pageSize: 1,
                     });
@@ -1968,9 +2031,474 @@ var twitch = {
         return resp;
     },
 };
-
+var anilist = {
+    baseURL: "https://graphql.anilist.co",
+    type: "anime",
+    disableAutoDownload: false,
+    disabled: false,
+    name: "Anilist",
+    shortenedName: "Ani",
+    searchApi: async function (query, params) {
+        var _a;
+        let gqlQuery = `query($type: MediaType`;
+        let mediaQuery = `media(type: $type`;
+        let values = {};
+        if (!params.type) {
+            params.type = "ANIME";
+        }
+        values["type"] = params.type.toUpperCase();
+        if (params.genres) {
+            gqlQuery += ", $genre: String";
+            mediaQuery += ", genre: $genre";
+            values["genre"] = params.genres;
+        }
+        if (params.season) {
+            gqlQuery += ", $season: MediaSeason";
+            mediaQuery += ", season: $season";
+            values["season"] = params.season.toUpperCase();
+        }
+        if (params.year) {
+            gqlQuery += ", $year: Int";
+            mediaQuery += ", seasonYear: $year";
+            values["year"] = params.year;
+        }
+        if (params.status) {
+            gqlQuery += ", $status: MediaStatus";
+            mediaQuery += ", status: $status";
+            values["status"] = params.status.toUpperCase().split(" ").join("_");
+        }
+        if (params.sort) {
+            gqlQuery += ", $sort: [MediaSort]";
+            mediaQuery += ", sort: $sort";
+            values["sort"] = this.sortMap[params.sort];
+        }
+        if (params.tags) {
+            gqlQuery += ", $tags: [String]";
+            mediaQuery += ", tag_in: $tags";
+            values["tags"] = [params.tags];
+        }
+        if (query) {
+            gqlQuery += ", $title: String";
+            mediaQuery += ", search: $title";
+            values["title"] = query;
+        }
+        gqlQuery += "){";
+        mediaQuery += "){";
+        try {
+            const response = await anilistAPI(`${gqlQuery}
+                    search: Page(page: 1, perPage: 100){
+                        ${mediaQuery}
+                            id
+                            title {
+                                romaji
+                                english
+                                native
+                            }
+                            coverImage { 
+                                extraLarge 
+                                large 
+                            }
+                        }
+                    }
+                }`, values);
+            const data = [];
+            for (const anime of response.data.search.media) {
+                data.push({
+                    "name": (_a = anime.title.english) !== null && _a !== void 0 ? _a : (Object.keys(anime.title).length > 0 ? anime.title[Object.keys(anime.title)[0]] : ""),
+                    "id": anime.id,
+                    "image": anime.coverImage.large,
+                    "link": "anilist"
+                });
+            }
+            return {
+                data,
+                "status": 200,
+                type: values["type"],
+            };
+        }
+        catch (err) {
+            return {
+                data: err.toString(),
+                status: 400
+            };
+        }
+    },
+    getAnimeInfo: async function (url, sibling = false, currentID = -1) {
+        let response = {
+            "name": "",
+            "image": "",
+            "description": "",
+            "episodes": [],
+            "mainName": ""
+        };
+        return response;
+    },
+    getLinkFromUrl: async function (url) {
+        const resp = {
+            sources: [],
+            name: "",
+            title: "",
+            nameWSeason: "",
+            episode: "",
+            status: 400,
+            message: "",
+            next: null,
+            prev: null
+        };
+        return resp;
+    },
+    genres: [
+        "Any",
+        "Action",
+        "Adventure",
+        "Comedy",
+        "Drama",
+        "Ecchi",
+        "Fantasy",
+        "Horror",
+        "Mahou Shoujo",
+        "Mecha",
+        "Music",
+        "Mystery",
+        "Psychological",
+        "Romance",
+        "Sci-Fi",
+        "Slice of Life",
+        "Sports",
+        "Supernatural",
+        "Thriller",
+    ],
+    seasons: [
+        "Any",
+        "Winter",
+        "Spring",
+        "Summer",
+        "Fall"
+    ],
+    status: [
+        "Any",
+        "Cancelled",
+        "Finished",
+        "Releasing",
+        "Not Yet Released"
+    ],
+    mediaType: [
+        "Anime",
+        "Manga"
+    ],
+    sortBy: [
+        "Title",
+        "Popularity",
+        "Score",
+        "Trending",
+        "Release Date"
+    ],
+    sortMap: {
+        "Title": "TITLE_ROMAJI",
+        "Popularity": "POPULARITY_DESC",
+        "Score": "SCORE_DESC",
+        "Trending": ["TRENDING_DESC", "POPULARITY_DESC"],
+        "Release Date": "START_DATE_DESC"
+    },
+    tags: [
+        "Any",
+        "4-koma",
+        "Achromatic",
+        "Achronological Order",
+        "Acting",
+        "Adoption",
+        "Advertisement",
+        "Afterlife",
+        "Age Gap",
+        "Age Regression",
+        "Agender",
+        "Agriculture",
+        "Airsoft",
+        "Alchemy",
+        "Aliens",
+        "Alternate Universe",
+        "American Football",
+        "Amnesia",
+        "Anachronism",
+        "Angels",
+        "Animals",
+        "Anthology",
+        "Anthropomorphism",
+        "Anti-Hero",
+        "Archery",
+        "Artificial Intelligence",
+        "Asexual",
+        "Assassins",
+        "Astronomy",
+        "Athletics",
+        "Augmented Reality",
+        "Autobiographical",
+        "Aviation",
+        "Badminton",
+        "Band",
+        "Bar",
+        "Baseball",
+        "Basketball",
+        "Battle Royale",
+        "Biographical",
+        "Bisexual",
+        "Body Horror",
+        "Body Swapping",
+        "Boxing",
+        "Boys' Love",
+        "Bullying",
+        "Butler",
+        "Calligraphy",
+        "Cannibalism",
+        "Card Battle",
+        "Cars",
+        "Centaur",
+        "CGI",
+        "Cheerleading",
+        "Chibi",
+        "Chimera",
+        "Chuunibyou",
+        "Circus",
+        "Classic Literature",
+        "Clone",
+        "College",
+        "Coming of Age",
+        "Conspiracy",
+        "Cosmic Horror",
+        "Cosplay",
+        "Crime",
+        "Crossdressing",
+        "Crossover",
+        "Cult",
+        "Cultivation",
+        "Cute Boys Doing Cute Things",
+        "Cute Girls Doing Cute Things",
+        "Cyberpunk",
+        "Cyborg",
+        "Cycling",
+        "Dancing",
+        "Death Game",
+        "Delinquents",
+        "Demons",
+        "Denpa",
+        "Desert",
+        "Detective",
+        "Dinosaurs",
+        "Disability",
+        "Dissociative Identities",
+        "Dragons",
+        "Drawing",
+        "Drugs",
+        "Dullahan",
+        "Dungeon",
+        "Dystopian",
+        "E-Sports",
+        "Economics",
+        "Educational",
+        "Elf",
+        "Ensemble Cast",
+        "Environmental",
+        "Episodic",
+        "Ero Guro",
+        "Espionage",
+        "Fairy",
+        "Fairy Tale",
+        "Family Life",
+        "Fashion",
+        "Female Harem",
+        "Female Protagonist",
+        "Femboy",
+        "Fencing",
+        "Firefighters",
+        "Fishing",
+        "Fitness",
+        "Flash",
+        "Food",
+        "Football",
+        "Foreign",
+        "Found Family",
+        "Fugitive",
+        "Full CGI",
+        "Full Color",
+        "Gambling",
+        "Gangs",
+        "Gender Bending",
+        "Ghost",
+        "Go",
+        "Goblin",
+        "Gods",
+        "Golf",
+        "Gore",
+        "Guns",
+        "Gyaru",
+        "Handball",
+        "Henshin",
+        "Heterosexual",
+        "Hikikomori",
+        "Historical",
+        "Homeless",
+        "Ice Skating",
+        "Idol",
+        "Isekai",
+        "Iyashikei",
+        "Josei",
+        "Judo",
+        "Kaiju",
+        "Karuta",
+        "Kemonomimi",
+        "Kids",
+        "Kuudere",
+        "Lacrosse",
+        "Language Barrier",
+        "LGBTQ+ Themes",
+        "Lost Civilization",
+        "Love Triangle",
+        "Mafia",
+        "Magic",
+        "Mahjong",
+        "Maids",
+        "Makeup",
+        "Male Harem",
+        "Male Protagonist",
+        "Marriage",
+        "Martial Arts",
+        "Medicine",
+        "Memory Manipulation",
+        "Mermaid",
+        "Meta",
+        "Military",
+        "Mixed Gender Harem",
+        "Monster Boy",
+        "Monster Girl",
+        "Mopeds",
+        "Motorcycles",
+        "Musical",
+        "Mythology",
+        "Necromancy",
+        "Nekomimi",
+        "Ninja",
+        "No Dialogue",
+        "Noir",
+        "Non-fiction",
+        "Nudity",
+        "Nun",
+        "Office Lady",
+        "Oiran",
+        "Ojou-sama",
+        "Orphan",
+        "Otaku Culture",
+        "Outdoor",
+        "Pandemic",
+        "Parkour",
+        "Parody",
+        "Philosophy",
+        "Photography",
+        "Pirates",
+        "Poker",
+        "Police",
+        "Politics",
+        "Post-Apocalyptic",
+        "POV",
+        "Primarily Adult Cast",
+        "Primarily Child Cast",
+        "Primarily Female Cast",
+        "Primarily Male Cast",
+        "Primarily Teen Cast",
+        "Prison",
+        "Puppetry",
+        "Rakugo",
+        "Real Robot",
+        "Rehabilitation",
+        "Reincarnation",
+        "Religion",
+        "Revenge",
+        "Robots",
+        "Rotoscoping",
+        "Rugby",
+        "Rural",
+        "Samurai",
+        "Satire",
+        "School",
+        "School Club",
+        "Scuba Diving",
+        "Seinen",
+        "Shapeshifting",
+        "Ships",
+        "Shogi",
+        "Shoujo",
+        "Shounen",
+        "Shrine Maiden",
+        "Skateboarding",
+        "Skeleton",
+        "Slapstick",
+        "Slavery",
+        "Software Development",
+        "Space",
+        "Space Opera",
+        "Spearplay",
+        "Steampunk",
+        "Stop Motion",
+        "Succubus",
+        "Suicide",
+        "Sumo",
+        "Super Power",
+        "Super Robot",
+        "Superhero",
+        "Surfing",
+        "Surreal Comedy",
+        "Survival",
+        "Swimming",
+        "Swordplay",
+        "Table Tennis",
+        "Tanks",
+        "Tanned Skin",
+        "Teacher",
+        "Teens' Love",
+        "Tennis",
+        "Terrorism",
+        "Time Manipulation",
+        "Time Skip",
+        "Tokusatsu",
+        "Tomboy",
+        "Torture",
+        "Tragedy",
+        "Trains",
+        "Transgender",
+        "Travel",
+        "Triads",
+        "Tsundere",
+        "Twins",
+        "Urban",
+        "Urban Fantasy",
+        "Vampire",
+        "Video Games",
+        "Vikings",
+        "Villainess",
+        "Virtual World",
+        "Volleyball",
+        "VTuber",
+        "War",
+        "Werewolf",
+        "Witch",
+        "Work",
+        "Wrestling",
+        "Writing",
+        "Wuxia",
+        "Yakuza",
+        "Yandere",
+        "Youkai",
+        "Yuri",
+        "Zombie"
+    ]
+};
 var nineAnime = {
     baseURL: "https://9anime.to",
+    type: "anime",
+    supportsMalsync: true,
+    disableAutoDownload: false,
+    disabled: false,
+    name: "9anime",
+    shortenedName: "9anime",
     searchApi: async function (query) {
         const searchDOM = document.createElement("div");
         try {
@@ -2129,6 +2657,7 @@ var nineAnime = {
                     console.warn("Could not find the title");
                 }
                 episodes.push({
+                    "isFiller": curElem.querySelector("a").getAttribute("class").includes("filler"),
                     "link": (nextPrev ? "" : "?watch=") + encodeURIComponent(id) + "&ep=" + curElem.querySelector("a").getAttribute("data-ids") + "&engine=5",
                     "id": curElem.querySelector("a").getAttribute("data-num"),
                     "sourceID": curElem.querySelector("a").getAttribute("data-ids"),
@@ -2528,9 +3057,13 @@ var nineAnime = {
         return `?watch=${url.pathname.replace("/watch", "")}&engine=5`;
     }
 };
-
 var fmoviesto = {
     baseURL: "https://fmovies.to",
+    type: "tv",
+    disableAutoDownload: false,
+    disabled: false,
+    name: "Fmovies.to",
+    shortenedName: "Fmovies",
     searchApi: async function (query) {
         let rawURL = "";
         let searchDOM = document.createElement("div");
@@ -2677,6 +3210,7 @@ var fmoviesto = {
                 episodes.push({
                     "link": (nextPrev ? "" : "?watch=") + encodeURIComponent(id) + "&ep=" + epID + "&engine=6",
                     "id": sourceID,
+                    "season": season,
                     "sourceID": epID,
                     "title": (nextPrev || isMovie) ? title : `Season ${season} | Episode ${episodeNum} - ${title}`,
                     "altTruncatedTitle": `S${season} E${episodeNum}`,
@@ -2723,7 +3257,9 @@ var fmoviesto = {
             const servers = {};
             let epList = [];
             epList = (await this.getAnimeInfo(`?watch=/${searchParams.get("watch")}`, true)).episodes;
-            const serverID = epList.find((x) => x.sourceID === sourceEp).id;
+            const epData = epList.find((x) => x.sourceID === sourceEp);
+            const season = isNaN(epData.season) ? 1 : epData.season;
+            const serverID = epData.id;
             const serverVRF = await this.getVRF(serverID, "fmovies-vrf");
             // https://fmovies.to/ajax/server/list/29303?vrf=O2F%2FYF1JRHg%3D
             const serverHTML = JSON.parse(await MakeFetchZoro(`https://fmovies.to/ajax/server/list/${serverID}?vrf=${serverVRF[0]}`)).result;
@@ -2762,7 +3298,7 @@ var fmoviesto = {
                 response.episode = "1";
             }
             response.name = searchParams.get("watch").replace("series/", "").replace("movie/", "").replace("tv/", "");
-            response.nameWSeason = response.name;
+            response.nameWSeason = response.name + "-" + season;
             response.status = 200;
             let sources = [];
             async function addSource(ID, self, index, extractor) {
@@ -3042,10 +3578,15 @@ var fmoviesto = {
         }
     }
 };
-
 var gogo = {
     baseURL: "https://gogoanime.gr",
     ajaxURL: "https://ajax.gogo-load.com/ajax",
+    type: "anime",
+    supportsMalsync: true,
+    disableAutoDownload: false,
+    disabled: false,
+    name: "GogoAnime",
+    shortenedName: "Gogo",
     keys: [
         CryptoJS.enc.Utf8.parse("37911490979715163134003223491201"),
         CryptoJS.enc.Utf8.parse("54674138327930866480207815084989"),
@@ -3327,9 +3868,14 @@ try {
 catch (err) {
     console.error(err);
 }
-
 var mangaDex = {
     baseURL: "https://api.mangadex.org",
+    type: "manga",
+    supportsMalsync: true,
+    disableAutoDownload: false,
+    disabled: false,
+    name: "MangaDex",
+    shortenedName: "MDex",
     searchApi: async function (query) {
         var _a, _b;
         try {
@@ -3499,9 +4045,14 @@ var mangaDex = {
         return `?watch=/${url.pathname.replace("/title/", "")}&engine=8`;
     }
 };
-
 var mangaFire = {
     baseURL: "https://mangafire.to",
+    type: "manga",
+    supportsMalsync: true,
+    disableAutoDownload: false,
+    disabled: false,
+    name: "MangaFire",
+    shortenedName: "MFire",
     searchApi: async function (query) {
         var _a, _b;
         const searchDOM = document.createElement("div");
@@ -3555,6 +4106,7 @@ var mangaFire = {
                 linkSplit.shift();
                 response.episodes.push({
                     title: episodeLI.querySelector("a").querySelector("span").innerText,
+                    number: parseFloat(episodeLI.getAttribute("data-number")),
                     link: `?watch=/read/${linkSplit.join("/read/")}&chap=${episodeLI.getAttribute("data-number")}&engine=9`,
                 });
             }
@@ -3570,7 +4122,7 @@ var mangaFire = {
     descramble: function (imageURL, key) {
         return new Promise(async function (resolve, reject) {
             // const image = await loadImage(imageURL);
-            const worker = new Worker("./extensions/mangafireDecrambler.js");
+            const worker = new Worker("./extensions/utils/mangafireDecrambler.js");
             // const bitmap = await createImageBitmap(image);
             const timeout = setTimeout(function () {
                 try {
@@ -3701,12 +4253,244 @@ var mangaFire = {
         return `?watch=${path}&engine=9`;
     }
 };
+var viewAsian = {
+    baseURL: "https://viewasian.co",
+    type: "tv",
+    disabled: false,
+    disableAutoDownload: false,
+    name: "viewAsian",
+    shortenedName: "viewAsian",
+    keys: [
+        CryptoJS.enc.Utf8.parse("93422192433952489752342908585752"),
+        CryptoJS.enc.Utf8.parse("9262859232435825"),
+    ],
+    searchApi: async function (query) {
+        var _a, _b;
+        let dom = document.createElement("div");
+        try {
+            let searchHTML = await MakeFetchZoro(`${this.baseURL}/movie/search/${query.replace(/[\W_]+/g, '-')}`, {});
+            dom.innerHTML = DOMPurify.sanitize(searchHTML);
+            let itemsDOM = dom.querySelectorAll(".movies-list-full .ml-item");
+            let data = [];
+            for (var i = 0; i < itemsDOM.length; i++) {
+                let con = itemsDOM[i];
+                let src = con.querySelector("img").getAttribute("data-original");
+                let aTag = con.querySelector("a");
+                let animeName = (_b = (_a = con.querySelector(".mli-info")) === null || _a === void 0 ? void 0 : _a.innerText) === null || _b === void 0 ? void 0 : _b.trim();
+                let animeHref = aTag.getAttribute("href") + "&engine=10";
+                data.push({ "name": animeName, "image": src, "link": animeHref });
+            }
+            return ({ data, "status": 200 });
+        }
+        catch (err) {
+            throw err;
+        }
+        finally {
+            removeDOM(dom);
+        }
+    },
+    getAnimeInfo: async function (url) {
+        url = url.split("&engine")[0];
+        const rawURL = `${this.baseURL}/${url}`;
+        console.log(this, this.baseURL, rawURL);
+        const animeDOM = document.createElement("div");
+        const episodeDOM = document.createElement("div");
+        try {
+            const response = {
+                "name": "",
+                "image": "",
+                "description": "",
+                "episodes": [],
+                "mainName": ""
+            };
+            const animeHTML = await MakeFetchZoro(rawURL, {});
+            const identifier = url.split("/")[0] + "/";
+            const id = url.replace(identifier, "viewasian-");
+            animeDOM.innerHTML = DOMPurify.sanitize(animeHTML);
+            response.mainName = id;
+            response.image = animeDOM.querySelector(".detail-mod img").getAttribute("src");
+            response.name = animeDOM.querySelector(".detail-mod h3").innerText.trim();
+            response.description = animeDOM.querySelector(".desc").innerText.trim();
+            const epData = [];
+            const episodeHTML = await MakeFetchZoro(`${this.baseURL}/${animeDOM.querySelector(".bwac-btn").getAttribute("href")}`);
+            episodeDOM.innerHTML = DOMPurify.sanitize(episodeHTML, {
+                ADD_ATTR: ["episode-data"]
+            });
+            const episodeCon = episodeDOM.querySelectorAll("ul#episodes-sv-1 li");
+            for (let i = 0; i < episodeCon.length; i++) {
+                const el = episodeCon[i];
+                const anchorTag = el.querySelector("a");
+                let epNum = parseInt(anchorTag.getAttribute("episode-data"));
+                const epParam = new URL(`${this.baseURL}${anchorTag.getAttribute("href")}`).searchParams.get("ep");
+                if (epNum == 0) {
+                    epNum = 0.1;
+                }
+                epData.unshift({
+                    title: `Episode ${epNum}`,
+                    link: `?watch=${id}&ep=${epParam}&engine=10`,
+                    id: epNum.toString(),
+                    altTitle: `Episode ${epNum}`
+                });
+            }
+            response.episodes = epData;
+            return response;
+        }
+        catch (err) {
+            err.url = rawURL;
+            throw err;
+        }
+        finally {
+            // removeDOM(animeDOM);
+            // removeDOM(episodeDOM);
+        }
+    },
+    getLinkFromUrl: async function (url) {
+        var _a, _b;
+        const watchDOM = document.createElement("div");
+        const embedDOM = document.createElement("div");
+        try {
+            const params = new URLSearchParams("?watch=" + url);
+            const sourceURLs = [];
+            watchDOM.style.display = "none";
+            embedDOM.style.display = "none";
+            const resp = {
+                sources: sourceURLs,
+                name: "",
+                nameWSeason: "",
+                episode: "",
+                status: 400,
+                message: "",
+                next: null,
+                prev: null,
+            };
+            const watchHTML = await MakeFetchZoro(`${this.baseURL}/watch/${params.get("watch").replace("viewasian-", "")}/watching.html?ep=${params.get("ep")}`);
+            watchDOM.innerHTML = DOMPurify.sanitize(watchHTML, { ADD_TAGS: ["iframe"] });
+            const episodeCon = watchDOM.querySelectorAll("ul#episodes-sv-1 li");
+            let foundCurrentEp = false;
+            for (let i = episodeCon.length - 1; i >= 0; i--) {
+                const el = episodeCon[i];
+                const anchorTag = el.querySelector("a");
+                const epParam = new URL(`${this.baseURL}${anchorTag.getAttribute("href")}`).searchParams.get("ep");
+                if (foundCurrentEp) {
+                    resp.next = `${params.get("watch")}&ep=${epParam}&engine=10`;
+                    break;
+                }
+                if (params.get("ep") === epParam) {
+                    foundCurrentEp = true;
+                }
+                else {
+                    resp.prev = `${params.get("watch")}&ep=${epParam}&engine=10`;
+                }
+            }
+            if (!foundCurrentEp) {
+                resp.prev = undefined;
+            }
+            let asianLoadURL = "";
+            const links = watchDOM.querySelectorAll('.anime_muti_link li');
+            for (let i = 0; i < links.length; i++) {
+                const curElem = links[i];
+                const isAsianLoad = curElem.innerText.toLowerCase().includes("asianload");
+                if (isAsianLoad) {
+                    asianLoadURL = curElem.getAttribute("data-video");
+                }
+            }
+            if (asianLoadURL.substring(0, 2) === "//") {
+                asianLoadURL = "https:" + asianLoadURL;
+            }
+            const embedHTML = await MakeFetchZoro(asianLoadURL);
+            const videoURL = new URL(asianLoadURL);
+            embedDOM.innerHTML = DOMPurify.sanitize(embedHTML);
+            const encyptedParams = this.generateEncryptedAjaxParams(embedHTML.split("data-value")[1].split("\"")[1], (_a = videoURL.searchParams.get('id')) !== null && _a !== void 0 ? _a : '', this.keys);
+            const encryptedData = JSON.parse(await MakeFetch(`${videoURL.protocol}//${videoURL.hostname}/encrypt-ajax.php?${encyptedParams}`, {
+                "headers": {
+                    "X-Requested-With": "XMLHttpRequest"
+                }
+            }));
+            const decryptedData = await this.decryptAjaxData(encryptedData.data, this.keys);
+            if (!decryptedData.source)
+                throw new Error('No source found.');
+            for (const source of decryptedData.source) {
+                sourceURLs.push({
+                    url: source.file,
+                    type: "hls",
+                    name: "HLS"
+                });
+            }
+            if (decryptedData.source_bk && ((_b = decryptedData.source_bk) === null || _b === void 0 ? void 0 : _b.length) > 0) {
+                for (const source of decryptedData.source_bk) {
+                    sourceURLs.push({
+                        url: source.file,
+                        type: "hls",
+                        name: "HLS"
+                    });
+                }
+            }
+            resp.name = params.get("watch");
+            resp.nameWSeason = params.get("watch");
+            resp.episode = params.get("ep");
+            if (parseFloat(resp.episode) === 0) {
+                resp.episode = "0.1";
+            }
+            return resp;
+        }
+        catch (err) {
+            throw err;
+        }
+        finally {
+            // removeDOM(watchDOM);
+            // removeDOM(embedDOM);
+        }
+    },
+    fixTitle(title) {
+        try {
+            title = title.replace("viewasian-", "");
+        }
+        catch (err) {
+            console.error(err);
+        }
+        finally {
+            return title;
+        }
+    },
+    generateEncryptedAjaxParams: function (scriptValue, id, keys) {
+        const encryptedKey = CryptoJS.AES.encrypt(id, keys[0], {
+            iv: keys[1],
+        });
+        const decryptedToken = CryptoJS.AES.decrypt(scriptValue, keys[0], {
+            iv: keys[1],
+        }).toString(CryptoJS.enc.Utf8);
+        return `id=${encryptedKey}&alias=${id}&${decryptedToken}`;
+    },
+    decryptAjaxData: function (encryptedData, keys) {
+        const decryptedData = CryptoJS.enc.Utf8.stringify(CryptoJS.AES.decrypt(encryptedData, keys[0], {
+            iv: keys[1],
+        }));
+        return JSON.parse(decryptedData);
+    }
+};
+try {
+    (async function () {
+        const keys = JSON.parse(await MakeFetchZoro(`https://raw.githubusercontent.com/enimax-anime/gogo/main/viewasian.json`));
+        for (let i = 0; i <= 1; i++) {
+            keys[i] = CryptoJS.enc.Utf8.parse(keys[i]);
+        }
+        viewAsian.keys = keys;
+    })();
+}
+catch (err) {
+    console.error(err);
+}
 
 // @ts-ignore
-const extensionList = [wco, animixplay, fmovies, zoro, twitch, nineAnime, fmoviesto, gogo, mangaDex, mangaFire];
+const extensionList = [wco, animixplay, fmovies, zoro, twitch, nineAnime, fmoviesto, gogo, mangaDex, mangaFire, viewAsian, anilist];
+// @ts-ignore   
+const extensionNames = [];
 // @ts-ignore
-const extensionNames = ["WCOforever", "Animixplay", "FlixHQ", "Zoro", "Twitch", "9anime", "Fmovies.to", "Gogo", "MangaDex", "MangaFire"];
+const extensionDisabled = [];
 // @ts-ignore
-const extensionDisabled = [false, true, false, false, false, false, false, false, false, false];
-// @ts-ignore
-const extensionTypes = ["", "", "", "", "", "", "", "", "manga", "manga"];
+const extensionTypes = [];
+for (const extension of extensionList) {
+    extensionNames.push(extension.name);
+    extensionDisabled.push(extension.disabled);
+    extensionTypes.push(extension.type);
+}

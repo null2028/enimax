@@ -236,17 +236,18 @@ input[type="color"]::-webkit-color-swatch {
 }
 
 #floatingMenu {
-    position: fixed;
-    bottom: 10px;
+    /* position: fixed; */
+    /* bottom: 10px; */
     text-align: center;
     width: 100%;
     z-index: 98;
 }
 
 #floatingMenuWrapper {
-    background: #2d292a;
+    /* background: #2d292a; */
     display: inline-block;
     padding: 10px;
+    padding-top: 3px;
     border-radius: 50px;
 }
 
@@ -325,42 +326,116 @@ input[type="color"]::-webkit-color-swatch {
     width: calc(50% - 20px) !important;
     max-width: 200px !important;
     min-width: 150px !important;
+    /* transform: scale(1); */
+    transition-duration: 200ms;
 }
+
+/* .s_card:hover{
+    transform: scale(0.9);
+} */
 
 .s_card_title {
     font-size: 14px !important;
     padding-top: 55px !important;
 }
 
-.s_card_title_main {
-    font-size: 14px !important;
-    text-decoration: underline;
+.s_card_title_new{
+    position: absolute;
+	font-weight: 600;
+    bottom: auto;
+    top: calc(100% - 70px);
+    /* left: 10px; */
+    text-align: left;
+    color: white;
+    width: 100%;
+    padding: 10px;
+    box-sizing: border-box;
+}
 
+.s_card_play{
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    right: auto;
+    bottom: auto;
+    pointer-events: none;
+    transition-duration: 200ms;
+}
+
+.discover .s_card_play{
+    pointer-events: auto !important;
+    top: auto;
+    left: auto;
+    bottom: 0;
+    right: 0;
+}
+
+
+.card_menu.downloadedCard{
+    top: 5px;
+}
+
+
+.card_menu.downloadedCard .card_menu_icon_delete{
+    margin-top: 0px !important;
+}
+
+.card_menu{
+    height: 40px;
+    left: auto;
+    bottom: auto;
+    right: 0;
+    top: 0px;
+    background: #1b1b1b;
+    border-top-right-radius: 8px;
+    border-bottom-left-radius: 10px;
+}
+
+.card_menu_item{
+    display: block;
+    margin-top: 5px;
+}
+
+.episodesProgressCon{
+    background-color: #a1a1a1bf !important;
+}
+
+.s_card_bg{
+    cursor: pointer;
+}
+
+.s_card:hover .s_card_play{
+    opacity: 1 !important;
+}
+
+.s_card_title_main {
+    font-size: 13px !important;
+    text-decoration: underline;
+    text-align: center;
 }
 
 .s_card_next_ep {
     display: inline-block;
-    background: #262626;
-    color: white;
-    border: 2px solid white;
+    background: white;
+    color: black;
+    border: 0px solid #1b1b1b;
     padding: 3px 8px;
     margin-left: 5px;
     border-radius: 0 8px 8px 10px;
     font-weight: 500;
-    font-size: 11px;
+    font-size: inherit;
     pointer-events: all !important;
 }
 
 .card_title_extension {
-    pointer-events: none;
     display: inline-block;
-    background: white;
+    background: #1b1b1b;
     margin-bottom: 10px;
-    color: black;
+    color: #cb9f9f;
     padding: 5px 10px 5px 10px;
-    border-radius: 15px;
-    font-size: 12px;
-    margin: 20px 0px 0px 20px;
+    border-radius: 8px 15px 15px 0;
+    font-size: 10px;
+    /* margin: 20px 0px 0px 10px; */
     position: absolute;
     top: 0;
     left: 0;
@@ -567,6 +642,10 @@ input[type="color"]::-webkit-color-swatch {
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' height='24px' viewBox='0 0 24 24' width='24px' fill='%23FFFFFF'%3E%3Cpath d='M0 0h24v24H0V0z' fill='none'/%3E%3Cpath d='M9 3L5 6.99h3V14h2V6.99h3L9 3zm7 14.01V10h-2v7.01h-3L15 21l4-3.99h-3z'/%3E%3C/svg%3E");
 }
 
+#anilistIcon{
+    background-image: url("data:image/svg+xml,%3Csvg role='img' fill='white' viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'%3E%3Ctitle%3EAniList%3C/title%3E%3Cpath d='M6.361 2.943L0 21.056h4.942l1.077-3.133H11.4l1.052 3.133H22.9c.71 0 1.1-.392 1.1-1.101V17.53c0-.71-.39-1.101-1.1-1.101h-6.483V4.045c0-.71-.392-1.102-1.101-1.102h-2.422c-.71 0-1.101.392-1.101 1.102v1.064l-.758-2.166zm2.324 5.948l1.688 5.018H7.144z'/%3E%3C/svg%3E");
+}
+
 .menuTitle {
     display: inline-block;
     vertical-align: middle;
@@ -597,4 +676,8 @@ input[type="color"]::-webkit-color-swatch {
     background-color: white;
     border-radius: 24px;
     vertical-align: middle;
+}
+
+#categoriesCon{
+    margin: 10px 0 0 0 !important;
 }

@@ -20,6 +20,7 @@ let homeDisplayTimeout;
 let errDOM = document.getElementById("errorCon");
 let firstLoad = true;
 let states = "";
+const hasAnilistToken = !!localStorage.getItem("anilist-token");
 // @ts-ignore
 const backdrop = document.getElementsByClassName("backdrop")[0];
 // @ts-ignore
@@ -70,6 +71,26 @@ function addState(id) {
     else {
         window.history.replaceState({}, "", `?action=${id}`);
     }
+}
+function checkIfExists(localURL) {
+    return (new Promise(function (resolve, reject) {
+        let timeout = setTimeout(function () {
+            reject("timeout");
+        }, 2000);
+        window.parent.resolveLocalFileSystemURL(window.parent.cordova.file.externalDataDirectory + localURL, function (fileSystem) {
+            clearTimeout(timeout);
+            resolve("downloaded");
+        }, (err) => {
+            clearTimeout(timeout);
+            reject("notdownloaded");
+        });
+    }));
+}
+function normalise(url) {
+    url = url.replace("?watch=", "");
+    url = url.split("&engine=")[0];
+    url = url.split("&isManga=")[0];
+    return url;
 }
 async function populateDownloadedArray() {
     downloadedFolders = {};
@@ -517,12 +538,16 @@ document.getElementById("discoverHide").onchange = function () {
 document.getElementById("autoPause").onchange = function () {
     localStorage.setItem("autoPause", this.checked.toString());
 };
+document.getElementById("autoDownload").onchange = function () {
+    localStorage.setItem("autoDownload", this.checked.toString());
+};
+document.getElementById("fullscreenMode").onchange = function () {
+    const isChecked = this.checked;
+    localStorage.setItem("fullscreenMode", isChecked.toString());
+    window.parent.handleFullscreen();
+};
 document.getElementById("hideNotification").onchange = function () {
     localStorage.setItem("hideNotification", this.checked.toString());
-};
-document.getElementById("fancyHome").onchange = function () {
-    localStorage.setItem("fancyHome", this.checked.toString());
-    location.reload();
 };
 document.getElementById("alwaysDown").onchange = function () {
     localStorage.setItem("alwaysDown", this.checked.toString());
@@ -553,6 +578,43 @@ document.getElementById("useImageBack").onchange = function () {
 document.getElementById("rangeCon").addEventListener("touchmove", function (event) {
     event.stopPropagation();
 });
+document.getElementById("anilistLogin").addEventListener("click", function (event) {
+    if (config.chrome) {
+        try {
+            alert("A new tab will open asking you to log in, and then you will be redirected to a new page. Copy the URL of the new page and paste it when prompted");
+            window.open("https://anilist.co/api/v2/oauth/authorize?client_id=13095&response_type=token", '_blank', 'location=yes,height=570,width=520,scrollbars=yes,status=yes');
+            let url = undefined;
+            while (!url) {
+                try {
+                    url = prompt("Enter the copied URL here");
+                    const accessToken = new URLSearchParams((new URL(url)).hash.substring(1)).get("access_token");
+                    localStorage.setItem("anilist-token", accessToken);
+                    if (accessToken) {
+                        const shouldUpdate = confirm("Logged in! Do you want to import your library? if you don't want to do that right now, you can do that later by going to the menu.");
+                        if (shouldUpdate) {
+                            window.parent.getAllItems();
+                        }
+                    }
+                    else {
+                        alert("Seems like something went wrong.");
+                    }
+                }
+                catch (err) {
+                    alert(err + "\n" + "Try again.");
+                }
+            }
+        }
+        catch (err) {
+            alert(err);
+        }
+    }
+    else {
+        window.parent.getWebviewHTML("https://anilist.co/api/v2/oauth/authorize?client_id=13095&response_type=token", false, null, "console.log()", true);
+    }
+});
+document.getElementById("anilistImport").addEventListener("click", function (event) {
+    window.parent.getAllItems();
+});
 document.getElementById("outlineColor").value = localStorage.getItem("outlineColor");
 document.getElementById("outlineWidth").value = localStorage.getItem("outlineWidth");
 document.getElementById("backgroundBlur").value = localStorage.getItem("backgroundBlur");
@@ -564,8 +626,9 @@ document.getElementById("downloadTimeout").value = localStorage.getItem("downloa
 document.getElementById("scrollBool").checked = localStorage.getItem("scrollBool") !== "false";
 document.getElementById("discoverHide").checked = localStorage.getItem("discoverHide") === "true";
 document.getElementById("autoPause").checked = localStorage.getItem("autoPause") === "true";
+document.getElementById("autoDownload").checked = localStorage.getItem("autoDownload") === "true";
+document.getElementById("fullscreenMode").checked = localStorage.getItem("fullscreenMode") === "true";
 document.getElementById("hideNotification").checked = localStorage.getItem("hideNotification") === "true";
-document.getElementById("fancyHome").checked = localStorage.getItem("fancyHome") === "true";
 document.getElementById("alwaysDown").checked = localStorage.getItem("alwaysDown") === "true";
 document.getElementById("useImageBack").checked = localStorage.getItem("useImageBack") === "true";
 document.getElementById("offline").checked = (localStorage.getItem("offline") === 'true');
@@ -664,13 +727,13 @@ var username = "hi";
 function open_menu(x) {
     let state = x.parentElement.getAttribute("data-state-menu");
     if (state == "open") {
-        x.parentElement.style.width = "40px";
+        x.parentElement.style.height = "40px";
         x.parentElement.style.zIndex = "0";
         x.parentElement.setAttribute("data-state-menu", "closed");
         x.style.transform = "rotate(0deg)";
     }
     else {
-        x.parentElement.style.width = "auto";
+        x.parentElement.style.height = `${x.getAttribute("data-full") === "true" ? 220 : 175}px`;
         x.parentElement.style.zIndex = "99";
         x.parentElement.setAttribute("data-state-menu", "open");
         x.style.transform = "rotate(45deg)";
@@ -852,7 +915,7 @@ if (isSnapSupported) {
 //     return tempDiv1;
 // }
 function makeDiscoverCard(data) {
-    let tempDiv1 = createElement({ "class": "s_card" });
+    let tempDiv1 = createElement({ "class": "s_card discover" });
     tempDiv1.style.backgroundImage = `url("${data.image}")`;
     let tempDiv2 = createElement({ "class": "s_card_bg" });
     let tempDiv3 = createElement({ "class": "s_card_title" });
@@ -1291,6 +1354,7 @@ if (true) {
     async function updateNewEp() {
         let updateLibNoti = sendNoti([0, null, "Message", "Updating Libary"]);
         let updatedShow = [];
+        let downloadQueue = window.parent.returnDownloadQueue();
         let extensionList = window.parent.returnExtensionList();
         let promises = [];
         let promiseShowData = [];
@@ -1313,7 +1377,10 @@ if (true) {
             promiseShowData.push({
                 "ep": currentEp,
                 "dom": show.dom,
-                "name": show.name
+                "name": show.name,
+                showURL,
+                "disableAutoDownload": currentEngine.disableAutoDownload === true,
+                "isManga": currentEngine.type === "manga"
             });
         }
         let promiseResult = [];
@@ -1342,8 +1409,37 @@ if (true) {
                         promiseShowData[count].dom.style.border = "3px solid grey";
                     }
                     else {
-                        let latestEpisode = promise.episodes;
-                        latestEpisode = latestEpisode[latestEpisode.length - 1].link;
+                        const data = promise;
+                        let episodeList = data.episodes;
+                        const latestEpisode = episodeList[episodeList.length - 1].link;
+                        const title = episodeList[episodeList.length - 1].title;
+                        const currentCount = count;
+                        if (!config.chrome && localStorage.getItem("autoDownload") === "true" && promiseShowData[currentCount].disableAutoDownload === false) {
+                            try {
+                                const isManga = promiseShowData[currentCount].isManga;
+                                if (!downloadQueue.isInQueue(downloadQueue, latestEpisode)) {
+                                    await checkIfExists(`/${isManga ? "manga/" : ""}${data.mainName}/${btoa(normalise(latestEpisode))}/.downloaded`);
+                                    console.log("hasbeendownloaded");
+                                }
+                                else {
+                                    console.warn("Already in the list");
+                                }
+                            }
+                            catch (err) {
+                                if (err === "notdownloaded") {
+                                    window.parent.postMessage({
+                                        "action": 403,
+                                        "data": latestEpisode,
+                                        "anime": promise,
+                                        "mainUrl": promiseShowData[currentCount].showURL,
+                                        "title": title
+                                    }, "*");
+                                }
+                                else {
+                                    console.error(err);
+                                }
+                            }
+                        }
                         if (promiseShowData[count].ep != latestEpisode) {
                             await showLastEpDB.lastestEp.put({ "name": promiseShowData[count].name, "latest": latestEpisode });
                             promiseShowData[count].dom.style.boxSizing = "border-box";
@@ -1390,19 +1486,19 @@ if (true) {
                 // (show.dom.querySelector(".card_menu") as HTMLElement).style.bottom = "50px"; 
                 const labelExtension = show.dom.querySelector(".card_title_extension");
                 const extensionName = labelExtension.innerText;
-                const nextEp = window.parent.secondsToHuman(nextEpData[`anime${id}`].nextAiringEpisode.timeUntilAiring, true);
-                labelExtension.style.padding = "inherit";
-                labelExtension.innerHTML = "";
-                labelExtension.appendChild(createElement({
-                    innerText: extensionName,
-                    style: {
-                        paddingLeft: "10px",
-                        display: "inline-block"
-                    }
-                }));
+                const nextEp = window.parent.secondsToHuman(nextEpData[`anime${id}`].nextAiringEpisode.timeUntilAiring, false);
+                // labelExtension.style.padding = "inherit";
+                // labelExtension.innerHTML = "";
+                // labelExtension.appendChild(createElement({
+                //     innerText: extensionName,
+                //     style: {
+                //         paddingLeft: "10px",
+                //         display: "inline-block"
+                //     }
+                // }));
                 labelExtension.appendChild(createElement({
                     innerText: nextEp,
-                    class: "s_card_next_ep",
+                    class: "next_ep_new",
                     listeners: {
                         click: function () {
                             alert("When the next episode will air.");
@@ -1441,6 +1537,7 @@ if (true) {
                 "style": {
                     "width": "100%",
                     "bottomMargin": "10px",
+                    "marginTop": "10px",
                     "textAlign": "center"
                 },
                 children: [
@@ -1489,14 +1586,44 @@ if (true) {
                 else {
                     engine = parseInt(engineTemp[1]);
                 }
-                currentExtensionName = extensionNames[engine];
+                currentExtensionName = extensionList[engine].shortenedName;
                 currentExtension = extensionList[engine];
             }
             catch (err) {
                 console.warn(err);
             }
+            let aniID = NaN;
+            try {
+                aniID = parseInt(new URLSearchParams(data[i][5]).get("aniID"));
+            }
+            catch (err) {
+            }
             const cardCon = createElement({
                 "class": "s_card",
+                "attributes": {
+                    "data-href": data[i][3],
+                    "data-epURL": data[i][5],
+                    "data-mainname": data[i][0]
+                },
+                "listeners": {
+                    "click": function () {
+                        localStorage.setItem("mainName", this.getAttribute("data-mainname"));
+                        localStorage.setItem("epURL", this.getAttribute("data-epURL"));
+                        window.parent.postMessage({ "action": 4, "data": this.getAttribute("data-href") }, "*");
+                    },
+                    "pointerdown": function () {
+                        this.style.transform = "scale(0.9)";
+                    },
+                    "pointerup": function () {
+                        this.style.transform = "";
+                    },
+                    "pointercancel": function () {
+                        this.style.transform = "";
+                    },
+                    "pointerout": function () {
+                        this.style.transform = "";
+                    }
+                },
                 "children": [
                     {
                         element: "img",
@@ -1510,7 +1637,7 @@ if (true) {
                         "class": "s_card_bg",
                         "children": [
                             {
-                                "class": "s_card_title",
+                                "class": "s_card_title_new",
                                 "children": [
                                     {
                                         "class": "s_card_title_main",
@@ -1521,16 +1648,17 @@ if (true) {
                                             "data-mainname": data[i][0]
                                         },
                                         "listeners": {
-                                            "click": function () {
+                                            "click": function (event) {
+                                                event.stopPropagation();
                                                 localStorage.setItem("currentLink", this.getAttribute("data-current"));
                                                 window.parent.postMessage({ "action": 500, data: "pages/episode/index.html" + this.getAttribute("data-href") }, "*");
-                                            }
+                                            },
+                                            "pointerdown": function (event) {
+                                                event.preventDefault();
+                                                event.stopPropagation();
+                                            },
                                         }
                                     },
-                                    {
-                                        "class": "card_ep",
-                                        "innerText": `Episode ${data[i][1]}`
-                                    }
                                 ]
                             },
                             {
@@ -1539,26 +1667,51 @@ if (true) {
                                 }
                             },
                             {
-                                "class": "s_card_play", "attributes": {
+                                "class": "s_card_play",
+                                "attributes": {
                                     "data-href": data[i][3],
                                     "data-epURL": data[i][5],
                                     "data-mainname": data[i][0]
-                                }, "listeners": {
+                                },
+                                "listeners": {
                                     "click": function () {
                                         localStorage.setItem("mainName", this.getAttribute("data-mainname"));
                                         localStorage.setItem("epURL", this.getAttribute("data-epURL"));
                                         window.parent.postMessage({ "action": 4, "data": this.getAttribute("data-href") }, "*");
-                                    }
-                                }, "element": "div"
+                                    },
+                                    "pointerdown": function (event) {
+                                        event.preventDefault();
+                                        event.stopPropagation();
+                                    },
+                                },
+                                "element": "div",
+                                "style": {
+                                    "opacity": "0"
+                                }
                             },
                             {
                                 "class": "card_menu",
+                                "listeners": {
+                                    "click": function (event) {
+                                        event.stopPropagation();
+                                        open_menu(this.children[0]);
+                                    },
+                                    "pointerdown": function (event) {
+                                        event.preventDefault();
+                                        event.stopPropagation();
+                                    },
+                                },
                                 "children": [
                                     {
-                                        "class": "card_menu_item card_menu_icon_add", "attributes": {}, "listeners": {
-                                            "click": function () {
+                                        "class": "card_menu_item card_menu_icon_add",
+                                        "attributes": {
+                                            "data-full": (!isNaN(aniID) && hasAnilistToken).toString()
+                                        },
+                                        "listeners": {
+                                            "click": function (event) {
+                                                event.stopPropagation();
                                                 open_menu(this);
-                                            }
+                                            },
                                         }
                                     },
                                     {
@@ -1566,15 +1719,22 @@ if (true) {
                                             "data-showname": data[i][0],
                                             "data-href": data[i][5]
                                         }, "listeners": {
-                                            "click": function () {
+                                            "click": function (event) {
+                                                event.stopPropagation();
                                                 let isManga = false;
                                                 try {
                                                     isManga = new URLSearchParams(this.getAttribute("data-href")).get("isManga") === "true";
+                                                    if (!isNaN(aniID) && hasAnilistToken) {
+                                                        const shouldDelete = confirm("Do you want to delete this show from your anilist account?");
+                                                        if (shouldDelete) {
+                                                            window.parent.deleteAnilistShow(aniID);
+                                                        }
+                                                    }
                                                 }
                                                 catch (err) {
                                                 }
                                                 ini_api.delete_card(this.getAttribute("data-showname"), this, isManga);
-                                            }
+                                            },
                                         }
                                     },
                                     {
@@ -1583,7 +1743,8 @@ if (true) {
                                             "data-main-link": data[i][5],
                                             "data-showname": data[i][0]
                                         }, "listeners": {
-                                            "click": function () {
+                                            "click": function (event) {
+                                                event.stopPropagation();
                                                 ini_api.change_image_card(this.getAttribute("data-showname"), this);
                                             }
                                         }
@@ -1592,8 +1753,26 @@ if (true) {
                                         "class": "card_menu_item card_menu_icon_watched", "attributes": {
                                             "data-showname": data[i][0]
                                         }, "listeners": {
-                                            "click": function () {
+                                            "click": function (event) {
+                                                event.stopPropagation();
                                                 watched_card(this);
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "class": "card_menu_item card_menu_icon_anilist",
+                                        "attributes": {},
+                                        "shouldAdd": !isNaN(aniID) && hasAnilistToken,
+                                        "listeners": {
+                                            "click": async function (event) {
+                                                event.stopPropagation();
+                                                window.parent.updateAnilistStatus(aniID);
+                                                // if (!isNaN(aniID) && hasAnilistToken) {
+                                                //     const shouldDelete = confirm("Do you want to delete this show from your anilist account?");
+                                                //     if (shouldDelete) {
+                                                //         (window.parent as cordovaWindow).deleteAnilistShow(aniID);
+                                                //     }
+                                                // }
                                             }
                                         }
                                     }
@@ -1601,12 +1780,50 @@ if (true) {
                             },
                             {
                                 "class": "card_title_extension",
-                                "innerText": currentExtensionName
+                                "style": {
+                                    "padding": "inherit"
+                                },
+                                "listeners": {
+                                    "click": function (event) {
+                                        event.stopPropagation();
+                                    },
+                                    "pointerdown": function (event) {
+                                        event.preventDefault();
+                                        event.stopPropagation();
+                                    },
+                                },
+                                "children": [
+                                    {
+                                        innerText: currentExtensionName,
+                                        style: {
+                                            paddingLeft: "10px",
+                                            display: "inline-block"
+                                        }
+                                    },
+                                    {
+                                        innerText: `${data[i][1]}`,
+                                        class: "s_card_next_ep",
+                                        listeners: {
+                                            click: function (event) {
+                                                event.stopPropagation();
+                                                alert("The episode number.");
+                                            },
+                                            "pointerdown": function (event) {
+                                                event.preventDefault();
+                                                event.stopPropagation();
+                                            },
+                                        }
+                                    }
+                                ]
                             }
                         ]
                     }
                 ]
             });
+            // labelExtension.style.
+            // labelExtension.innerHTML = "";
+            // labelExtension.appendChild(createElement());
+            // labelExtension.appendChild(createElement());
             if (parseInt(data[i][4]) == -1) {
                 flaggedShow.push({
                     "showURL": data[i][5],
@@ -1676,7 +1893,7 @@ if (true) {
                             ]
                         },
                         {
-                            "class": "card_menu",
+                            "class": "card_menu downloadedCard",
                             "children": [
                                 {
                                     "class": "card_menu_item card_menu_icon_delete", "attributes": {
@@ -1849,3 +2066,25 @@ window.addEventListener("popstate", function (event) {
         console.error(err);
     }
 });
+if (!!localStorage.getItem("anilist-token")) {
+    document.getElementById("anilistImport").style.display = "block";
+}
+// function disableFullScreenH(count = 1){
+//     // if(count <= 0){
+//     //     return;
+//     // }
+//     (window.parent as cordovaWindow).enableFullScreen();
+//     // setTimeout(function(){
+//     //     disableFullScreenH(--count);
+//     // }, 200);
+// }
+// if(localStorage.getItem("fullscreenMode") !== "true" && !config.chrome){
+//     disableFullScreenH(10);
+// }
+window.parent.handleFullscreen();
+for (const div of document.querySelectorAll("div")) {
+    div.setAttribute("tabindex", "0");
+}
+for (const input of document.querySelectorAll("input")) {
+    input.setAttribute("tabindex", "0");
+}

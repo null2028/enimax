@@ -329,6 +329,23 @@ let DMenu = new dropDownMenu(
 			},
 			"items": [
 				{
+					"html": "Playback speed <div id=\"playbackDOM\" ></div>",
+					"slider": true,
+					"sliderConfig": {
+						"max": 5,
+						"min": 0,
+						"step": 0.1
+					},
+					"classes": ["inputItem", "sliderMenu"],
+					"value": localStorage.getItem("playback-speed") ? localStorage.getItem("playback-speed") : "1",
+					"onInput": function (event: InputEvent) {
+						const rate = (<HTMLInputElement>event.target).value;
+						playerDOM.innerText = `(${rate})`;
+						vidInstance.vid.playbackRate = isNaN(parseFloat(rate)) ? 1 : parseFloat(rate);
+						localStorage.setItem("playback-speed", rate);
+					}
+				},
+				{
 					"text": "Autoplay",
 					"toggle": true,
 					"on": localStorage.getItem("autoplay") === "true",
@@ -498,7 +515,7 @@ window.addEventListener("videoStartInterval", () => {
 function normalise(url: string): string {
 	url = url.replace("?watch=", "");
 	url = url.split("&engine=")[0];
-    url = url.split("&isManga=")[0];
+	url = url.split("&isManga=")[0];
 	return url;
 }
 
@@ -672,7 +689,7 @@ function ini_main() {
 
 		updateCurrentTime = 0;
 		getEpCheck = 0;
-		lastUpdate = -1;
+		lastUpdate = 0;
 		updateCheck = 0;
 		int_up = 3000;
 		vidInstance.vid.currentTime = 0;
@@ -710,6 +727,26 @@ async function update(shouldCheck: number) {
 	}
 
 	updateCheck = 1;
+
+	if (!downloaded) {
+
+		try {
+			const aniID = new URLSearchParams(localStorage.getItem("epURL")).get("aniID");
+			const identifier = `${aniID}-${currentVidData.episode}`;
+
+			if (
+				aniID &&
+				vidInstance.vid.duration > 0 &&
+				(vidInstance.vid.currentTime + 120) > vidInstance.vid.duration &&
+				localStorage.getItem("anilist-last") != identifier
+			) {
+				await (window.parent as cordovaWindow).updateEpWatched(aniID, currentVidData.episode);
+				localStorage.setItem("anilist-last", identifier);
+			}
+		} catch (err) {
+			console.warn(err);
+		}
+	}
 
 	(<cordovaWindow>window.parent).apiCall("POST", { "username": username, "action": 1, "time": currentTime, "ep": currentVidData.episode, "name": currentVidData.nameWSeason, "nameUm": currentVidData.name, "prog": currentDuration }, () => { }, [], true, false).then(function (response: any) {
 		try {
@@ -989,6 +1026,7 @@ function chooseQual(config: sourceConfig) {
 				}
 
 				vidInstance.vid.currentTime = skipTo;
+				updatePlaybackSpeed();
 				vidInstance.vid.play();
 				loadHLSsource();
 			});
@@ -1004,6 +1042,7 @@ function chooseQual(config: sourceConfig) {
 			}
 
 			vidInstance.vid.currentTime = skipTo;
+			updatePlaybackSpeed();
 			vidInstance.vid.load();
 			vidInstance.vid.play();
 
@@ -1160,6 +1199,7 @@ async function getEp(x = 0) {
 
 		document.getElementById("ep_dis").innerHTML = currentVidData.episode.toString();
 		clearInterval(updateCurrentTime);
+		localStorage.removeItem("anilist-last-error");
 		updateCurrentTime = window.setInterval(update, int_up);
 
 		let skipTo = 0;
@@ -1200,6 +1240,13 @@ function openSettingsSemi(translateY: number) {
 		settingCon.style.transform = `translateY(calc(100% + ${-translateY + 50}px))`;
 	}
 
+}
+
+function updatePlaybackSpeed() {
+	const localRate = localStorage.getItem("playback-speed");
+	const rate = isNaN(parseFloat(localRate)) ? 1 : parseFloat(localRate);
+	vidInstance.vid.playbackRate = rate;
+	playerDOM.innerText = `(${rate})`;
 }
 
 function closeSettings() {
@@ -1313,7 +1360,7 @@ window.onmessage = async function (message: MessageEvent) {
 
 					DMenu.getScene("episodes").addItem({
 						highlightable: true,
-						html: ep.title + (ep.date ? `<div class="menuDate">${ep.date.toLocaleString()}</div>` : ""),
+						html: (ep.isFiller ? `<div class="filler">Filler</div>` : "") + ep.title + (ep.date ? `<div class="menuDate">${ep.date.toLocaleString()}</div>` : ""),
 						altText: truncatedTitle,
 						selected: location.search === ep.link,
 						id: ep.link,
@@ -1583,6 +1630,7 @@ document.getElementById("back").onclick = function () {
 
 let settingsPullInstance = new settingsPull(document.getElementById("settingHandlePadding"), closeSettings);
 let settingsPullInstanceTT = new settingsPull(document.querySelector(".menuCon"), closeSettings, true);
+const playerDOM = (document.querySelector("#playbackDOM") as HTMLElement);
 
 applyTheme();
 applySubtitleConfig();

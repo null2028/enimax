@@ -105,12 +105,13 @@ function setURL(url: string) {
     }
 
     mainIFrame.style.opacity = "0";
-    mainIFrame.style.transform = "translate(10px)";
+    mainIFrame.style.transform = "scale(0.95, 0.95)";
     setTimeout(function () {
         mainIFrame.contentWindow.location = url;
+        mainIFrame.style.transform = "scale(1.05, 1.05)";
         setTimeout(function () {
+            mainIFrame.style.transform = "scale(1, 1)";
             mainIFrame.style.opacity = "1";
-            mainIFrame.style.transform = "translate(0px)";
         }, 200);
     }, 200);
 }
@@ -618,6 +619,9 @@ function executeAction(message: MessageAction, reqSource: Window) {
         }
 
         if (!config.chrome) {
+
+            enableFullScreen();
+
             let checkLock = 0;
 
             setTimeout(function () {
@@ -675,6 +679,11 @@ function onResume() {
     if (frameLocation.includes("pages/player")) {
         playerIFrame.contentWindow.postMessage({ action: "pipout" }, "*");
     }
+
+    if (localStorage.getItem("fullscreenMode") === "true") {
+        // disableFullScreen(10);
+    }
+
 }
 
 
@@ -682,7 +691,33 @@ function back() {
     backFunction();
 }
 
+function disableFullScreen(count = 1) {
+    // @ts-ignore
+    AndroidFullScreen.showSystemUI(() => {}, () => {});
+}
+
+function enableFullScreen() {
+    // @ts-ignore
+    AndroidFullScreen.immersiveMode(() => {}, () => {});
+}
+
+function handleFullscreen(){
+    if(config.chrome){
+        return;
+    }
+    
+    if (localStorage.getItem("fullscreenMode") === "true") {
+        // @ts-ignore
+        disableFullScreen();
+    } else {
+        // @ts-ignore
+        enableFullScreen();
+    }
+}
+
 async function onDeviceReady() {
+
+    handleFullscreen();
 
     await SQLInit();
     await SQLInitDownloaded();
@@ -718,6 +753,11 @@ async function onDeviceReady() {
 
         const homePageOpen = frameLocation.pathname.indexOf("www/pages/homepage/index.html") > -1;
         if (homePageOpen || frameWasOpen) {
+
+            if(!config.chrome && localStorage.getItem("fullscreenMode") === "true"){
+                disableFullScreen();
+            }
+
             playerIFrame.contentWindow.location.replace("fallback.html");
             playerIFrame.classList.remove("pop");
             playerIFrame.style.display = "none";
@@ -761,7 +801,6 @@ async function onDeviceReady() {
     document.addEventListener("backbutton", () => { backFunction() }, false);
     document.addEventListener("pause", onPause, false);
     document.addEventListener("resume", onResume, false);
-
 }
 
 document.addEventListener("deviceready", onDeviceReady, false);

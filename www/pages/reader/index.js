@@ -387,6 +387,25 @@ async function ini() {
                     "nameUm": localStorage.mainName,
                     "prog": totalPages - 1
                 }, () => { });
+                if (!readerDownloaded) {
+                    (async function () {
+                        try {
+                            const aniID = new URLSearchParams(localStorage.getItem("epURL")).get("aniID");
+                            const identifier = `${aniID}-${currentMangaData.chapter}`;
+                            console.log(aniID, identifier, totalPages - 1, (currentMangaData.chapter + 3));
+                            if (aniID &&
+                                totalPages - 1 > 0 &&
+                                (pageIndex + 3) > totalPages - 1 &&
+                                localStorage.getItem("anilist-last") != identifier) {
+                                await window.parent.updateEpWatched(aniID, currentMangaData.chapter);
+                                localStorage.setItem("anilist-last", identifier);
+                            }
+                        }
+                        catch (err) {
+                            console.warn(err);
+                        }
+                    })();
+                }
                 for (let i = 0; i < pagesDOM.length; i++) {
                     if (Math.abs(index - i) <= 3) {
                         const con = pagesDOM[i];

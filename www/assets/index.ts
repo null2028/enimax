@@ -1,4 +1,9 @@
 function createElement(config: createElementConfig): HTMLElement {
+    
+    if(config.shouldAdd === false){
+        return;
+    }
+
     let temp: HTMLElement;
     if ("element" in config) {
         temp = document.createElement(config.element!);
@@ -11,6 +16,8 @@ function createElement(config: createElementConfig): HTMLElement {
     for (let value in attributes) {
         temp.setAttribute(value, attributes[value]);
     }
+
+    // temp.setAttribute("tabindex", "0");
 
     for (let value in config.style) {
 
@@ -82,7 +89,7 @@ function changeTheme() {
 
     }
 }
-const isSnapSupported = CSS.supports('scroll-snap-align:start') && CSS.supports("scroll-snap-stop: always") && CSS.supports("scroll-snap-type: x mandatory") && localStorage.getItem("fancyHome") !== "true";
+const isSnapSupported = true;
 
 const backgroundGradients = [
     "linear-gradient(0deg, black 0 71%, var(--theme-color) 135% 100%)",

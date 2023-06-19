@@ -72,6 +72,8 @@ class XMLHttpRequest2 {
             option.body = data;
         }
         let self = this;
+        // @ts-ignore
+        // todo
         window.parent.cordova.plugin.http.sendRequest(self.config.url, option, function (response) {
             if (self.responseType == "text") {
                 self.responseText = response.data;

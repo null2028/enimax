@@ -93,12 +93,13 @@ function setURL(url) {
         frameHistory = [];
     }
     mainIFrame.style.opacity = "0";
-    mainIFrame.style.transform = "translate(10px)";
+    mainIFrame.style.transform = "scale(0.95, 0.95)";
     setTimeout(function () {
         mainIFrame.contentWindow.location = url;
+        mainIFrame.style.transform = "scale(1.05, 1.05)";
         setTimeout(function () {
+            mainIFrame.style.transform = "scale(1, 1)";
             mainIFrame.style.opacity = "1";
-            mainIFrame.style.transform = "translate(0px)";
         }, 200);
     }, 200);
 }
@@ -515,6 +516,7 @@ function executeAction(message, reqSource) {
             playerIFrame.contentWindow.location.replace(`pages/${pageName}/index.html` + message.data);
         }
         if (!config.chrome) {
+            enableFullScreen();
             let checkLock = 0;
             setTimeout(function () {
                 if (checkLock == 0) {
@@ -564,11 +566,36 @@ function onResume() {
     if (frameLocation.includes("pages/player")) {
         playerIFrame.contentWindow.postMessage({ action: "pipout" }, "*");
     }
+    if (localStorage.getItem("fullscreenMode") === "true") {
+        // disableFullScreen(10);
+    }
 }
 function back() {
     backFunction();
 }
+function disableFullScreen(count = 1) {
+    // @ts-ignore
+    AndroidFullScreen.showSystemUI(() => { }, () => { });
+}
+function enableFullScreen() {
+    // @ts-ignore
+    AndroidFullScreen.immersiveMode(() => { }, () => { });
+}
+function handleFullscreen() {
+    if (config.chrome) {
+        return;
+    }
+    if (localStorage.getItem("fullscreenMode") === "true") {
+        // @ts-ignore
+        disableFullScreen();
+    }
+    else {
+        // @ts-ignore
+        enableFullScreen();
+    }
+}
 async function onDeviceReady() {
+    handleFullscreen();
     await SQLInit();
     await SQLInitDownloaded();
     updateImage();
@@ -597,6 +624,9 @@ async function onDeviceReady() {
                 || playerIFrame.contentWindow.location.pathname.includes("www/pages/reader/index.html"));
         const homePageOpen = frameLocation.pathname.indexOf("www/pages/homepage/index.html") > -1;
         if (homePageOpen || frameWasOpen) {
+            if (!config.chrome && localStorage.getItem("fullscreenMode") === "true") {
+                disableFullScreen();
+            }
             playerIFrame.contentWindow.location.replace("fallback.html");
             playerIFrame.classList.remove("pop");
             playerIFrame.style.display = "none";

@@ -23,6 +23,7 @@ let homeDisplayTimeout: any;
 let errDOM: HTMLElement = document.getElementById("errorCon");
 let firstLoad = true;
 let states: string = "";
+const hasAnilistToken = !!localStorage.getItem("anilist-token");
 
 // @ts-ignore
 const backdrop = document.getElementsByClassName("backdrop")[0] as HTMLImageElement;
@@ -80,6 +81,32 @@ function addState(id: string) {
         window.history.replaceState({}, "", `?action=${id}`);
     }
 }
+
+function checkIfExists(localURL: string): Promise<string> {
+    return (new Promise(function (resolve, reject) {
+
+        let timeout = setTimeout(function () {
+            reject("timeout");
+        }, 2000);
+
+        (<cordovaWindow>window.parent).resolveLocalFileSystemURL((<cordovaWindow>window.parent).cordova.file.externalDataDirectory + localURL, function (fileSystem) {
+            clearTimeout(timeout);
+            resolve("downloaded");
+        }, (err) => {
+            clearTimeout(timeout);
+            reject("notdownloaded");
+        });
+
+    }));
+}
+
+function normalise(url: string) {
+    url = url.replace("?watch=", "");
+    url = url.split("&engine=")[0];
+    url = url.split("&isManga=")[0];
+    return url;
+}
+
 
 async function populateDownloadedArray() {
     downloadedFolders = {};
@@ -665,14 +692,18 @@ document.getElementById("autoPause").onchange = function () {
     localStorage.setItem("autoPause", (this as HTMLInputElement).checked.toString());
 }
 
+document.getElementById("autoDownload").onchange = function () {
+    localStorage.setItem("autoDownload", (this as HTMLInputElement).checked.toString());
+}
+
+document.getElementById("fullscreenMode").onchange = function () {
+    const isChecked = (this as HTMLInputElement).checked;
+    localStorage.setItem("fullscreenMode", isChecked.toString());
+    (window.parent as cordovaWindow).handleFullscreen();
+}
 
 document.getElementById("hideNotification").onchange = function () {
     localStorage.setItem("hideNotification", (this as HTMLInputElement).checked.toString());
-}
-
-document.getElementById("fancyHome").onchange = function () {
-    localStorage.setItem("fancyHome", (this as HTMLInputElement).checked.toString());
-    location.reload();
 }
 
 document.getElementById("alwaysDown").onchange = function () {
@@ -709,6 +740,42 @@ document.getElementById("rangeCon").addEventListener("touchmove", function (even
     event.stopPropagation();
 });
 
+document.getElementById("anilistLogin").addEventListener("click", function (event) {
+    if (config.chrome) {
+        try {
+            alert("A new tab will open asking you to log in, and then you will be redirected to a new page. Copy the URL of the new page and paste it when prompted");
+            window.open("https://anilist.co/api/v2/oauth/authorize?client_id=13095&response_type=token", '_blank', 'location=yes,height=570,width=520,scrollbars=yes,status=yes');
+            let url = undefined;
+
+            while (!url) {
+                try {
+                    url = prompt("Enter the copied URL here");
+                    const accessToken = new URLSearchParams((new URL(url)).hash.substring(1)).get("access_token");
+                    localStorage.setItem("anilist-token", accessToken);
+
+                    if (accessToken) {
+                        const shouldUpdate = confirm("Logged in! Do you want to import your library? if you don't want to do that right now, you can do that later by going to the menu.");
+                        if (shouldUpdate) {
+                            (window.parent as cordovaWindow).getAllItems();
+                        }
+                    } else {
+                        alert("Seems like something went wrong.");
+                    }
+                } catch (err) {
+                    alert(err + "\n" + "Try again.");
+                }
+            }
+        } catch (err) {
+            alert(err);
+        }
+    } else {
+        (window.parent as cordovaWindow).getWebviewHTML("https://anilist.co/api/v2/oauth/authorize?client_id=13095&response_type=token", false, null, "console.log()", true);
+    }
+});
+
+document.getElementById("anilistImport").addEventListener("click", function (event) {
+    (window.parent as cordovaWindow).getAllItems();
+});
 
 (document.getElementById("outlineColor") as HTMLInputElement).value = localStorage.getItem("outlineColor");
 (document.getElementById("outlineWidth") as HTMLInputElement).value = localStorage.getItem("outlineWidth");
@@ -721,8 +788,9 @@ document.getElementById("rangeCon").addEventListener("touchmove", function (even
 (document.getElementById("scrollBool") as HTMLInputElement).checked = localStorage.getItem("scrollBool") !== "false";
 (document.getElementById("discoverHide") as HTMLInputElement).checked = localStorage.getItem("discoverHide") === "true";
 (document.getElementById("autoPause") as HTMLInputElement).checked = localStorage.getItem("autoPause") === "true";
+(document.getElementById("autoDownload") as HTMLInputElement).checked = localStorage.getItem("autoDownload") === "true";
+(document.getElementById("fullscreenMode") as HTMLInputElement).checked = localStorage.getItem("fullscreenMode") === "true";
 (document.getElementById("hideNotification") as HTMLInputElement).checked = localStorage.getItem("hideNotification") === "true";
-(document.getElementById("fancyHome") as HTMLInputElement).checked = localStorage.getItem("fancyHome") === "true";
 (document.getElementById("alwaysDown") as HTMLInputElement).checked = localStorage.getItem("alwaysDown") === "true";
 (document.getElementById("useImageBack") as HTMLInputElement).checked = localStorage.getItem("useImageBack") === "true";
 (document.getElementById("offline") as HTMLInputElement).checked = (localStorage.getItem("offline") === 'true');
@@ -847,12 +915,12 @@ var username = "hi";
 function open_menu(x) {
     let state = x.parentElement.getAttribute("data-state-menu");
     if (state == "open") {
-        x.parentElement.style.width = "40px";
+        x.parentElement.style.height = "40px";
         x.parentElement.style.zIndex = "0";
         x.parentElement.setAttribute("data-state-menu", "closed");
         x.style.transform = "rotate(0deg)";
     } else {
-        x.parentElement.style.width = "auto";
+        x.parentElement.style.height = `${x.getAttribute("data-full") === "true" ? 220 : 175}px`;
         x.parentElement.style.zIndex = "99";
         x.parentElement.setAttribute("data-state-menu", "open");
         x.style.transform = "rotate(45deg)";
@@ -1075,7 +1143,7 @@ if (isSnapSupported) {
 // }
 
 function makeDiscoverCard(data: DiscoverData) {
-    let tempDiv1 = createElement({ "class": "s_card" });
+    let tempDiv1 = createElement({ "class": "s_card discover" });
     tempDiv1.style.backgroundImage = `url("${data.image}")`;
     let tempDiv2 = createElement({ "class": "s_card_bg" });
     let tempDiv3 = createElement({ "class": "s_card_title" });
@@ -1656,8 +1724,9 @@ if (true) {
     async function updateNewEp() {
         let updateLibNoti = sendNoti([0, null, "Message", "Updating Libary"]);
         let updatedShow = [];
-        let extensionList = (<cordovaWindow>window.parent).returnExtensionList();
-        let promises = [];
+        let downloadQueue = (<cordovaWindow>window.parent).returnDownloadQueue();
+        let extensionList: extension[] = (<cordovaWindow>window.parent).returnExtensionList();
+        let promises: Promise<extensionInfo>[] = [];
         let promiseShowData = [];
         let allSettled = "allSettled" in Promise;
         // let allSettled = false;
@@ -1681,7 +1750,10 @@ if (true) {
             promiseShowData.push({
                 "ep": currentEp,
                 "dom": show.dom,
-                "name": show.name
+                "name": show.name,
+                showURL,
+                "disableAutoDownload": (currentEngine as extension).disableAutoDownload === true,
+                "isManga": (currentEngine as extension).type === "manga"
             });
         }
 
@@ -1711,8 +1783,39 @@ if (true) {
                         promiseShowData[count].dom.style.boxSizing = "border-box";
                         promiseShowData[count].dom.style.border = "3px solid grey";
                     } else {
-                        let latestEpisode = promise.episodes;
-                        latestEpisode = latestEpisode[latestEpisode.length - 1].link;
+                        const data = promise as extensionInfo;
+                        let episodeList = data.episodes as extensionInfoEpisode[];
+                        const latestEpisode = episodeList[episodeList.length - 1].link;
+                        const title = episodeList[episodeList.length - 1].title;
+                        const currentCount = count;
+
+                        if (!config.chrome && localStorage.getItem("autoDownload") === "true" && promiseShowData[currentCount].disableAutoDownload === false) {
+
+                            try {
+                                const isManga = promiseShowData[currentCount].isManga;
+
+                                if (!downloadQueue.isInQueue(downloadQueue, latestEpisode)) {
+                                    await checkIfExists(`/${isManga ? "manga/" : ""}${data.mainName}/${btoa(normalise(latestEpisode))}/.downloaded`);
+                                    console.log("hasbeendownloaded");
+                                } else {
+                                    console.warn("Already in the list");
+                                }
+                            } catch (err) {
+
+                                if (err === "notdownloaded") {
+                                    window.parent.postMessage({
+                                        "action": 403,
+                                        "data": latestEpisode,
+                                        "anime": promise,
+                                        "mainUrl": promiseShowData[currentCount].showURL,
+                                        "title": title
+                                    }, "*");
+                                } else {
+                                    console.error(err);
+                                }
+                            }
+                        }
+
                         if (promiseShowData[count].ep != latestEpisode) {
                             await showLastEpDB.lastestEp.put({ "name": promiseShowData[count].name, "latest": latestEpisode });
                             promiseShowData[count].dom.style.boxSizing = "border-box";
@@ -1760,21 +1863,21 @@ if (true) {
                 // (show.dom.querySelector(".card_menu") as HTMLElement).style.bottom = "50px"; 
                 const labelExtension = show.dom.querySelector(".card_title_extension") as HTMLElement;
                 const extensionName = labelExtension.innerText;
-                const nextEp = (window.parent as cordovaWindow).secondsToHuman(nextEpData[`anime${id}`].nextAiringEpisode.timeUntilAiring, true);
+                const nextEp = (window.parent as cordovaWindow).secondsToHuman(nextEpData[`anime${id}`].nextAiringEpisode.timeUntilAiring, false);
 
-                labelExtension.style.padding = "inherit";
-                labelExtension.innerHTML = "";
-                labelExtension.appendChild(createElement({
-                    innerText: extensionName,
-                    style: {
-                        paddingLeft: "10px",
-                        display: "inline-block"
-                    }
-                }));
+                // labelExtension.style.padding = "inherit";
+                // labelExtension.innerHTML = "";
+                // labelExtension.appendChild(createElement({
+                //     innerText: extensionName,
+                //     style: {
+                //         paddingLeft: "10px",
+                //         display: "inline-block"
+                //     }
+                // }));
 
                 labelExtension.appendChild(createElement({
                     innerText: nextEp,
-                    class: "s_card_next_ep",
+                    class: "next_ep_new",
                     listeners: {
                         click: function () {
                             alert("When the next episode will air.");
@@ -1821,7 +1924,7 @@ if (true) {
         updateRoomAdd();
         addCustomRoom();
         let extensionNames = (<cordovaWindow>window.parent).returnExtensionNames();
-        let extensionList = (<cordovaWindow>window.parent).returnExtensionList();
+        let extensionList = (<cordovaWindow>window.parent).returnExtensionList() as extension[];
 
         if (!offlineMode) {
             document.getElementById('room_-1').append(
@@ -1829,6 +1932,7 @@ if (true) {
                     "style": {
                         "width": "100%",
                         "bottomMargin": "10px",
+                        "marginTop": "10px",
                         "textAlign": "center"
                     },
                     children: [
@@ -1881,15 +1985,47 @@ if (true) {
                     engine = parseInt(engineTemp[1]);
                 }
 
-                currentExtensionName = extensionNames[engine];
+                currentExtensionName = extensionList[engine].shortenedName;
                 currentExtension = extensionList[engine];
             } catch (err) {
                 console.warn(err);
             }
 
 
+            let aniID: number = NaN;
+
+            try {
+                aniID = parseInt(new URLSearchParams(data[i][5]).get("aniID"));
+            } catch (err) {
+
+            }
+
             const cardCon = createElement({
                 "class": "s_card",
+                "attributes": {
+                    "data-href": data[i][3],
+                    "data-epURL": data[i][5],
+                    "data-mainname": data[i][0]
+                },
+                "listeners": {
+                    "click": function () {
+                        localStorage.setItem("mainName", this.getAttribute("data-mainname"));
+                        localStorage.setItem("epURL", this.getAttribute("data-epURL"));
+                        window.parent.postMessage({ "action": 4, "data": this.getAttribute("data-href") }, "*");
+                    },
+                    "pointerdown": function () {
+                        this.style.transform = "scale(0.9)";
+                    },
+                    "pointerup": function () {
+                        this.style.transform = "";
+                    },
+                    "pointercancel": function () {
+                        this.style.transform = "";
+                    },
+                    "pointerout": function () {
+                        this.style.transform = "";
+                    }
+                },
                 "children": [
                     {
                         element: "img",
@@ -1903,7 +2039,7 @@ if (true) {
                         "class": "s_card_bg",
                         "children": [
                             {
-                                "class": "s_card_title",
+                                "class": "s_card_title_new",
                                 "children": [
                                     {
                                         "class": "s_card_title_main",
@@ -1914,16 +2050,17 @@ if (true) {
                                             "data-mainname": data[i][0]
                                         },
                                         "listeners": {
-                                            "click": function () {
+                                            "click": function (event) {
+                                                event.stopPropagation();
                                                 localStorage.setItem("currentLink", (this as HTMLElement).getAttribute("data-current"));
                                                 window.parent.postMessage({ "action": 500, data: "pages/episode/index.html" + (this as HTMLElement).getAttribute("data-href") }, "*");
-                                            }
+                                            },
+                                            "pointerdown": function (event: PointerEvent) {
+                                                event.preventDefault();
+                                                event.stopPropagation();
+                                            },
                                         }
                                     },
-                                    {
-                                        "class": "card_ep",
-                                        "innerText": `Episode ${data[i][1]}`
-                                    }
                                 ]
                             },
                             {
@@ -1933,26 +2070,51 @@ if (true) {
                                 }
                             },
                             {
-                                "class": "s_card_play", "attributes": {
+                                "class": "s_card_play",
+                                "attributes": {
                                     "data-href": data[i][3],
                                     "data-epURL": data[i][5],
                                     "data-mainname": data[i][0]
-                                }, "listeners": {
+                                },
+                                "listeners": {
                                     "click": function () {
                                         localStorage.setItem("mainName", this.getAttribute("data-mainname"));
                                         localStorage.setItem("epURL", this.getAttribute("data-epURL"));
                                         window.parent.postMessage({ "action": 4, "data": this.getAttribute("data-href") }, "*");
-                                    }
-                                }, "element": "div"
+                                    },
+                                    "pointerdown": function (event: PointerEvent) {
+                                        event.preventDefault();
+                                        event.stopPropagation();
+                                    },
+                                },
+                                "element": "div",
+                                "style": {
+                                    "opacity": "0"
+                                }
                             },
                             {
                                 "class": "card_menu",
+                                "listeners": {
+                                    "click": function (event) {
+                                        event.stopPropagation();
+                                        open_menu(this.children[0]);
+                                    },
+                                    "pointerdown": function (event: PointerEvent) {
+                                        event.preventDefault();
+                                        event.stopPropagation();
+                                    },
+                                },
                                 "children": [
                                     {
-                                        "class": "card_menu_item card_menu_icon_add", "attributes": {}, "listeners": {
-                                            "click": function () {
+                                        "class": "card_menu_item card_menu_icon_add",
+                                        "attributes": {
+                                            "data-full": (!isNaN(aniID) && hasAnilistToken).toString()
+                                        },
+                                        "listeners": {
+                                            "click": function (event) {
+                                                event.stopPropagation();
                                                 open_menu(this);
-                                            }
+                                            },
                                         }
                                     },
                                     {
@@ -1960,16 +2122,25 @@ if (true) {
                                             "data-showname": data[i][0],
                                             "data-href": data[i][5]
                                         }, "listeners": {
-                                            "click": function () {
+                                            "click": function (event) {
+                                                event.stopPropagation();
+
                                                 let isManga = false;
-                                                try{
-                                                    isManga = new URLSearchParams(this.getAttribute("data-href")).get("isManga") === "true"
-                                                }catch(err){
+                                                try {
+                                                    isManga = new URLSearchParams(this.getAttribute("data-href")).get("isManga") === "true";
+                                                    if (!isNaN(aniID) && hasAnilistToken) {
+                                                        const shouldDelete = confirm("Do you want to delete this show from your anilist account?");
+                                                        if (shouldDelete) {
+                                                            (window.parent as cordovaWindow).deleteAnilistShow(aniID);
+                                                        }
+                                                    }
+                                                } catch (err) {
 
                                                 }
 
+
                                                 ini_api.delete_card(this.getAttribute("data-showname"), this, isManga);
-                                            }
+                                            },
                                         }
                                     },
                                     {
@@ -1978,7 +2149,8 @@ if (true) {
                                             "data-main-link": data[i][5],
                                             "data-showname": data[i][0]
                                         }, "listeners": {
-                                            "click": function () {
+                                            "click": function (event) {
+                                                event.stopPropagation();
                                                 ini_api.change_image_card(this.getAttribute("data-showname"), this);
                                             }
                                         }
@@ -1987,8 +2159,28 @@ if (true) {
                                         "class": "card_menu_item card_menu_icon_watched", "attributes": {
                                             "data-showname": data[i][0]
                                         }, "listeners": {
-                                            "click": function () {
+                                            "click": function (event) {
+                                                event.stopPropagation();
                                                 watched_card(this);
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "class": "card_menu_item card_menu_icon_anilist",
+                                        "attributes": {},
+                                        "shouldAdd": !isNaN(aniID) && hasAnilistToken,
+                                        "listeners": {
+                                            "click": async function (event) {
+                                                event.stopPropagation();
+
+                                                (window.parent as cordovaWindow).updateAnilistStatus(aniID);
+
+                                                // if (!isNaN(aniID) && hasAnilistToken) {
+                                                //     const shouldDelete = confirm("Do you want to delete this show from your anilist account?");
+                                                //     if (shouldDelete) {
+                                                //         (window.parent as cordovaWindow).deleteAnilistShow(aniID);
+                                                //     }
+                                                // }
                                             }
                                         }
                                     }
@@ -1996,13 +2188,52 @@ if (true) {
                             },
                             {
                                 "class": "card_title_extension",
-                                "innerText": currentExtensionName
+                                "style": {
+                                    "padding": "inherit"
+                                },
+                                "listeners": {
+                                    "click": function (event: Event) {
+                                        event.stopPropagation();
+                                    },
+                                    "pointerdown": function (event: PointerEvent) {
+                                        event.preventDefault();
+                                        event.stopPropagation();
+                                    },
+                                },
+                                "children": [
+                                    {
+                                        innerText: currentExtensionName,
+                                        style: {
+                                            paddingLeft: "10px",
+                                            display: "inline-block"
+                                        }
+                                    },
+                                    {
+                                        innerText: `${data[i][1]}`,
+                                        class: "s_card_next_ep",
+                                        listeners: {
+                                            click: function (event) {
+                                                event.stopPropagation();
+                                                alert("The episode number.");
+                                            },
+                                            "pointerdown": function (event: PointerEvent) {
+                                                event.preventDefault();
+                                                event.stopPropagation();
+                                            },
+                                        }
+                                    }
+                                ]
                             }
                         ]
                     }
                 ]
             });
 
+            // labelExtension.style.
+            // labelExtension.innerHTML = "";
+            // labelExtension.appendChild(createElement());
+
+            // labelExtension.appendChild(createElement());
 
             if (parseInt(data[i][4]) == -1) {
                 flaggedShow.push({
@@ -2086,7 +2317,7 @@ if (true) {
                             ]
                         },
                         {
-                            "class": "card_menu",
+                            "class": "card_menu downloadedCard",
                             "children": [
                                 {
                                     "class": "card_menu_item card_menu_icon_delete", "attributes": {
@@ -2296,3 +2527,34 @@ window.addEventListener("popstate", function (event) {
         console.error(err);
     }
 });
+
+if (!!localStorage.getItem("anilist-token")) {
+    document.getElementById("anilistImport").style.display = "block";
+}
+
+// function disableFullScreenH(count = 1){
+//     // if(count <= 0){
+//     //     return;
+//     // }
+
+//     (window.parent as cordovaWindow).enableFullScreen();
+
+//     // setTimeout(function(){
+//     //     disableFullScreenH(--count);
+//     // }, 200);
+// }
+
+// if(localStorage.getItem("fullscreenMode") !== "true" && !config.chrome){
+//     disableFullScreenH(10);
+// }
+
+(window.parent as cordovaWindow).handleFullscreen();
+
+
+for (const div of document.querySelectorAll("div")) {
+    div.setAttribute("tabindex", "0");
+}
+
+for (const input of document.querySelectorAll("input")) {
+    input.setAttribute("tabindex", "0");
+}

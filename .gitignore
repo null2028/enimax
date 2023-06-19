@@ -9,6 +9,15 @@ build.sh
 copyConfig.sh
 
 enimax-chrome-extension/
+enimax-chrome-extension-v2/
+enimax-firefox-extension/
 test.js
 test.html
 Makefile.local
+
+helper/package.json
+helper/package-lock.json
+helper/.env
+.env
+
+switch.sh

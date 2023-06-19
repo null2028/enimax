@@ -208,6 +208,7 @@ class settingsPull {
         self.shouldStart = false;
         self.hasMoved = false;
         self.settingCon = document.querySelector(".menuCon");
+        self.iniTranslate = self.settingCon.getAttribute("data-translate") === "true";
     }
     touchStart(event, self) {
         if (self.shouldCheck) {
@@ -232,7 +233,7 @@ class settingsPull {
         let x = targetTouches[0].screenY;
         let translate = -(-x + self.iniX);
         if (translate > 0) {
-            self.settingCon.style.transform = `translateY(${-(-x + self.iniX)}px)`;
+            self.settingCon.style.transform = `translate(${self.iniTranslate ? "-50%" : "0"}, ${-(-x + self.iniX)}px)`;
             self.lastX = -x + self.iniX;
         }
     }
@@ -244,14 +245,14 @@ class settingsPull {
         // 	self.dom.style.transform = `translateX(0px)`;
         // }
         if (self.shouldStart === false) {
-            self.settingCon.style.transform = `translateY(0)`;
+            self.settingCon.style.transform = `translate(${self.iniTranslate ? "-50%" : "0"}, 0)`;
             return;
         }
         if (self.lastX < -75) {
             self.callback();
         }
         else {
-            self.settingCon.style.transform = `translateY(0)`;
+            self.settingCon.style.transform = `translate(${self.iniTranslate ? "-50%" : "0"}, 0)`;
         }
         self.settingCon.style.transitionDuration = "200ms";
         self.iniTop = 0;

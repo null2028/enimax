@@ -166,16 +166,35 @@ if (config && config.chrome) {
 }
 
 
-function getWebviewHTML(url = "https://www.zoro.to", hidden = false, timeout: number | undefined = 15000, code: boolean | string = false) {
+function getWebviewHTML(url = "https://www.zoro.to", hidden = false, timeout: number | undefined = 15000, code: boolean | string = false, isAnilist = false) {
     return new Promise((resolve, reject) => {
         // @ts-ignore
         const inappRef = cordova.InAppBrowser.open(url, '_blank', hidden ? "hidden=true" : "");
 
-        inappRef.addEventListener('loadstop', () => {
-            inappRef.executeScript({
-                'code': code === false ? `let resultInApp={'status':200,'data':document.body.innerText};
+        if(isAnilist){
+            inappRef.show();
+        }
+
+        inappRef.addEventListener('loadstop', (event) => {
+            if(isAnilist){
+                if (event.url.includes("enimax-anime.github.io/anilist")) {
+                    const accessToken = new URLSearchParams((new URL(event.url)).hash.substring(1)).get("access_token");
+                    localStorage.setItem("anilist-token", accessToken);                    
+                    inappRef.close();
+                    const shouldUpdate = confirm("Logged in! Do you want to import your library? if you don't want to do that right now, you can do that later by going to the menu");
+                    if(shouldUpdate){
+                        getAllItems();
+                    }
+                    resolve("Done");
+                }else if((new URL(event.url)).hostname === "anilist.co"){
+                    inappRef.show();
+                }
+            }else{
+                inappRef.executeScript({
+                    'code': code === false ? `let resultInApp={'status':200,'data':document.body.innerText};
                         webkit.messageHandlers.cordova_iab.postMessage(JSON.stringify(resultInApp));` : code
-            });
+                });
+            }
         });
 
         inappRef.addEventListener('loaderror', (err: Error) => {
@@ -231,24 +250,24 @@ function getCurrentSeason(type: "current" | "next") {
     let season = "";
     const month = new Date().getMonth();
     switch (month) {
-        case 11:
         case 0:
         case 1:
+        case 2:
             season = "WINTER";
             break;
-        case 2:
         case 3:
         case 4:
+        case 5:
             season = "SPRING";
             break;
-        case 5:
         case 6:
         case 7:
+        case 8:
             season = "SUMMER";
             break;
-        case 8:
         case 9:
         case 10:
+        case 11:
             season = "FALL";
             break;
     }
@@ -356,6 +375,22 @@ const anilistQueries = {
                                 year
                             }
                             seasonYear
+                        }
+                    }
+                }`,
+    "search": `query($type: MediaType, $title: String){
+                    search: Page(page: 1, perPage: 100){
+                        media (search: $title, type: $type) { 
+                            id
+                            title {
+                                romaji
+                                english
+                                native
+                            }
+                            coverImage { 
+                                extraLarge 
+                                large 
+                            }
                         }
                     }
                 }`

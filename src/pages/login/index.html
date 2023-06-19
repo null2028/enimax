@@ -41,7 +41,6 @@
             max-width: 400px;
             width: calc(100% - 50px);
             outline: none;
-            border: 0;
             border-radius: 45px;
             margin-top: 30px;
             -webkit-box-sizing: border-box;
@@ -49,15 +48,10 @@
             padding: 30px;
             font-size: 17px;
             font-family: 'Montserrat', sans-serif;
-
-
+            border: 1px solid transparent;
             -webkit-transition-duration: 0.2s;
-
             -o-transition-duration: 0.2s;
-
             transition-duration: 0.2s;
-
-
             background: rgb(255, 255, 255, 0.78);
             -webkit-box-shadow: 6px 7px 0px 0px #2f2c42;
             box-shadow: 6px 7px 0px 0px #2f2c42;
@@ -85,7 +79,6 @@
             border-radius: 0;
             margin-top: 40px;
             border: 0;
-            outline: 0;
             padding: 15px;
             padding-left: 25px;
             padding-right: 25px;
@@ -144,11 +137,12 @@
         <div id="settingsMain"></div>
         <div id="noti_con"></div>
         <div id="title">Login</div>
+        <div class="inputCon"></div>
         <div class="inputCon">
-            <input type="text" class="box_input" placeholder="Enter your username" id="username">
+            <input type="text" class="box_input" placeholder="Enter your username" id="username" tabindex="0">
         </div>
         <div class="inputCon">
-            <input type="password" class="box_input" placeholder="Enter the password" id="password">
+            <input type="password" class="box_input" placeholder="Enter the password" id="password" tabindex="0">
         </div>
         <div class="inputCon"><input type="button" class="submit" value="Submit" id="submit"></div>
 

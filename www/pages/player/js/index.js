@@ -290,6 +290,23 @@ let DMenu = new dropDownMenu([
         },
         "items": [
             {
+                "html": "Playback speed <div id=\"playbackDOM\" ></div>",
+                "slider": true,
+                "sliderConfig": {
+                    "max": 5,
+                    "min": 0,
+                    "step": 0.1
+                },
+                "classes": ["inputItem", "sliderMenu"],
+                "value": localStorage.getItem("playback-speed") ? localStorage.getItem("playback-speed") : "1",
+                "onInput": function (event) {
+                    const rate = event.target.value;
+                    playerDOM.innerText = `(${rate})`;
+                    vidInstance.vid.playbackRate = isNaN(parseFloat(rate)) ? 1 : parseFloat(rate);
+                    localStorage.setItem("playback-speed", rate);
+                }
+            },
+            {
                 "text": "Autoplay",
                 "toggle": true,
                 "on": localStorage.getItem("autoplay") === "true",
@@ -594,7 +611,7 @@ function ini_main() {
         document.getElementById("fastFor").style.display = "none";
         updateCurrentTime = 0;
         getEpCheck = 0;
-        lastUpdate = -1;
+        lastUpdate = 0;
         updateCheck = 0;
         int_up = 3000;
         vidInstance.vid.currentTime = 0;
@@ -621,6 +638,22 @@ async function update(shouldCheck) {
         return;
     }
     updateCheck = 1;
+    if (!downloaded) {
+        try {
+            const aniID = new URLSearchParams(localStorage.getItem("epURL")).get("aniID");
+            const identifier = `${aniID}-${currentVidData.episode}`;
+            if (aniID &&
+                vidInstance.vid.duration > 0 &&
+                (vidInstance.vid.currentTime + 120) > vidInstance.vid.duration &&
+                localStorage.getItem("anilist-last") != identifier) {
+                await window.parent.updateEpWatched(aniID, currentVidData.episode);
+                localStorage.setItem("anilist-last", identifier);
+            }
+        }
+        catch (err) {
+            console.warn(err);
+        }
+    }
     window.parent.apiCall("POST", { "username": username, "action": 1, "time": currentTime, "ep": currentVidData.episode, "name": currentVidData.nameWSeason, "nameUm": currentVidData.name, "prog": currentDuration }, () => { }, [], true, false).then(function (response) {
         try {
             if (response.status == 200) {
@@ -852,6 +885,7 @@ function chooseQual(config) {
                     skipTo += 0.1;
                 }
                 vidInstance.vid.currentTime = skipTo;
+                updatePlaybackSpeed();
                 vidInstance.vid.play();
                 loadHLSsource();
             });
@@ -866,6 +900,7 @@ function chooseQual(config) {
                 vidInstance.vid.src = config.url;
             }
             vidInstance.vid.currentTime = skipTo;
+            updatePlaybackSpeed();
             vidInstance.vid.load();
             vidInstance.vid.play();
         }
@@ -990,6 +1025,7 @@ async function getEp(x = 0) {
         }, () => { });
         document.getElementById("ep_dis").innerHTML = currentVidData.episode.toString();
         clearInterval(updateCurrentTime);
+        localStorage.removeItem("anilist-last-error");
         updateCurrentTime = window.setInterval(update, int_up);
         let skipTo = 0;
         if (localStorage.getItem("rewatch") == "true") {
@@ -1023,6 +1059,12 @@ function openSettingsSemi(translateY) {
     else {
         settingCon.style.transform = `translateY(calc(100% + ${-translateY + 50}px))`;
     }
+}
+function updatePlaybackSpeed() {
+    const localRate = localStorage.getItem("playback-speed");
+    const rate = isNaN(parseFloat(localRate)) ? 1 : parseFloat(localRate);
+    vidInstance.vid.playbackRate = rate;
+    playerDOM.innerText = `(${rate})`;
 }
 function closeSettings() {
     let settingCon = document.querySelector(".menuCon");
@@ -1108,7 +1150,7 @@ window.onmessage = async function (message) {
                     }
                     DMenu.getScene("episodes").addItem({
                         highlightable: true,
-                        html: ep.title + (ep.date ? `<div class="menuDate">${ep.date.toLocaleString()}</div>` : ""),
+                        html: (ep.isFiller ? `<div class="filler">Filler</div>` : "") + ep.title + (ep.date ? `<div class="menuDate">${ep.date.toLocaleString()}</div>` : ""),
                         altText: truncatedTitle,
                         selected: location.search === ep.link,
                         id: ep.link,
@@ -1360,5 +1402,6 @@ document.getElementById("back").onclick = function () {
 };
 let settingsPullInstance = new settingsPull(document.getElementById("settingHandlePadding"), closeSettings);
 let settingsPullInstanceTT = new settingsPull(document.querySelector(".menuCon"), closeSettings, true);
+const playerDOM = document.querySelector("#playbackDOM");
 applyTheme();
 applySubtitleConfig();
