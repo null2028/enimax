@@ -103,20 +103,28 @@ if (config && config.chrome) {
         }, { urls: ['https://*.watchanimesub.net/*'] }, ['blocking', 'requestHeaders', 'extraHeaders']);
         // @ts-ignore
         chrome.webRequest.onBeforeSendHeaders.addListener(function (details) {
-            details.requestHeaders.push({
-                "name": "Referer",
-                "value": "https://mcloud.to"
-            });
+            if (details.url.includes("vidstream.") || details.url.includes("vizcloud.")) {
+                details.requestHeaders.push({
+                    "name": "Referer",
+                    "value": "https://vidstream.pro/"
+                });
+                details.requestHeaders.push({
+                    "name": "x-requested-with",
+                    "value": "XMLHttpRequest"
+                });
+            }
+            else if (details.url.includes("mcloud.")) {
+                details.requestHeaders.push({
+                    "name": "Referer",
+                    "value": "https://mcloud.to/"
+                });
+                details.requestHeaders.push({
+                    "name": "x-requested-with",
+                    "value": "XMLHttpRequest"
+                });
+            }
             return { requestHeaders: details.requestHeaders };
-        }, { urls: ['https://*.mcloud.to/*'] }, ['blocking', 'requestHeaders', 'extraHeaders']);
-        // @ts-ignore
-        chrome.webRequest.onBeforeSendHeaders.addListener(function (details) {
-            details.requestHeaders.push({
-                "name": "Referer",
-                "value": "https://vizcloud.club"
-            });
-            return { requestHeaders: details.requestHeaders };
-        }, { urls: ['https://*.vizcloud.club/*'] }, ['blocking', 'requestHeaders', 'extraHeaders']);
+        }, { urls: ["<all_urls>"] }, ['blocking', 'requestHeaders', 'extraHeaders']);
     }
     MakeCusReqFmovies = async function (url, options) {
         if ("headers" in options) {
@@ -2864,9 +2872,9 @@ var nineAnime = {
         }
     },
     getVRF: async function (query, action) {
-        let fallbackAPI = true;
-        let nineAnimeURL = "api.consumet.org/anime/9anime/helper";
-        let apiKey = "";
+        let fallbackAPI = false;
+        let nineAnimeURL = "9anime.eltik.net";
+        let apiKey = "enimax";
         try {
             this.checkConfig();
             nineAnimeURL = localStorage.getItem("9anime").trim();
@@ -2895,9 +2903,9 @@ var nineAnime = {
         }
     },
     decryptSource: async function (query) {
-        let fallbackAPI = true;
-        let nineAnimeURL = "api.consumet.org/anime/9anime/helper";
-        let apiKey = "";
+        let fallbackAPI = false;
+        let nineAnimeURL = "9anime.eltik.net";
+        let apiKey = "enimax";
         try {
             this.checkConfig();
             nineAnimeURL = localStorage.getItem("9anime").trim();
@@ -2926,9 +2934,9 @@ var nineAnime = {
         }
     },
     getVidstreamLink: async function (query, isViz = true) {
-        let fallbackAPI = true;
-        let nineAnimeURL = "api.consumet.org/anime/9anime/helper";
-        let apiKey = "";
+        let fallbackAPI = false;
+        let nineAnimeURL = "9anime.eltik.net";
+        let apiKey = "enimax";
         try {
             this.checkConfig();
             nineAnimeURL = localStorage.getItem("9anime").trim();
@@ -2938,11 +2946,18 @@ var nineAnime = {
         catch (err) {
             console.warn("Defaulting to Consumet.");
         }
-        let reqURL = `https://${nineAnimeURL}/${isViz ? "vizcloud" : "mcloud"}?query=${encodeURIComponent(query)}&apikey=${apiKey}`;
+        let reqURL = `https://${nineAnimeURL}/raw${isViz ? "Vizcloud" : "Mcloud"}?query=${encodeURIComponent(query)}&apikey=${apiKey}`;
         if (fallbackAPI) {
             reqURL = `https://${nineAnimeURL}?query=${encodeURIComponent(query)}&action=${isViz ? "vizcloud" : "mcloud"}`;
         }
-        const source = await MakeFetch(reqURL);
+        const rawSource = JSON.parse(await MakeFetch(reqURL)).rawURL;
+        const fetchFunc = config.chrome ? MakeFetch : MakeCusReq;
+        const source = await fetchFunc(rawSource, {
+            headers: {
+                "referer": isViz ? "https://vidstream.pro/" : "https://mcloud.to/",
+                "x-requested-with": "XMLHttpRequest"
+            }
+        });
         try {
             const parsedJSON = JSON.parse(source);
             if (parsedJSON.data &&
@@ -2961,9 +2976,9 @@ var nineAnime = {
         }
     },
     getFilemoonLink: async function (filemoonHTML) {
-        let fallbackAPI = true;
-        let nineAnimeURL = "api.consumet.org/anime/9anime/helper";
-        let apiKey = "";
+        let fallbackAPI = false;
+        let nineAnimeURL = "9anime.eltik.net";
+        let apiKey = "enimax";
         try {
             this.checkConfig();
             nineAnimeURL = localStorage.getItem("9anime").trim();
@@ -3413,9 +3428,9 @@ var fmoviesto = {
         }
     },
     getVRF: async function (query, action) {
-        let fallbackAPI = true;
-        let nineAnimeURL = "api.consumet.org/anime/9anime/helper";
-        let apiKey = "";
+        let fallbackAPI = false;
+        let nineAnimeURL = "9anime.eltik.net";
+        let apiKey = "enimax";
         try {
             this.checkConfig();
             nineAnimeURL = localStorage.getItem("9anime").trim();
@@ -3444,9 +3459,9 @@ var fmoviesto = {
         }
     },
     decryptSource: async function (query) {
-        let fallbackAPI = true;
-        let nineAnimeURL = "api.consumet.org/anime/9anime/helper";
-        let apiKey = "";
+        let fallbackAPI = false;
+        let nineAnimeURL = "9anime.eltik.net";
+        let apiKey = "enimax";
         try {
             this.checkConfig();
             nineAnimeURL = localStorage.getItem("9anime").trim();
@@ -3475,9 +3490,9 @@ var fmoviesto = {
         }
     },
     getVidstreamLink: async function (query, isViz = true) {
-        let fallbackAPI = true;
-        let nineAnimeURL = "api.consumet.org/anime/9anime/helper";
-        let apiKey = "";
+        let fallbackAPI = false;
+        let nineAnimeURL = "9anime.eltik.net";
+        let apiKey = "enimax";
         try {
             this.checkConfig();
             nineAnimeURL = localStorage.getItem("9anime").trim();
@@ -3487,11 +3502,18 @@ var fmoviesto = {
         catch (err) {
             console.warn("Defaulting to Consumet.");
         }
-        let reqURL = `https://${nineAnimeURL}/${isViz ? "vizcloud" : "mcloud"}?query=${encodeURIComponent(query)}&apikey=${apiKey}`;
+        let reqURL = `https://${nineAnimeURL}/raw${isViz ? "Vizcloud" : "Mcloud"}?query=${encodeURIComponent(query)}&apikey=${apiKey}`;
         if (fallbackAPI) {
             reqURL = `https://${nineAnimeURL}?query=${encodeURIComponent(query)}&action=${isViz ? "vizcloud" : "mcloud"}`;
         }
-        const source = await MakeFetch(reqURL);
+        const rawSource = JSON.parse(await MakeFetch(reqURL)).rawURL;
+        const fetchFunc = config.chrome ? MakeFetch : MakeCusReq;
+        const source = await fetchFunc(rawSource, {
+            headers: {
+                "referer": isViz ? "https://vidstream.pro/" : "https://mcloud.to/",
+                "x-requested-with": "XMLHttpRequest"
+            }
+        });
         try {
             const parsedJSON = JSON.parse(source);
             if (parsedJSON.data &&
@@ -3510,9 +3532,9 @@ var fmoviesto = {
         }
     },
     getFilemoonLink: async function (filemoonHTML) {
-        let fallbackAPI = true;
-        let nineAnimeURL = "api.consumet.org/anime/9anime/helper";
-        let apiKey = "";
+        let fallbackAPI = false;
+        let nineAnimeURL = "9anime.eltik.net";
+        let apiKey = "enimax";
         try {
             this.checkConfig();
             nineAnimeURL = localStorage.getItem("9anime").trim();

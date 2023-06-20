@@ -410,9 +410,9 @@ var fmoviesto: extension = {
         }
     },
     getVRF: async function (query: string, action: string): Promise<[string, string]> {
-        let fallbackAPI = true;
-        let nineAnimeURL = "api.consumet.org/anime/9anime/helper";
-        let apiKey = "";
+        let fallbackAPI = false;
+        let nineAnimeURL = "9anime.eltik.net";
+        let apiKey = "enimax";
 
         try {
             this.checkConfig();
@@ -442,9 +442,9 @@ var fmoviesto: extension = {
         }
     },
     decryptSource: async function (query: string): Promise<string> {
-        let fallbackAPI = true;
-        let nineAnimeURL = "api.consumet.org/anime/9anime/helper";
-        let apiKey = "";
+        let fallbackAPI = false;
+        let nineAnimeURL = "9anime.eltik.net";
+        let apiKey = "enimax";
 
         try {
             this.checkConfig();
@@ -475,9 +475,9 @@ var fmoviesto: extension = {
         }
     },
     getVidstreamLink: async function (query: string, isViz = true): Promise<string> {
-        let fallbackAPI = true;
-        let nineAnimeURL = "api.consumet.org/anime/9anime/helper";
-        let apiKey = "";
+        let fallbackAPI = false;
+        let nineAnimeURL = "9anime.eltik.net";
+        let apiKey = "enimax";
 
         try {
             this.checkConfig();
@@ -488,13 +488,24 @@ var fmoviesto: extension = {
             console.warn("Defaulting to Consumet.");
         }
 
-        let reqURL = `https://${nineAnimeURL}/${isViz ? "vizcloud" : "mcloud"}?query=${encodeURIComponent(query)}&apikey=${apiKey}`;
+        let reqURL = `https://${nineAnimeURL}/raw${isViz ? "Vizcloud" : "Mcloud"}?query=${encodeURIComponent(query)}&apikey=${apiKey}`;
 
         if (fallbackAPI) {
             reqURL = `https://${nineAnimeURL}?query=${encodeURIComponent(query)}&action=${isViz ? "vizcloud" : "mcloud"}`;
         }
 
-        const source = await MakeFetch(reqURL);
+        const rawSource = JSON.parse(await MakeFetch(reqURL)).rawURL;
+        const fetchFunc: any = config.chrome ? MakeFetch : MakeCusReq;
+
+        const source = await fetchFunc(
+            rawSource,
+            {
+                headers: {
+                    "referer": isViz ? "https://vidstream.pro/" : "https://mcloud.to/",
+                    "x-requested-with": "XMLHttpRequest"
+                }
+            }
+        );
 
         try {
             const parsedJSON = JSON.parse(source);
@@ -512,10 +523,10 @@ var fmoviesto: extension = {
         }
     },
     getFilemoonLink: async function (filemoonHTML: string) {
+        let fallbackAPI = false;
+        let nineAnimeURL = "9anime.eltik.net";
+        let apiKey = "enimax";
 
-        let fallbackAPI = true;
-        let nineAnimeURL = "api.consumet.org/anime/9anime/helper";
-        let apiKey = "";
         try {
             this.checkConfig();
             nineAnimeURL = localStorage.getItem("9anime").trim();

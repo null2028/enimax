@@ -32,7 +32,7 @@ const version = JSON.parse(fs.readFileSync(path.join(__dirname, "../version.json
         owner: "enimax-anime",
         repo: "enimax",
         release_id: id,
-        name: `enimax_test_${version}.apk`,
+        name: `enimax_v${version}.apk`,
         data: fs.readFileSync(path.join(__dirname, "../../app-release.apk")),
         headers: {
             "X-GitHub-Api-Version": "2022-11-28"
