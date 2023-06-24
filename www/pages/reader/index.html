@@ -18,15 +18,27 @@
     <script src="../../assets/js/config.js"></script>
     <script src="../../assets/js/pull.js"></script>
     <script src="../../assets/libs/panzoom.js"></script>
+    <script src="../../assets/libs/jszip.js"></script>
+    <script src="../../assets/libs/epub.js"></script>
     <script src="../player/js/DDM.js"></script>
 </head>
 
 <body>
     <div id="con_11" style="overflow: hidden !important;">
-        <div id="mainLoading">Loading...</div>
+        <div id="mainLoading">
+            Loading...
+        </div>
 
-        <div id="pageNum"><span id="currentPage"></span> / <span id="totalPage"></span></div>
+        <div class="epubMenu"></div>
+        <div id="epubSettings" class="settingsIcon"></div>
 
+        <div id="pageNum">
+            <span id="currentPage"></span> 
+            <span id="slash">/</span>
+            <span id="totalPage"></span>
+        </div>
+        <div id="epubNext"></div>
+        <div id="epubPrev"></div>
         <div id="chapterCon" class="snappedCustomRooms"></div>
         <div class="spotlight" id="spotlight"></div>
         <div class="topNav close" id="topNav">

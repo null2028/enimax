@@ -297,3 +297,61 @@
 input[type="color"] {
     margin-right: 10px;
 }
+
+.epub-container{
+    left: 40px;
+}
+
+#epubNext{
+    position: absolute;
+    top:0;
+    left: 0;
+    height: 100%;
+    width: 40px;
+    background-color: grey;
+}
+
+#epubPrev{
+    position: absolute;
+    top:0;
+    right: 0;
+    height: 100%;
+    width: 40px;
+    background-color: grey;
+}
+
+#epubSettings{
+    position: absolute;
+    bottom: 10px;
+    right: 10px;
+    height: 30px;
+    width: 30px;
+    background-color: #000000;
+    z-index: 2;
+    border-radius: 100px;
+    background-position: center;
+    background-repeat: no-repeat;
+    display: none;
+}
+
+.numberBox {
+    display: inline-block;
+    border-radius: 30px;
+    text-align: center;
+    height: 20px;
+    padding: 10px;
+    margin: 10px;
+    width: 100px;
+    font-family: 'Montserrat', sans-serif;
+    font-weight: bolder;
+    border: 5px solid #d8c9c9;
+}
+
+iframe{
+    border: 0;
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 100%;
+}

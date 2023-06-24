@@ -60,6 +60,7 @@ ts:
 	cd www/extensions/tv && printf "\n" >> index.js && cat fmovies.js >> ../index.js
 	cd www/extensions/anime && printf "\n" >> index.js && cat zoro.js >> ../index.js
 	cd www/extensions/others && printf "\n" >> index.js && cat twitch.js >> ../index.js
+	cd www/extensions/others && printf "\n" >> index.js && cat anna.js >> ../index.js
 	cd www/extensions/others && printf "\n" >> index.js && cat anilist.js >> ../index.js
 	cd www/extensions/anime && printf "\n" >> index.js && cat 9anime.js >> ../index.js
 	cd www/extensions/tv && printf "\n" >> index.js && cat fmoviesto.js >> ../index.js

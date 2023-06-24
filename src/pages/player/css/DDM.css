@@ -1,6 +1,6 @@
 @import url("../../../assets/css/fonts.css");
 
-.menuCon {
+.menuCon, .epubMenu {
     /* height: auto; */
     position: absolute;
     top: 10px;

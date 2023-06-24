@@ -11,7 +11,19 @@ function fix_title(title: string) {
     }
 }
 
-function normalise(url: string): string {
+function normalise(url: string) {
+    let engine = 0;
+
+    try{
+        const params = new URLSearchParams(url);
+        engine = parseInt(params.get("engine"));
+        if(engine === 12){
+            url = url.split("&current=")[0];
+        }
+    }catch(err){
+        console.warn(err);
+    }
+
     url = url.replace("?watch=", "");
     url = url.split("&engine=")[0];
     url = url.split("&isManga=")[0];
@@ -220,7 +232,11 @@ class DownloadManga {
                 self.infoFile = infoFileEntry;
                 self.iniInfo(self);
                 self.updateMetaData(self);
-                self.startDownload(self);
+                if (self.vidData.readerType === "epub") {
+                    self.startDownloadSingle(self);
+                } else {
+                    self.startDownload(self);
+                }
             } else {
                 self.errorHandler(self, "The manga has already been downloaded");
             }
@@ -353,6 +369,149 @@ class DownloadManga {
             }, function (err) {
                 reject(err);
             });
+        });
+    }
+
+    saveToLocal(x = 0, self: DownloadManga) {
+        if (self.pause) {
+            return;
+        }
+        if (x == 1) {
+            self.updateNoti(`Storing downloaded data - ${fix_title(self.name)}`, self, 1);
+            if (self.check == 0) {
+                self.check = 1;
+                var data = new Blob(self.buffers.splice(0, Math.min(self.buffers.length, self.maxBufferLength)), { "type": "video/mp4" });
+
+                self.fileEntry.createWriter(function (fileWriter) {
+
+                    fileWriter.onwriteend = function (e) {
+                        self.check = 0;
+                        if (self.buffers.length != 0) {
+                            self.saveToLocal(1, self);
+                        } else {
+                            self.done(self);
+                        }
+                    };
+
+                    fileWriter.onerror = function (e) {
+                        self.errorHandler(self, e?.toString());
+                    };
+
+                    fileWriter.seek(fileWriter.length);
+
+                    fileWriter.write(data);
+
+                }, (err) => {
+                    self.errorHandler(self, err?.toString());
+                });
+            } else {
+                setTimeout(function () {
+                    self.saveToLocal(1, self);
+                }, 1000);
+            }
+        } else {
+            if (self.buffers.length > self.maxBufferLength && self.check == 0) {
+                self.check = 1;
+                var data = new Blob(self.buffers.splice(0, self.maxBufferLength), { "type": "video/mp4" });
+                self.fileEntry.createWriter(function (fileWriter) {
+
+                    fileWriter.onwriteend = function (e) {
+                        self.check = 0;
+                    };
+
+                    fileWriter.onerror = function (e) {
+                        self.errorHandler(self, e?.toString());
+                    };
+
+                    fileWriter.seek(fileWriter.length);
+
+                    fileWriter.write(data);
+
+                }, (err) => {
+                    self.errorHandler(self, err?.toString());
+                });
+            }
+        }
+    }
+
+    async startDownloadSingle(self: DownloadManga) {
+
+        self.fileDir.getFile(`main.${self.vidData.sources[0].type}`, { create: true, exclusive: false }, function (fileEntry: FileEntry) {
+            self.fileEntry = fileEntry;
+            fileEntry.getMetadata(function (x) {
+                self.buffers = [];
+                self.size = x.size;
+                const controller = new AbortController();
+                self.controller = controller;
+                self.updateNoti("Starting...", self, 1);
+
+                let timeoutId = setTimeout(function () {
+                    controller.abort();
+                }, 60000);
+                fetch(self.vidData.sources[0].url, {
+                    headers: {
+                        "Range": `bytes=${self.size}-`,
+                    },
+                    signal: controller.signal,
+                }).then(response => {
+                    clearTimeout(timeoutId);
+                    self.total = parseInt(response.headers.get("content-length"));
+                    if (parseInt(response.headers.get("content-length")) == self.size) {
+                        self.done(self);
+                    } else {
+                        if (response.ok) {
+                            const reader = response.body.getReader();
+                            let total = 0;
+                            return reader.read().then(function processResult(result) {
+
+                                if (result.done) {
+                                    self.updateNoti(`${fix_title(self.name)}`, self);
+                                    self.saveToLocal(1, self);
+                                    self.saved = true;
+                                    return total;
+                                }
+
+                                if (self.pause) {
+                                    controller.abort();
+                                }
+
+
+                                const value = result.value;
+                                self.downloaded += value.length;
+                                self.buffers.push(value.buffer);
+                                if (self.buffers.length > self.maxBufferLength) {
+                                    self.updateNoti(`${fix_title(self.name)}`, self);
+
+
+                                    self.saveToLocal(0, self);
+                                }
+                                reader.read().then(processResult).catch(function (err) {
+                                    self.errorHandler(self, "Error while reading the response's data. ");
+                                });
+                            }).catch(function () {
+                                controller.abort();
+                                self.errorHandler(self, "Error while reading the response's body.");
+                            });
+                        } else {
+                            if (response.status == 416) {
+                                self.errorHandler(self, "Out of range");
+
+                            } else {
+                                self.errorHandler(self, "Unexpexted error");
+
+                            }
+                        }
+                    }
+                }
+                ).catch(function (x) {
+                    console.log(x);
+                    self.errorHandler(self, "Error downloading the file.");
+                });
+            }, function (x) {
+                self.errorHandler(self, "Could not get the meta-data.");
+            });
+        }, function (x) {
+            self.errorHandler(self, "Could not make the main file.");
         });
     }
 

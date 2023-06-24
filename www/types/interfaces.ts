@@ -227,6 +227,8 @@ interface extension {
 
 interface extensionMangaSource {
     pages: MangaPage[],
+    readerType?: "epub",
+    sources? : Array<videoSource>,
     next: string | null,
     nextTitle: string | null,
     prev: string | null,
