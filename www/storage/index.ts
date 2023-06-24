@@ -833,11 +833,10 @@ async function apiCall(method, form, callback, args = [], timeout = false, shoul
                 if (cur.toLowerCase().substring(0, 7) == "?watch=" && cur.toLowerCase().indexOf("javascript") == -1) {
                     var response: any = {};
                     let getdata = await db.vid.filter((data) => (data.ep == 0 && data.name == nameUm)).toArray();
-                    
                     if (getdata.length == 0) {
                         await db.vid.add({ ep: 0, cur_time: ep, name: nameUm, curlink: cur, time2: timern() });
                     } else {
-                        response.mainLink = getdata[0].mainLink;
+                        response.mainLink = getdata[0].main_link;
                     }
 
                     getdata = await db.vid.where({

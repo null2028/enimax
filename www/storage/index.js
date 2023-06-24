@@ -750,7 +750,7 @@ async function apiCall(method, form, callback, args = [], timeout = false, shoul
                         await db.vid.add({ ep: 0, cur_time: ep, name: nameUm, curlink: cur, time2: timern() });
                     }
                     else {
-                        response.mainLink = getdata[0].mainLink;
+                        response.mainLink = getdata[0].main_link;
                     }
                     getdata = await db.vid.where({
                         ep: ep,
