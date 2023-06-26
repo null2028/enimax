@@ -1362,15 +1362,39 @@ if (true) {
         catch (err) {
         }
     }
+    // async function batchPromises(showURLs, batchSize){
+    async function batchPromises(showURLs, batchSize) {
+        const allSettled = "allSettled" in Promise;
+        const result = [];
+        const promises = [];
+        for (let i = 0; i < showURLs.length; i++) {
+            promises.push(showURLs[i].engine.getAnimeInfo(showURLs[i].showURL));
+            if (promises.length >= batchSize || i == showURLs.length - 1) {
+                if (allSettled) {
+                    const res = await Promise.allSettled(promises);
+                    for (const promise of res) {
+                        if (promise.status === "fulfilled") {
+                            result.push(promise.value);
+                        }
+                        else {
+                            result.push(null);
+                        }
+                    }
+                }
+                else {
+                    result.push(...await Promise.all(promises));
+                }
+                promises.splice(0);
+            }
+        }
+        return result;
+    }
     async function updateNewEp() {
         let updateLibNoti = sendNoti([0, null, "Message", "Updating Libary"]);
-        let updatedShow = [];
         let downloadQueue = window.parent.returnDownloadQueue();
         let extensionList = window.parent.returnExtensionList();
-        let promises = [];
+        let showURLs = [];
         let promiseShowData = [];
-        let allSettled = "allSettled" in Promise;
-        // let allSettled = false;
         for (let show of flaggedShow) {
             let showURL = show.showURL;
             showURL = showURL.replace("?watch=/", "");
@@ -1384,7 +1408,10 @@ if (true) {
                 currentEngine = parseInt(temp[1]);
                 currentEngine = extensionList[currentEngine];
             }
-            promises.push(currentEngine.getAnimeInfo(showURL));
+            showURLs.push({
+                showURL,
+                engine: currentEngine
+            });
             promiseShowData.push({
                 "ep": currentEp,
                 "dom": show.dom,
@@ -1394,22 +1421,8 @@ if (true) {
                 "isManga": currentEngine.type === "manga"
             });
         }
-        let promiseResult = [];
         try {
-            if (allSettled) {
-                let res = await Promise.allSettled(promises);
-                for (let promise of res) {
-                    if (promise.status === "fulfilled") {
-                        promiseResult.push(promise.value);
-                    }
-                    else {
-                        promiseResult.push(null);
-                    }
-                }
-            }
-            else {
-                promiseResult = await Promise.all(promises);
-            }
+            const promiseResult = await batchPromises(showURLs, 5);
             await showLastEpDB.lastestEp.clear();
             let count = 0;
             for (let promise of promiseResult) {
