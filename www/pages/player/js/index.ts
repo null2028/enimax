@@ -14,6 +14,7 @@ let skipIntroInfo: skipData = {
 	start: 0,
 	end: 0
 };
+let selectedMain = null;
 let curTrack: undefined | TextTrack = undefined;
 let marginApplied = false;
 let updateCurrentTime: number,
@@ -513,22 +514,22 @@ window.addEventListener("videoStartInterval", () => {
 });
 
 function normalise(url: string) {
-    let engine = 0;
+	let engine = 0;
 
-    try{
-        const params = new URLSearchParams(url);
-        engine = parseInt(params.get("engine"));
-        if(engine === 12){
-            url = url.split("&current=")[0];
-        }
-    }catch(err){
-        console.warn(err);
-    }
+	try {
+		const params = new URLSearchParams(url);
+		engine = parseInt(params.get("engine"));
+		if (engine === 12) {
+			url = url.split("&current=")[0];
+		}
+	} catch (err) {
+		console.warn(err);
+	}
 
-    url = url.replace("?watch=", "");
-    url = url.split("&engine=")[0];
-    url = url.split("&isManga=")[0];
-    return url;
+	url = url.replace("?watch=", "");
+	url = url.split("&engine=")[0];
+	url = url.split("&isManga=")[0];
+	return url;
 }
 // @ts-ignore
 function checkIfExists(localURL: string): Promise<string> {
@@ -1020,9 +1021,11 @@ function chooseQual(config: sourceConfig) {
 
 			if (!config.clicked) {
 				hls.loadSource(defURL);
+				selectedMain = [config.type, defURL];
 			}
 			else {
 				hls.loadSource(config.url);
+				selectedMain = [config.type, config.url];
 			}
 
 			hls.attachMedia(vidInstance.vid);
@@ -1273,6 +1276,14 @@ function closeSettings() {
 			}, 200);
 		});
 	});
+}
+
+function updateCasting(casting: undefined | boolean) {
+	if ((window.parent as cordovaWindow).isCasting() || casting === true) {
+		document.getElementById("cast").className = "casting";
+	}else{
+		document.getElementById("cast").className = "notCasting";
+	}
 }
 
 function isLocked(): boolean {
@@ -1645,3 +1656,60 @@ const playerDOM = (document.querySelector("#playbackDOM") as HTMLElement);
 
 applyTheme();
 applySubtitleConfig();
+
+document.getElementById("cast").onclick = async function () {
+	let classname: "casting" | "notCasting" | undefined;
+
+	if ((window.parent as cordovaWindow).isCasting()) {
+		const changed = (await (window.parent as cordovaWindow).destroySession());
+		console.log("DESTROY", changed);
+
+		if(changed === true){
+			classname = "notCasting";
+		}
+	} else {
+		let type: string, url: string;
+		if (selectedMain) {
+			url = selectedMain[1];
+			type = selectedMain[0];
+		} else {
+			url = currentVidData.sources[0].url;
+			type = currentVidData.sources[0].type;
+		}
+
+		if (downloaded) {
+			const localIP = (await (window.parent as cordovaWindow).getLocalIP())?.ip;
+
+			if (!localIP) {
+				alert("Could not get the LAN address");
+			}
+
+			url = `http://${localIP}:56565${url}`;
+		}
+
+		if (type == "hls") {
+			type = "application/x-mpegURL";
+		} else {
+			type = "video/mp4";
+		}
+
+		const changed = await (window.parent as cordovaWindow).castVid({
+			url,
+			type,
+			currentTime: vidInstance.vid.currentTime
+		});
+
+		console.log("MAKE", changed);
+
+		if(changed === true){
+			classname = "casting";
+		}
+	}
+
+
+	if(classname){
+		document.getElementById("cast").className = classname;
+	}
+}
+
+updateCasting(false);

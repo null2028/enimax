@@ -13,6 +13,7 @@ let skipIntroInfo = {
     start: 0,
     end: 0
 };
+let selectedMain = null;
 let curTrack = undefined;
 let marginApplied = false;
 let updateCurrentTime, getEpCheck, lastUpdate, updateCheck, int_up;
@@ -883,9 +884,11 @@ function chooseQual(config) {
             }
             if (!config.clicked) {
                 hls.loadSource(defURL);
+                selectedMain = [config.type, defURL];
             }
             else {
                 hls.loadSource(config.url);
+                selectedMain = [config.type, config.url];
             }
             hls.attachMedia(vidInstance.vid);
             //@ts-ignore
@@ -1090,6 +1093,14 @@ function closeSettings() {
             }, 200);
         });
     });
+}
+function updateCasting(casting) {
+    if (window.parent.isCasting() || casting === true) {
+        document.getElementById("cast").className = "casting";
+    }
+    else {
+        document.getElementById("cast").className = "notCasting";
+    }
 }
 function isLocked() {
     return vidInstance.locked;
@@ -1416,3 +1427,51 @@ let settingsPullInstanceTT = new settingsPull(document.querySelector(".menuCon")
 const playerDOM = document.querySelector("#playbackDOM");
 applyTheme();
 applySubtitleConfig();
+document.getElementById("cast").onclick = async function () {
+    var _a;
+    let classname;
+    if (window.parent.isCasting()) {
+        const changed = (await window.parent.destroySession());
+        console.log("DESTROY", changed);
+        if (changed === true) {
+            classname = "notCasting";
+        }
+    }
+    else {
+        let type, url;
+        if (selectedMain) {
+            url = selectedMain[1];
+            type = selectedMain[0];
+        }
+        else {
+            url = currentVidData.sources[0].url;
+            type = currentVidData.sources[0].type;
+        }
+        if (downloaded) {
+            const localIP = (_a = (await window.parent.getLocalIP())) === null || _a === void 0 ? void 0 : _a.ip;
+            if (!localIP) {
+                alert("Could not get the LAN address");
+            }
+            url = `http://${localIP}:56565${url}`;
+        }
+        if (type == "hls") {
+            type = "application/x-mpegURL";
+        }
+        else {
+            type = "video/mp4";
+        }
+        const changed = await window.parent.castVid({
+            url,
+            type,
+            currentTime: vidInstance.vid.currentTime
+        });
+        console.log("MAKE", changed);
+        if (changed === true) {
+            classname = "casting";
+        }
+    }
+    if (classname) {
+        document.getElementById("cast").className = classname;
+    }
+};
+updateCasting(false);

@@ -136,7 +136,19 @@ interface videoChangedFillModeEvent extends CustomEvent {
     }
 }
 
+interface cordovaServerRequest {
+    headers: string;
+    method: string;
+    path: string;
+    requestId: string;
+}
 interface cordovaWindow extends Window {
+    webserver: any,
+    getLocalIP: any,
+    chrome: any,
+    castVid: (data: any) => Promise<boolean>,
+    destroySession: () => Promise<boolean>,
+    isCasting: () => boolean,
     cordova: any,
     handleFullscreen: () => void;
     returnAnilistStatus: () => anilistStatus[],

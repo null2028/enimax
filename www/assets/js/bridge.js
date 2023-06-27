@@ -6,6 +6,50 @@ let frameHistory = [];
 var token;
 let seekCheck = true;
 let backFunction;
+let castSession = null;
+function isCasting() {
+    try {
+        if (castSession && "status" in castSession) {
+            return castSession.status == "connected";
+        }
+        else {
+            return false;
+        }
+    }
+    catch (err) {
+        return false;
+    }
+}
+function destroySession() {
+    return new Promise((resolve, reject) => {
+        try {
+            if (castSession && "stop" in castSession) {
+                castSession.stop(() => {
+                    resolve(true);
+                }, () => {
+                    resolve(false);
+                });
+            }
+            else {
+                resolve(false);
+            }
+        }
+        catch (err) {
+            resolve(false);
+        }
+    });
+}
+function castVid(data) {
+    return new Promise((resolve, reject) => {
+        thisWindow.chrome.cast.requestSession((session) => {
+            onSessionRequestSuccess(session, data);
+            resolve(true);
+        }, () => {
+            alert("Could not cast the video");
+            resolve(false);
+        });
+    });
+}
 function returnExtensionList() {
     return extensionList;
 }
@@ -594,6 +638,30 @@ function handleFullscreen() {
         enableFullScreen();
     }
 }
+function getLocalIP() {
+    return new Promise(function (resolve, reject) {
+        // @ts-ignore
+        networkinterface.getWiFiIPAddress(resolve, reject);
+    });
+}
+function onSessionRequestSuccess(session, data) {
+    castSession = session;
+    const mediaInfo = new thisWindow.chrome.cast.media.MediaInfo(data.url, data.type);
+    const request = new thisWindow.chrome.cast.media.LoadRequest(mediaInfo);
+    session.loadMedia(request, () => {
+        // session.getMe
+        try {
+            castSession._getMedia().seek({ currentTime: data.currentTime });
+        }
+        catch (err) {
+            console.error(err);
+            alert("Could not seek");
+        }
+    }, (err) => {
+        console.error(err);
+        alert("Could not load the video");
+    });
+}
 async function onDeviceReady() {
     handleFullscreen();
     await SQLInit();
@@ -604,7 +672,17 @@ async function onDeviceReady() {
         thisWindow.cordova.plugins.backgroundMode.disableWebViewOptimizations();
         thisWindow.cordova.plugins.backgroundMode.disableBatteryOptimizations();
     });
-    // @ts-ignore
+    const initializeCastApi = function () {
+        const sessionRequest = new thisWindow.chrome.cast.SessionRequest(thisWindow.chrome.cast.media.DEFAULT_MEDIA_RECEIVER_APP_ID);
+        const apiConfig = new thisWindow.chrome.cast.ApiConfig(sessionRequest, () => { }, receiverListener);
+        thisWindow.chrome.cast.initialize(apiConfig, () => { }, () => { });
+    };
+    function receiverListener(availability) {
+        console.log('receiverListener', availability);
+        if (availability === thisWindow.chrome.cast.ReceiverAvailability.AVAILABLE) {
+        }
+    }
+    initializeCastApi();
     token = thisWindow.cordova.plugin.http.getCookieString(config.remoteWOport);
     downloadQueueInstance = new downloadQueue();
     mainIFrame.src = "pages/homepage/index.html";
@@ -666,6 +744,27 @@ async function onDeviceReady() {
     document.addEventListener("backbutton", () => { backFunction(); }, false);
     document.addEventListener("pause", onPause, false);
     document.addEventListener("resume", onResume, false);
+    thisWindow.webserver.start((x) => {
+        console.log(x);
+    }, (x) => {
+        console.log(x);
+    }, 56565);
+    thisWindow.webserver.onRequest(async (request) => {
+        const requestResponse = {
+            status: 200,
+            headers: {
+                "Access-Control-Allow-Origin": "*"
+            }
+        };
+        try {
+            requestResponse["path"] = `${thisWindow.cordova.file.externalDataDirectory}${request.path}`.replace('file://', '');
+        }
+        catch (err) {
+            requestResponse.status = 400;
+            requestResponse["body"] = "An unexpected error has occurred.";
+        }
+        thisWindow.webserver.sendResponse(request.requestId, requestResponse, () => { }, () => { });
+    });
 }
 document.addEventListener("deviceready", onDeviceReady, false);
 if (config.chrome) {
