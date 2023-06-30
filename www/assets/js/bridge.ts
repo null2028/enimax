@@ -7,7 +7,7 @@ var token;
 let seekCheck = true;
 let backFunction: Function;
 let castSession = null;
-
+let lastRequestTime = 0;
 function isCasting() {
     try {
         if (castSession && "status" in castSession) {
@@ -17,6 +17,76 @@ function isCasting() {
         }
     } catch (err) {
         return false;
+    }
+}
+
+function updateCastTime(time: string) {
+    try {
+        const currentTime = parseFloat(time);
+        const seekObj = new thisWindow.chrome.cast.media.SeekRequest;
+        seekObj.currentTime = currentTime;
+        castSession.media[0].seek(seekObj);
+    } catch (err) {
+        console.error(err);
+    }
+}
+
+function getCurrentCastState() {
+    return {
+        paused: castSession.media[0].playerState === thisWindow.chrome.cast.media.PlayerState.PAUSED,
+        currentTime: castSession.media[0].currentTime,
+        duration: castSession.media[0].media.duration,
+        hasFinished: castSession.media[0].idleReason === thisWindow.chrome.cast.media.IdleReason.FINISHED
+    };
+}
+
+function castStateUpdated() {
+    try {
+        const currentState = getCurrentCastState();
+        playerIFrame.contentWindow.postMessage({
+            action: "castStateUpdated",
+            data: currentState
+        }, "*");
+    } catch (err) {
+        console.error(err);
+    }
+}
+
+function getEstimatedState() {
+    try {
+        return {
+            paused: castSession.media[0].playerState === thisWindow.chrome.cast.media.PlayerState.PAUSED,
+            currentTime: castSession.media[0].getEstimatedTime(),
+            duration: castSession.media[0].media.duration
+        };
+    } catch (err) {
+        return undefined;
+    }
+}
+
+function toggleCastState() {
+    const media = castSession.media[0];
+    if (media.playerState === thisWindow.chrome.cast.media.PlayerState.PAUSED) {
+        media.play();
+    } else {
+        media.pause();
+    }
+}
+
+function fixTitle(title: string, extension?: extension) {
+    try {
+        if (extension && "fixTitle" in extension) {
+            title = extension.fixTitle(title);
+        }
+
+        let titleArray = title.split("-");
+        let temp = "";
+        for (var i = 0; i < titleArray.length; i++) {
+            temp = temp + titleArray[i].substring(0, 1).toUpperCase() + titleArray[i].substring(1) + " ";
+        }
+        return temp;
+    } catch (err) {
+        return title;
     }
 }
 
@@ -37,16 +107,99 @@ function destroySession() {
         }
     });
 }
-
-function castVid(data) {
+function startServer() {
     return new Promise((resolve, reject) => {
-        thisWindow.chrome.cast.requestSession((session) => {
-            onSessionRequestSuccess(session, data);
-            resolve(true);
-        }, () => {
-            alert("Could not cast the video");
-            resolve(false);
+        thisWindow.webserver.start((x) => {
+            resolve(x);
+        }, (err) => {
+            if (err === "Server already running") {
+                resolve("running");
+            } else {
+                reject(err);
+            }
+        }, 56565);
+    });
+}
+
+async function setUpWebServer() {
+    await startServer();
+
+    thisWindow.webserver.onRequest(async (request: cordovaServerRequest) => {
+
+        console.log(request);
+
+        lastRequestTime = Date.now();
+        const requestResponse = {
+            status: 200,
+            headers: {
+                "Access-Control-Allow-Origin": "*"
+            }
+        }
+
+        try {
+            const isMP4 = request.path.endsWith(".mp4");
+
+            if (isMP4) {
+                requestResponse.headers["Content-Type"] = "video/mp4";
+            }
+
+            requestResponse["path"] = `${thisWindow.cordova.file.externalDataDirectory}${request.path}`.replace("file://", "");
+            if (isMP4) {
+                requestResponse["path"] = requestResponse["path"].substring(
+                    0,
+                    requestResponse["path"].length - 4
+                ) + ".m3u8";
+            }
+
+        } catch (err) {
+            requestResponse.status = 400;
+            requestResponse["body"] = "An unexpected error has occurred.";
+        }
+
+        thisWindow.webserver.sendResponse(request.requestId, requestResponse, () => { }, () => { })
+    });
+}
+
+function killServer() {
+    return new Promise((resolve, reject) => {
+        thisWindow.webserver.stop((x) => {
+            resolve(x);
+        }, (x) => {
+            reject(x);
         });
+    });
+}
+
+
+function castVid(data, requiresWebServer: boolean) {
+    console.log(data, requiresWebServer);
+
+    return new Promise(async (resolve, reject) => {
+        try {
+            if (requiresWebServer) {
+                await setUpWebServer();
+            }
+        } catch (err) {
+            sendNoti([3, "red", "Alert", "Could not start the webserver, or the webserver wasn't killed. The video may not play."]);
+        }
+
+        try {
+            if (castSession?.status === thisWindow.chrome.cast.SessionStatus.CONNECTED) {
+                onSessionRequestSuccess(castSession, data);
+                resolve(true);
+            } else {
+                thisWindow.chrome.cast.requestSession((session) => {
+                    onSessionRequestSuccess(session, data);
+                    resolve(true);
+                }, () => {
+                    alert("Could not cast the video. Try again.");
+                    resolve(false);
+                });
+            }
+
+        } catch (err) {
+            resolve(false);
+        }
     });
 }
 
@@ -768,17 +921,20 @@ function getLocalIP() {
 
 
 function onSessionRequestSuccess(session, data) {
+
+
     castSession = session;
 
     const mediaInfo = new thisWindow.chrome.cast.media.MediaInfo(
         data.url,
-        data.type);
+        data.type
+    );
 
     const request = new thisWindow.chrome.cast.media.LoadRequest(mediaInfo);
     session.loadMedia(request, () => {
-        // session.getMe
         try {
             castSession._getMedia().seek({ currentTime: data.currentTime });
+            castSession.media[0].addUpdateListener(castStateUpdated);
         } catch (err) {
             console.error(err);
             alert("Could not seek");
@@ -902,31 +1058,16 @@ async function onDeviceReady() {
     document.addEventListener("pause", onPause, false);
     document.addEventListener("resume", onResume, false);
 
-    thisWindow.webserver.start((x) => {
-        console.log(x);
-    }, (x) => {
-        console.log(x);
-    }, 56565);
-
-    thisWindow.webserver.onRequest(async (request: cordovaServerRequest) => {
-        const requestResponse = {
-            status: 200,
-            headers: {
-                "Access-Control-Allow-Origin": "*"
+    setInterval(async function () {
+        if (!isCasting() || (Date.now() - lastRequestTime) > 3600000) {
+            try {
+                await killServer();
+                console.log("Killed the server");
+            } catch (err) {
+                console.error(err);
             }
         }
-
-        try {
-            requestResponse["path"] = `${thisWindow.cordova.file.externalDataDirectory}${request.path}`.replace('file://', '');
-        } catch (err) {
-            requestResponse.status = 400;
-            requestResponse["body"] = "An unexpected error has occurred.";
-        }
-
-        thisWindow.webserver.sendResponse(request.requestId, requestResponse, () => { }, () => { })
-    });
-
-
+    }, 120000); // 2 minutes
 }
 
 document.addEventListener("deviceready", onDeviceReady, false);

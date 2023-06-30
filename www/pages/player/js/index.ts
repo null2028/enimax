@@ -40,6 +40,10 @@ let lastFragError = -10;
 let lastFragDuration = 0;
 let fragErrorCount = 0;
 let hasLoadedEpList = false;
+let loadsLocally = false;
+let remoteInterval = null;
+let castingMode = false;
+let shouldUpdateSlider = true;
 
 function applySubtitleConfig(): void {
 	let subtitleStyle = document.getElementById("subtitleStyle") as HTMLStyleElement;
@@ -587,15 +591,18 @@ function backToNormal() {
 	document.getElementById('bar_con').style.display = "block";
 }
 
-function getEpIni() {
+async function getEpIni() {
 	vidInstance.setObjectSettings(1, false);
+	loadsLocally = false;
+	selectedMain = null;
 
 	let param = decodeURIComponent(location.search.replace("?watch=", ""));
 	if (downloaded) {
 		let rootDir = decodeURIComponent(location.search.replace("?watch=", "").split("&")[0]);
 
-		// Getting the meta data
-		(<cordovaWindow>window.parent).makeLocalRequest("GET", `${rootDir}/viddata.json`).then(function (vidString) {
+		try {
+			// Getting the meta data
+			const vidString = await (<cordovaWindow>window.parent).makeLocalRequest("GET", `${rootDir}/viddata.json`);
 			let viddata = JSON.parse(vidString).data;
 
 			currentVidData = viddata;
@@ -606,13 +613,9 @@ function getEpIni() {
 				let temp = tempData.join("&");
 				delete currentVidData["next"];
 				try {
-
-					(<cordovaWindow>window.parent).makeLocalRequest("GET", `/${rootDir.split("/")[1]}/${btoa(temp)}/.downloaded`).then((x) => {
-						currentVidData.next = encodeURIComponent(`/${rootDir.split("/")[1]}/${btoa(temp)}`);
-						document.getElementById("next_ep").style.display = "table-cell";
-
-					}).catch((x) => console.error(x));
-
+					await (<cordovaWindow>window.parent).makeLocalRequest("GET", `/${rootDir.split("/")[1]}/${btoa(temp)}/.downloaded`);
+					currentVidData.next = encodeURIComponent(`/${rootDir.split("/")[1]}/${btoa(temp)}`);
+					document.getElementById("next_ep").style.display = "table-cell";
 				} catch (err) {
 
 				}
@@ -624,11 +627,9 @@ function getEpIni() {
 				let temp = tempData.join("&");
 				delete currentVidData["prev"];
 				try {
-					(<cordovaWindow>window.parent).makeLocalRequest("GET", `/${rootDir.split("/")[1]}/${btoa(temp)}/.downloaded`).then((x) => {
-						currentVidData.prev = encodeURIComponent(`/${rootDir.split("/")[1]}/${btoa(temp)}`);
-						document.getElementById("prev_ep").style.display = "table-cell";
-
-					}).catch((error: Error) => console.error(error));
+					await (<cordovaWindow>window.parent).makeLocalRequest("GET", `/${rootDir.split("/")[1]}/${btoa(temp)}/.downloaded`);
+					currentVidData.prev = encodeURIComponent(`/${rootDir.split("/")[1]}/${btoa(temp)}`);
+					document.getElementById("prev_ep").style.display = "table-cell";
 				} catch (err) {
 
 				}
@@ -638,10 +639,12 @@ function getEpIni() {
 			if ("skipIntro" in viddata.sources[0]) {
 				skipIntro = viddata.sources[0].skipIntro;
 			}
+
 			currentVidData.sources = [{
 				"name": viddata.sources[0].name,
 				"type": viddata.sources[0].type,
-				"url": viddata.sources[0].type == 'hls' ? `${rootDir}/master.m3u8` : `${(<cordovaWindow>window.parent).cordova.file.externalDataDirectory}/${rootDir}/master.m3u8`,
+				"url": viddata.sources[0].type == 'hls' ? `${rootDir}/master.m3u8` : `${(<cordovaWindow>window.parent).cordova.file.externalDataDirectory}${rootDir}/master.m3u8`,
+				"castURL": `${rootDir}/master.mp4`
 			}];
 
 			if (skipIntro) {
@@ -650,10 +653,9 @@ function getEpIni() {
 
 			engine = currentVidData.engine;
 			getEp();
-		}).catch(function (err: Error) {
+		} catch (err) {
 			alert(err);
-		});
-
+		}
 	} else {
 		window.parent.postMessage({ "action": 5, "data": `${param}` }, "*");
 	}
@@ -726,11 +728,23 @@ function ini_main() {
 	}
 }
 
-async function update(shouldCheck: number) {
-	let currentTime = vidInstance.vid.currentTime;
-	let currentDuration = Math.floor(vidInstance.vid.duration);
+async function update(shouldCheck: number, altCurrentTime?: any, altDuration?: any) {
+	let currentTime: number;
+	let currentDuration: number;
 
-	if (updateCheck == 1 && (vidInstance.vid.currentTime - lastUpdate) > 60 && shouldCheck != 19) {
+	if (!isNaN(parseFloat(altCurrentTime))) {
+		currentTime = parseFloat(altCurrentTime);
+	} else {
+		currentTime = vidInstance.vid.currentTime;
+	}
+
+	if (!isNaN(parseInt(altDuration))) {
+		currentDuration = parseInt(altDuration);
+	} else {
+		currentDuration = Math.floor(vidInstance.vid.duration);
+	}
+
+	if (updateCheck == 1 && (currentTime - lastUpdate) > 60 && shouldCheck != 19) {
 		alert("Could not sync time with the server.");
 	}
 
@@ -749,7 +763,7 @@ async function update(shouldCheck: number) {
 			if (
 				aniID &&
 				vidInstance.vid.duration > 0 &&
-				(vidInstance.vid.currentTime + 120) > vidInstance.vid.duration &&
+				(currentTime + 120) > vidInstance.vid.duration &&
 				localStorage.getItem("anilist-last") != identifier
 			) {
 				await (window.parent as cordovaWindow).updateEpWatched(aniID, currentVidData.episode);
@@ -789,7 +803,7 @@ async function update(shouldCheck: number) {
 			alert("Time could not be synced with the server.");
 
 		} else if (errorCount == 5) {
-			lastUpdate = vidInstance.vid.currentTime;
+			lastUpdate = currentTime;
 		}
 
 	});
@@ -1136,6 +1150,11 @@ async function getEp(x = 0) {
 		return;
 	}
 
+	if (castingMode) {
+		startCasting(true);
+		return;
+	}
+
 	getEpCheck = 1;
 
 	try {
@@ -1197,8 +1216,6 @@ async function getEp(x = 0) {
 		else {
 			document.getElementById("next_ep").style.display = "table-cell";
 		}
-
-
 
 		let response = await (<cordovaWindow>window.parent).apiCall("POST",
 			{
@@ -1281,7 +1298,7 @@ function closeSettings() {
 function updateCasting(casting: undefined | boolean) {
 	if ((window.parent as cordovaWindow).isCasting() || casting === true) {
 		document.getElementById("cast").className = "casting";
-	}else{
+	} else {
 		document.getElementById("cast").className = "notCasting";
 	}
 }
@@ -1343,6 +1360,234 @@ document.querySelector("#episodeList").addEventListener("click", function () {
 
 function updateEpListSelected() {
 	DMenu?.selections[location.search]?.select();
+}
+
+function enableRemote(time: number) {
+	const currentTime = time;
+	const duration = 86400;
+	const remoteDOM = document.querySelector("#remote") as HTMLElement;
+	const hasPrev = !!currentVidData.prev;
+	const hasNext = !!currentVidData.next;
+
+	vidInstance.setObjectSettings(1, false);
+
+	if (hls) {
+		hls.destroy();
+	}
+
+	console.log(JSON.parse(JSON.stringify(currentVidData)), hasNext, hasPrev);
+
+	vidInstance.vid.src = "";
+	clearInterval(remoteInterval);
+
+	remoteDOM.innerHTML = "";
+	remoteDOM.style.display = "flex";
+	remoteDOM.appendChild(createElement(
+		{
+			style: {
+				width: "100%",
+			},
+			children: [
+				{
+					id: "remoteTitle",
+					innerText: (window.parent as cordovaWindow).fixTitle(
+						localStorage.getItem("mainName"),
+						extensionList[engine],
+					)
+				},
+				{
+					id: "remoteEpisode",
+					innerText: `Epsiode ${currentVidData.episode}`
+				},
+				{
+					style: {
+						textAlign: "center",
+						margin: "30px 0"
+					},
+					children: [
+						{
+							element: "div",
+							class: "remoteIcon remotePrev",
+							style: {
+								opacity: hasPrev ? "1" : "0",
+								pointerEvents: hasPrev ? "auto" : "none"
+							},
+							listeners: {
+								click: function () {
+									destroyRemote();
+									changeEp(-1);
+								}
+							}
+						},
+						{
+							element: "div",
+							id: "remotePlay",
+							class: "remoteIcon remotePlay",
+							listeners: {
+								click: function () {
+									(window.parent as cordovaWindow).toggleCastState();
+								}
+							}
+						},
+						{
+							element: "div",
+							class: "remoteIcon remoteNext",
+							style: {
+								opacity: hasNext ? "1" : "0",
+								pointerEvents: hasNext ? "auto" : "none"
+							},
+							listeners: {
+								click: function () {
+									destroyRemote();
+									changeEp(1);
+								}
+							}
+						},
+					]
+
+				},
+				{
+					element: "range-slider",
+					id: "remoteSlider",
+					attributes: {
+						tyle: "range",
+						max: duration.toString(),
+						min: "0",
+						value: currentTime.toString(),
+					},
+					listeners: {
+						change: function () {
+							(window.parent as cordovaWindow).updateCastTime(this.getAttribute("value"));
+						}
+					}
+				}
+			]
+		}
+	));
+
+	// sendNoti([5, "red", "red", currentTime]);
+	shouldUpdateSlider = true;
+	(window.parent as cordovaWindow).updateCastTime(currentTime);
+	updateRemoteState({paused: true, currentTime, duration, hasFinished: false});
+}
+
+function destroyRemote() {
+	clearInterval(remoteInterval);
+	remoteInterval = null;
+	const remoteDOM = document.querySelector("#remote") as HTMLElement;
+	remoteDOM.style.display = "none";
+	remoteDOM.innerHTML = "";
+}
+
+function updateRemoteState(castState: { paused: boolean, currentTime: number, duration: number, hasFinished: boolean }) {
+	if(shouldUpdateSlider === false){
+		return;
+	}
+
+	if(castState.hasFinished === true && localStorage.getItem("autoplay") === "true"){
+		changeEp(1);
+		return;
+	}
+
+	const slider = document.getElementById("remoteSlider") as HTMLInputElement;
+
+	slider.value = castState.currentTime.toString();
+	slider.setAttribute("max", castState.duration.toString());
+
+	if (parseInt(slider.getAttribute("value")) != 0) {
+		update(19, slider.getAttribute("value"), slider.getAttribute("max"));
+	}
+	
+	if (castState.paused) {
+		(document.getElementById("remotePlay") as HTMLInputElement).className = "remoteIcon remotePlay";
+	} else {
+		(document.getElementById("remotePlay") as HTMLInputElement).className = "remoteIcon remotePause";
+	}
+
+	if(remoteInterval === null && castState.paused === false){
+		remoteInterval = setInterval(function () {
+			try {
+				const state = (window.parent as cordovaWindow).getEstimatedState();
+				if (state) {
+					updateRemoteState(state);
+				}
+			} catch (err) {
+				console.error(err);
+			}
+		}, 1000);
+	}
+}
+
+async function startCasting(shouldDestroy = false) {
+	shouldUpdateSlider = false;
+	let classname: "casting" | "notCasting" | undefined;
+	let requiresWebServer = false;
+
+	if ((window.parent as cordovaWindow).isCasting() && shouldDestroy === false) {
+		const changed = (await (window.parent as cordovaWindow).destroySession());
+		console.log("DESTROY", changed);
+
+		if (changed === true) {
+			classname = "notCasting";
+		}
+	} else {
+		let type: string, url: string;
+		if (selectedMain) {
+			url = selectedMain[1];
+			type = selectedMain[0];
+		} else {
+			url = currentVidData.sources[0].url;
+			type = currentVidData.sources[0].type;
+		}
+
+
+		if (type == "hls") {
+			type = "application/x-mpegURL";
+		} else {
+			type = "video/mp4";
+			url = currentVidData.sources[0].castURL;
+		}
+
+
+		if (downloaded || loadsLocally) {
+			requiresWebServer = true;
+
+			const localIP = (await (window.parent as cordovaWindow).getLocalIP())?.ip;
+
+			if (!localIP) {
+				alert("Could not get the LAN address");
+			}
+
+			url = `http://${localIP}:56565${url}`;
+		}
+
+		let response = await (<cordovaWindow>window.parent).apiCall("POST",
+			{
+				"username": username,
+				"action": 2,
+				"name": currentVidData.nameWSeason,
+				"nameUm": currentVidData.name,
+				"ep": currentVidData.episode,
+				"cur": location.search
+			}, () => { });
+
+
+		const changed = await (window.parent as cordovaWindow).castVid({
+			url,
+			type,
+			currentTime: response.data.time
+		}, requiresWebServer);
+
+		if (changed === true) {
+			classname = "casting";
+			castingMode = true;
+			enableRemote(response.data.time);
+		}
+	}
+
+	if (classname) {
+		document.getElementById("cast").className = classname;
+	}
 }
 
 window.onmessage = async function (message: MessageEvent) {
@@ -1432,12 +1677,14 @@ window.onmessage = async function (message: MessageEvent) {
 					res = confirm("Want to open the downloaded version?");
 				}
 				if (res) {
+					loadsLocally = true;
 					let vidString = (await (<cordovaWindow>window.parent).makeLocalRequest("GET", `${rootDir}/viddata.json`));
 					let viddata: videoData = JSON.parse(vidString).data;
 					currentVidData.sources = [{
 						"name": viddata.sources[0].name,
 						"type": viddata.sources[0].type,
-						"url": viddata.sources[0].type == 'hls' ? `${rootDir}/master.m3u8` : `${(<cordovaWindow>window.parent).cordova.file.externalDataDirectory}/${rootDir}/master.m3u8`,
+						"url": viddata.sources[0].type == 'hls' ? `${rootDir}/master.m3u8` : `${(<cordovaWindow>window.parent).cordova.file.externalDataDirectory}${rootDir}/master.m3u8`,
+						"castURL": `${rootDir}/master.mp4`
 					}];
 					CustomXMLHttpRequest = (<cordovaWindow>window.parent).XMLHttpRequest;
 				}
@@ -1481,6 +1728,8 @@ window.onmessage = async function (message: MessageEvent) {
 				vidInstance.lockVid2();
 			}
 		}
+	} else if (message.data.action == "castStateUpdated") {
+		updateRemoteState(message.data.data);
 	}
 };
 
@@ -1634,6 +1883,10 @@ DMenu.open("initial");
 DMenu.closeMenu();
 if (config.chrome) {
 	document.getElementById("fullscreenToggle").style.display = "block";
+	const chromeDOM = document.getElementsByClassName("notChrome") as HTMLCollectionOf<HTMLElement>;
+	for (let i = 0; i < chromeDOM.length; i++) {
+		chromeDOM[i].style.display = "none";
+	}
 }
 
 if (config.local || downloaded) {
@@ -1657,59 +1910,8 @@ const playerDOM = (document.querySelector("#playbackDOM") as HTMLElement);
 applyTheme();
 applySubtitleConfig();
 
-document.getElementById("cast").onclick = async function () {
-	let classname: "casting" | "notCasting" | undefined;
-
-	if ((window.parent as cordovaWindow).isCasting()) {
-		const changed = (await (window.parent as cordovaWindow).destroySession());
-		console.log("DESTROY", changed);
-
-		if(changed === true){
-			classname = "notCasting";
-		}
-	} else {
-		let type: string, url: string;
-		if (selectedMain) {
-			url = selectedMain[1];
-			type = selectedMain[0];
-		} else {
-			url = currentVidData.sources[0].url;
-			type = currentVidData.sources[0].type;
-		}
-
-		if (downloaded) {
-			const localIP = (await (window.parent as cordovaWindow).getLocalIP())?.ip;
-
-			if (!localIP) {
-				alert("Could not get the LAN address");
-			}
-
-			url = `http://${localIP}:56565${url}`;
-		}
-
-		if (type == "hls") {
-			type = "application/x-mpegURL";
-		} else {
-			type = "video/mp4";
-		}
-
-		const changed = await (window.parent as cordovaWindow).castVid({
-			url,
-			type,
-			currentTime: vidInstance.vid.currentTime
-		});
-
-		console.log("MAKE", changed);
-
-		if(changed === true){
-			classname = "casting";
-		}
-	}
-
-
-	if(classname){
-		document.getElementById("cast").className = classname;
-	}
-}
+document.getElementById("cast").onclick = function () {
+	startCasting();
+};
 
 updateCasting(false);

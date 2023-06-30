@@ -93,6 +93,7 @@ interface videoSource {
     name: string,
     type: string,
     url: string,
+    castURL?: string,
     skipIntro?: skipData
 }
 
@@ -141,12 +142,18 @@ interface cordovaServerRequest {
     method: string;
     path: string;
     requestId: string;
+    query: string,
 }
 interface cordovaWindow extends Window {
+    fixTitle(title: string, extension?: extension): string,
+    getEstimatedState: Function,
+    toggleCastState: Function,
+    getCurrentCastState: Function,
+    updateCastTime: Function,
     webserver: any,
     getLocalIP: any,
     chrome: any,
-    castVid: (data: any) => Promise<boolean>,
+    castVid: (data: any, requiresWebServer: boolean) => Promise<boolean>,
     destroySession: () => Promise<boolean>,
     isCasting: () => boolean,
     cordova: any,
