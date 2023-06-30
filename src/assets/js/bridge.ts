@@ -1076,6 +1076,7 @@ if (config.chrome) {
     (mainIFrame as HTMLIFrameElement).src = "pages/homepage/index.html";
 }
 
+localStorage.removeItem("pdfjs.history");
 updateTheme();
 setGradient();
 setOpacity();

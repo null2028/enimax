@@ -191,7 +191,7 @@ let catDataCon = createElement({
 
 
 const catDataCons = [];
-const cats = ["Anime", "Manga", "TV/Movies", "Others"];
+const cats = ["Anime", "Manga/Light novels", "TV/Movies", "Others"];
 const catIDs = ["anime", "manga", "tv", "others"];
 
 conElem.append(createElement({

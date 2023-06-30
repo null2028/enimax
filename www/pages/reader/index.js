@@ -13,6 +13,8 @@ const totalPageDOM = document.getElementById("totalPage");
 const settingCon = document.querySelector(".menuCon");
 const mainLoading = document.getElementById("mainLoading");
 const pageNumDOM = document.getElementById("pageNum");
+const epubNext = document.querySelector("#epubNext");
+const epubPrev = document.querySelector("#epubPrev");
 const modes = {
     NORMAL: 0,
     REVERSED: 1
@@ -170,6 +172,7 @@ function readerMakeLocalRequest(method, url, responseType = "blob") {
     });
 }
 function constructTheme() {
+    var _a;
     const tags = ["h1", "h2", "h3", "h4", "h5", "h6"];
     const themeVal = {
         p: {}
@@ -177,11 +180,10 @@ function constructTheme() {
     for (const tag of tags) {
         themeVal[tag] = {};
     }
-    if (localStorage.getItem("epub-fontColor")) {
-        themeVal["p"]["color"] = localStorage.getItem("epub-fontColor");
-        for (const tag of tags) {
-            themeVal[tag]["color"] = localStorage.getItem("epub-fontColor");
-        }
+    const fontColor = (_a = localStorage.getItem("epub-fontColor")) !== null && _a !== void 0 ? _a : "#ffffff";
+    themeVal["p"]["color"] = fontColor;
+    for (const tag of tags) {
+        themeVal[tag]["color"] = fontColor;
     }
     if (localStorage.getItem("epub-fontSize")) {
         themeVal["p"]["font-size"] = `${localStorage.getItem("epub-fontSize")}px`;
@@ -195,14 +197,12 @@ window.addEventListener("epubProgress", function (event) {
     mainLoading.textContent = `${((event.loaded / event.total) * 100).toFixed(2)}% done`;
 });
 function handleEpubMenu(elem) {
-    if (elem.getAttribute("data-open") !== "true") {
+    if (epubMenu.menuCon.getAttribute("data-open") !== "true") {
         epubMenu.open("initial");
         epubMenu.openMenu();
-        elem.setAttribute("data-open", "true");
     }
     else {
         epubMenu.closeMenu();
-        elem.setAttribute("data-open", "false");
     }
 }
 window.onmessage = function (event) {
@@ -266,7 +266,7 @@ async function setupEpubReader(data, readerDownloaded) {
         }
         // @ts-ignore
         const book = ePub(data.sources[0].url);
-        rendition = book.renderTo("chapterCon", { width: "calc(100% - 80px)", height: "calc(100% - 40px)" });
+        rendition = book.renderTo("chapterCon", { width: "calc(100% - 60px)", height: "calc(100% - 40px)" });
         rendition.on("displayed", (event) => {
             changed();
         });
@@ -424,9 +424,14 @@ async function ini() {
         }
         if (currentMangaData.readerType === "epub") {
             changeMode(modes.NORMAL);
+            toggleArrows();
+            // Close the manga menu if it's open
+            menuOpen = true;
+            handleMenu();
             setupEpubReader(currentMangaData, (readerDownloaded || loadLocally));
             return;
         }
+        mainLoading === null || mainLoading === void 0 ? void 0 : mainLoading.addEventListener("click", handleMenu);
         if (hasLoadedEpList === false && !readerDownloaded) {
             hasLoadedEpList = true;
             extensionListReader[mangaEngine].getAnimeInfo(localStorage.getItem("epURL").replace("?watch=/", "")).then((data) => {
@@ -802,6 +807,17 @@ function togglePageNum(shouldShow) {
         pageNumDOM.style.display = "none";
     }
 }
+function toggleArrows() {
+    const shouldShow = localStorage.getItem("epub-hideArrows") === "true";
+    if (shouldShow) {
+        epubNext.style.display = "none";
+        epubPrev.style.display = "none";
+    }
+    else {
+        epubNext.style.display = "flex";
+        epubPrev.style.display = "flex";
+    }
+}
 document.getElementById("next").onclick = function () {
     if (reversed) {
         loadPrev();
@@ -905,17 +921,17 @@ const epubMenu = new dropDownMenu([
         "items": [
             {
                 "text": "Sections",
-                "iconID": "qualIcon",
+                "iconID": "epubSection",
                 "open": "sections"
             },
             {
                 "text": "Table of Contents",
-                "iconID": "qualIcon",
+                "iconID": "tocIcon",
                 "open": "toc"
             },
             {
                 "text": "Config",
-                "iconID": "qualIcon",
+                "iconID": "epubConfig",
                 "open": "config"
             }
         ]
@@ -958,6 +974,19 @@ const epubMenu = new dropDownMenu([
                     togglePageNum(true);
                 },
                 "text": "Hide page number"
+            },
+            {
+                "toggle": true,
+                "on": localStorage.getItem("epub-hideArrows") === "false",
+                "toggleOn": () => {
+                    localStorage.setItem("epub-hideArrows", "true");
+                    toggleArrows();
+                },
+                "toggleOff": () => {
+                    localStorage.setItem("epub-hideArrows", "false");
+                    toggleArrows();
+                },
+                "text": "Hide the arrows"
             },
             {
                 "color": true,
@@ -1092,7 +1121,6 @@ document.querySelector(".bottomNavMenuItem.settingsIcon").addEventListener("clic
         closeSettings();
     }
 });
-mainLoading === null || mainLoading === void 0 ? void 0 : mainLoading.addEventListener("click", handleMenu);
 document.querySelector(".bottomNavMenuItem.reloadIcon").addEventListener("click", function () {
     window.location.reload();
 });

@@ -900,6 +900,7 @@ document.addEventListener("deviceready", onDeviceReady, false);
 if (config.chrome) {
     mainIFrame.src = "pages/homepage/index.html";
 }
+localStorage.removeItem("pdfjs.history");
 updateTheme();
 setGradient();
 setOpacity();
