@@ -1263,7 +1263,7 @@ function makeDiscoverCard(data: DiscoverData) {
 function humanDate(date: { day: number, month: number, year: number }) {
     const thisDate = new Date();
     thisDate.setDate(date.day);
-    thisDate.setMonth(date.month);
+    thisDate.setMonth(date.month - 1);
     thisDate.setFullYear(date.year);
 
     return `${thisDate.getDate()} ${thisDate.toLocaleString('en-us', { month: "short" })} ${thisDate.getFullYear()}`;
