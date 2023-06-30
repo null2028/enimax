@@ -1013,7 +1013,8 @@ async function onDeviceReady() {
             if (!config.chrome && localStorage.getItem("fullscreenMode") === "true") {
                 disableFullScreen();
             }
-
+            
+            castSession = null;
             playerIFrame.contentWindow.location.replace("fallback.html");
             playerIFrame.classList.remove("pop");
             playerIFrame.style.display = "none";
