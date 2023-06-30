@@ -1218,7 +1218,7 @@ addToLibrary.onclick = function () {
 
                         (<cordovaWindow>window.parent).apiCall("POST", { "username": "", "action": 4 }, (response: any) => {
                             const rooms = response.data[1];
-
+                            rooms.unshift("Recently Watched", 0, "Ongoing", -1);
                             if (rooms.length === 0) {
                                 return;
                             }
@@ -1254,6 +1254,16 @@ addToLibrary.onclick = function () {
 
 
         } else {
+            const searchQuery = new URLSearchParams(location.search);
+            if (!!localStorage.getItem("anilist-token") && searchQuery.has("aniID") && searchQuery.get("aniID")) {
+                const aniID = parseInt(searchQuery.get("aniID"));
+                const shouldDelete = confirm("Do you want to delete this show from your anilist account?");
+                if (shouldDelete) {
+                    (window.parent as cordovaWindow).deleteAnilistShow(aniID);
+                }
+
+            }
+
             const shouldDelete = confirm("Are you sure that you want to remove this show from your library?");
             if (shouldDelete) {
                 (<cordovaWindow>window.parent).apiCall("POST", { "username": "", "action": 6, "name": showMainName }, () => {
@@ -1263,17 +1273,6 @@ addToLibrary.onclick = function () {
                 });
             } else {
                 addToLibrary.classList.remove("isWaiting");
-            }
-
-
-            const searchQuery = new URLSearchParams(location.search);
-            if (!!localStorage.getItem("anilist-token") && searchQuery.has("aniID") && searchQuery.get("aniID")) {
-                const aniID = parseInt(searchQuery.get("aniID"));
-                const shouldDelete = confirm("Do you want to delete this show from your anilist account?");
-                if (shouldDelete) {
-                    (window.parent as cordovaWindow).deleteAnilistShow(aniID);
-                }
-
             }
         }
     } else {
