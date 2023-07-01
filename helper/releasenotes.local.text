@@ -1,17 +1,15 @@
-1. Added viewasian
-2. Fixed fmovies
-3. Fixed WCOForever
-4. UI overhaul
-5. Added advanced anilist search
-6. Refined the filter menu
-7. An option to add the latest episode in the ongoing tab to the download queue. However, it will only do that after the library updates either manually (by clicking on "update library") or automatically (which happens twice a day). This setting is **disabled** by default and can be enabled by going to the Settings and then enabling **"Auto-download the latest episode in the Ongoing category"** option.
-8. Changed homepage's card layout.
-9. Fillers are highlighted, whenever that information is available
-10. Fixed navigation on android TV. I plan on refining it even more.
-11. An option to disable fullscreen mode
-12. Moved twitch live streams to the start of the list
-13. Added an option to change playback speed of the video
+New features:
+1. Added Anna's archive (for light novels).
+2. Added casting! Not all sources will work because of some technicalities. However, you can cast any video if you have already downloaded it.
+3. Anilist anonymous mode. Can be enabled by going to the settings. When enabled, it won't sync up progress with your anilist account.
+4. Sped up Anilist importing.
 
-Major features:
+Minor changes:
+1. Added a button to log out from Anilist.
+2. Shows can be directly added to "Recently Watched" and "Ongoing" from the info page.
 
-14. Added anilist support! You can go to the menu and click on `Anilist Login` to login. Once you're logged in, it will ask if you want to import your libary. This is a one time process, but it can be repeated by going to the menu and clicking on "Import anilist library".
+Backend changes and bug fixes:
+1. Switched away from Consumet for 9anime and Fmovies.
+2. Fixed the new episode bug.
+3. Fixed a chrome storage bug.
+4. Fixed a bug where the discover page would show the wrong month.

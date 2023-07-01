@@ -461,8 +461,6 @@ async function getAllItems() {
 
             await batchPromisesMalSync(malsyncURLs, 5, anilistData, permNoti);
 
-            console.log(anilistData);
-
             for (let i = 0; i < anilistIDs.length; i++) {
                 const id = anilistIDs[i];
 
