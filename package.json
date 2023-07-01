@@ -72,7 +72,9 @@
       "cordova-plugin-webserver": {},
       "cordova-plugin-networkinterface": {}
     },
-    "platforms": []
+    "platforms": [
+      "android"
+    ]
   },
   "dependencies": {
     "@types/cordova": "^11.0.0",

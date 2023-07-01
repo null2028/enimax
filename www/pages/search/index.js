@@ -27,6 +27,15 @@ let currentCatIndex = 0;
 function sendNoti() {
     return document.createElement("div");
 }
+function openWebview(url) {
+    if (config.chrome) {
+        window.open(url, "_blank");
+    }
+    else {
+        // @ts-ignore
+        window.parent.getWebviewHTML(url, false, null, "console.log()");
+    }
+}
 function search() {
     const conID = `room_${catIDs[currentCatIndex]}`;
     document.getElementById(conID).innerHTML = "<div style='margin:auto;'>Loading...</div>";
@@ -127,7 +136,14 @@ function search() {
     }).catch(function (error) {
         document.getElementById(conID).innerHTML = "";
         constructErrorPage(document.getElementById(conID), error.toString(), {
-            hasLink: false,
+            hasLink: true,
+            clickEvent: () => {
+                let url = currentEngine.baseURL;
+                if (!url.startsWith("http")) {
+                    url = "https://" + url;
+                }
+                openWebview(url);
+            },
             hasReload: false,
             isError: false,
             customConClass: "absolute",

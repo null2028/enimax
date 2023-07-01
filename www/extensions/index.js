@@ -886,7 +886,7 @@ var animixplay = {
     }
 };
 var fmovies = {
-    baseURL: fmoviesBaseURL,
+    baseURL: "fmovies.ink",
     type: "tv",
     disableAutoDownload: false,
     disabled: false,

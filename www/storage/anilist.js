@@ -215,6 +215,44 @@ async function changeShowStatus(anilistID, status) {
     };
     await makeAnilistReq(query, variables, accessToken);
 }
+async function infoPromise(showURL, engine, index) {
+    const result = await engine.getAnimeInfo(showURL.replace("?watch=/", ""));
+    return {
+        index,
+        result
+    };
+}
+async function batchPromises(showURLs, batchSize, links, permNoti) {
+    const allSettled = "allSettled" in Promise;
+    const promises = [];
+    for (let i = 0; i < showURLs.length; i++) {
+        const showURL = showURLs[i].showURL;
+        permNoti.updateBody(showURL);
+        promises.push(infoPromise(showURL, showURLs[i].engine, i));
+        if (promises.length >= batchSize || i == showURLs.length - 1) {
+            if (allSettled) {
+                const res = await Promise.allSettled(promises);
+                for (const promise of res) {
+                    if (promise.status === "fulfilled") {
+                        links[promise.value.index].result = promise.value.result;
+                    }
+                }
+            }
+            else {
+                try {
+                    const res = await Promise.all(promises);
+                    for (const result of res) {
+                        links[result.index].result = result.result;
+                    }
+                }
+                catch (err) {
+                    console.warn(err);
+                }
+            }
+            promises.splice(0);
+        }
+    }
+}
 async function getAllItems() {
     const accessToken = localStorage.getItem("anilist-token");
     if (!accessToken) {
@@ -321,10 +359,21 @@ async function getAllItems() {
                     console.warn(err);
                 }
             }
+            const promiseInput = [];
+            for (const link of links) {
+                promiseInput.push({
+                    showURL: link.link,
+                    engine: currentExtension,
+                });
+            }
+            await batchPromises(promiseInput, 5, links, permNoti);
             for (const link of links) {
                 try {
+                    if (!link.result) {
+                        continue;
+                    }
                     permNoti.updateBody(`Trying to get the info for ${link.link}`);
-                    const currentInfo = await currentExtension.getAnimeInfo(link.link.replace("?watch=/", ""));
+                    const currentInfo = link.result;
                     let currentEp = currentInfo.episodes.find((ep) => {
                         return parseFloat(ep[numberKey]) >= link.progress;
                     });
