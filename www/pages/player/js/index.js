@@ -1266,6 +1266,7 @@ function enableRemote(time) {
 }
 function destroyRemote() {
     clearInterval(remoteInterval);
+    shouldUpdateSlider = false;
     remoteInterval = null;
     const remoteDOM = document.querySelector("#remote");
     remoteDOM.style.display = "none";

@@ -1,5 +1,6 @@
-let playerIFrame = document.getElementById("player") as HTMLIFrameElement;
-let mainIFrame = document.getElementById("frame") as HTMLIFrameElement;
+const playerIFrame = document.getElementById("player") as HTMLIFrameElement;
+const mainIFrame = document.getElementById("frame") as HTMLIFrameElement;
+const anonDOM = document.getElementById("anonMode") as HTMLElement;
 let thisWindow = (window as unknown as cordovaWindow);
 var socket;
 let frameHistory: Array<string> = [];
@@ -170,6 +171,23 @@ function killServer() {
     });
 }
 
+function handleUpperBar() {
+    const anonIsActive = localStorage.getItem("anon-anilist") === "true";
+    const offlineIsActive = localStorage.getItem("offline") === "true";
+
+    if (offlineIsActive) {
+        mainIFrame.classList.add("anon");
+        anonDOM.classList.add("active");
+        anonDOM.textContent = "Downloaded-only mode";
+    } else if (anonIsActive) {
+        mainIFrame.classList.add("anon");
+        anonDOM.classList.add("active");
+        anonDOM.textContent = "Anilist-anon mode";
+    } else {
+        mainIFrame.classList.remove("anon");
+        anonDOM.classList.remove("active");
+    }
+}
 
 function castVid(data, requiresWebServer: boolean) {
     console.log(data, requiresWebServer);
@@ -622,14 +640,14 @@ function executeAction(message: MessageAction, reqSource: Window) {
     else if (message.action == 400) {
         screen.orientation.lock("any").then(() => { }).catch(() => { });
         playerIFrame.classList.add("pop");
-        mainIFrame.style.height = "calc(100% - 200px)";
+        mainIFrame.classList.add("mainPop");
         mainIFrame.style.display = "block";
         playerIFrame.style.display = "block";
     }
     else if (message.action == 401) {
         screen.orientation.lock("landscape").then(() => { }).catch(() => { });
         playerIFrame.classList.remove("pop");
-        mainIFrame.style.height = "100%";
+        mainIFrame.classList.remove("mainPop");
         mainIFrame.style.display = "none";
         playerIFrame.style.display = "block";
 
@@ -1013,7 +1031,7 @@ async function onDeviceReady() {
             if (!config.chrome && localStorage.getItem("fullscreenMode") === "true") {
                 disableFullScreen();
             }
-            
+
             castSession = null;
             playerIFrame.contentWindow.location.replace("fallback.html");
             playerIFrame.classList.remove("pop");
@@ -1082,3 +1100,4 @@ updateTheme();
 setGradient();
 setOpacity();
 applyTheme();
+handleUpperBar();

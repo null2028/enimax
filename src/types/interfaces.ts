@@ -147,6 +147,7 @@ interface cordovaServerRequest {
 interface cordovaWindow extends Window {
     fixTitle(title: string, extension?: extension): string,
     getEstimatedState: Function,
+    handleUpperBar: Function,
     toggleCastState: Function,
     getCurrentCastState: Function,
     updateCastTime: Function,

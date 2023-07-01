@@ -1473,6 +1473,7 @@ function enableRemote(time: number) {
 
 function destroyRemote() {
 	clearInterval(remoteInterval);
+	shouldUpdateSlider = false;
 	remoteInterval = null;
 	const remoteDOM = document.querySelector("#remote") as HTMLElement;
 	remoteDOM.style.display = "none";

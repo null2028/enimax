@@ -41,6 +41,10 @@ async function makeAnilistReq(query: string, variables: any, accessToken: string
 }
 
 async function updateEpWatched(anilistID: any, epNum: any) {
+    if(localStorage.getItem("anon-anilist") === "true"){
+        return;
+    }
+    
     const accessToken = localStorage.getItem("anilist-token");
 
     if (!accessToken || isNaN(parseInt(anilistID)) || isNaN(parseInt(epNum))) {

@@ -466,6 +466,7 @@ offlineDOM.onchange = function () {
         localStorage.setItem("offline", "true");
         window.parent.postMessage({ "action": 500, data: "pages/homepage/index.html" }, "*");
     }
+    window.parent.handleUpperBar();
 };
 async function logout() {
     try {
@@ -563,6 +564,10 @@ document.getElementById("hideNotification").onchange = function () {
 document.getElementById("alwaysDown").onchange = function () {
     localStorage.setItem("alwaysDown", this.checked.toString());
 };
+document.getElementById("anonModeToggle").onchange = function () {
+    localStorage.setItem("anon-anilist", this.checked.toString());
+    window.parent.handleUpperBar();
+};
 document.getElementById("9animeHelper").oninput = function () {
     localStorage.setItem("9anime", this.value);
 };
@@ -590,6 +595,11 @@ document.getElementById("rangeCon").addEventListener("touchmove", function (even
     event.stopPropagation();
 });
 document.getElementById("anilistLogin").addEventListener("click", function (event) {
+    if (hasAnilistToken) {
+        localStorage.removeItem("anilist-token");
+        window.location.reload();
+        return;
+    }
     if (config.chrome) {
         try {
             alert("A new tab will open asking you to log in, and then you will be redirected to a new page. Copy the URL of the new page and paste it when prompted");
@@ -642,6 +652,7 @@ document.getElementById("fullscreenMode").checked = localStorage.getItem("fullsc
 document.getElementById("hideNotification").checked = localStorage.getItem("hideNotification") === "true";
 document.getElementById("alwaysDown").checked = localStorage.getItem("alwaysDown") === "true";
 document.getElementById("useImageBack").checked = localStorage.getItem("useImageBack") === "true";
+document.getElementById("anonModeToggle").checked = localStorage.getItem("anon-anilist") === "true";
 document.getElementById("offline").checked = (localStorage.getItem("offline") === 'true');
 document.getElementById("reset").addEventListener("click", function () {
     window.parent.postMessage({ "action": 22, data: "" }, "*");
@@ -2111,4 +2122,10 @@ for (const div of document.querySelectorAll("div")) {
 }
 for (const input of document.querySelectorAll("input")) {
     input.setAttribute("tabindex", "0");
+}
+if (hasAnilistToken) {
+    const anilistMenuItem = document.querySelector("#anilistLogin .menuTitle");
+    if (anilistMenuItem) {
+        anilistMenuItem.textContent = "Anilist Log out";
+    }
 }
