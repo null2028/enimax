@@ -1,5 +1,5 @@
 var fmovies: extension = {
-    baseURL: "fmovies.ink",
+    baseURL: fmoviesBaseURL,
     type: "tv",
     disableAutoDownload: false,
     disabled: false,

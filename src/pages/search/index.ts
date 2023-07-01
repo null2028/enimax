@@ -33,6 +33,15 @@ function sendNoti() {
     return document.createElement("div");
 }
 
+function openWebview(url: string) {
+    if (config.chrome) {
+        window.open(url, "_blank");
+    } else {
+        // @ts-ignore
+        window.parent.getWebviewHTML(url, false, null, "console.log()");
+    }
+}
+
 function search() {
     const conID = `room_${catIDs[currentCatIndex]}`;
 
@@ -154,7 +163,16 @@ function search() {
             document.getElementById(conID),
             error.toString(),
             {
-                hasLink: false,
+                hasLink: true,
+                clickEvent: () => {
+                    let url = (currentEngine as extension).baseURL;
+
+                    if(!url.startsWith("http")){
+                        url = "https://" + url;
+                    }
+
+                    openWebview(url);
+                },
                 hasReload: false,
                 isError: false,             // It already has the "Error:" prefix, so this is not needed
                 customConClass: "absolute",
