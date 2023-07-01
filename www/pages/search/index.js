@@ -91,12 +91,7 @@ function search() {
         let main_div = x.data;
         if (main_div.length == 0) {
             document.getElementById(conID).innerHTML = "";
-            constructErrorPage(document.getElementById(conID), "No results", {
-                hasLink: false,
-                hasReload: false,
-                isError: false,
-                customConClass: "absolute"
-            });
+            throw new Error("No results");
         }
         else {
             document.getElementById(conID).innerHTML = "";

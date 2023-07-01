@@ -258,7 +258,7 @@ async function changeShowStatus(anilistID: any, status: anilistStatus) {
 
 async function infoPromise(showURL: string, engine: extension, index: number) {
     const result = await engine.getAnimeInfo(showURL.replace("?watch=/", ""));
-    
+
     return {
         index,
         result
@@ -301,6 +301,49 @@ async function batchPromises(showURLs: { showURL: string, engine: extension }[],
     }
 }
 
+async function malsyncPromise(url: string, id: number) {
+    const result = await MakeFetch(url);
+
+    return {
+        id,
+        result
+    };
+}
+
+async function batchPromisesMalSync(URLs: {id: number, url: string}[], batchSize: number, anilistData: {[key: number]: string}, permNoti: notification) {
+    const allSettled = "allSettled" in Promise;
+    const promises: Array<Promise<{ id: number, result: string }>>  = [];
+
+    for (let i = 0; i < URLs.length; i++) {
+        promises.push(malsyncPromise(URLs[i].url, URLs[i].id));
+        permNoti.updateBody(`Getting link for anilist ID: ${URLs[i].id}`);
+
+        if (promises.length >= batchSize || i == URLs.length - 1) {
+
+            if (allSettled) {
+                const res = await Promise.allSettled(promises);
+
+                for (const promise of res) {
+                    if (promise.status === "fulfilled") {
+                        anilistData[promise.value.id] = promise.value.result;
+                    }
+                }
+            } else {
+                try {
+                    const res = await Promise.all(promises);
+
+                    for(const result of res){
+                        anilistData[result.id] = result.result;
+                    }
+                } catch (err) {
+                    console.warn(err);
+                }
+            }
+
+            promises.splice(0);
+        }
+    }
+}
 
 async function getAllItems() {
     const accessToken = localStorage.getItem("anilist-token");
@@ -405,15 +448,25 @@ async function getAllItems() {
             }
 
             const links: AnilistLinks = [];
+            const anilistData = {};
+            const malsyncURLs: {id: number, url: string}[] = [];
+            
+            for (let i = 0; i < anilistIDs.length; i++) {
+                const id = anilistIDs[i];
+                malsyncURLs.push({
+                    url: `https://raw.githubusercontent.com/MALSync/MAL-Sync-Backup/master/data/anilist/${type.toLowerCase()}/${id}.json`,
+                    id: parseInt(id)
+                });
+            }
+
+            await batchPromisesMalSync(malsyncURLs, 5, anilistData, permNoti);
 
             for (let i = 0; i < anilistIDs.length; i++) {
                 const id = anilistIDs[i];
 
                 try {
-                    permNoti.updateBody(`Getting link for anilist ID: ${id}`);
-
                     const page = JSON.parse(
-                        await MakeFetch(`https://raw.githubusercontent.com/MALSync/MAL-Sync-Backup/master/data/anilist/${type.toLowerCase()}/${id}.json`)
+                        anilistData[parseInt(id)]
                     ).Pages[pageKey];
 
                     links.push({
@@ -440,7 +493,7 @@ async function getAllItems() {
             for (const link of links) {
                 try {
 
-                    if(!link.result){
+                    if (!link.result) {
                         continue;
                     }
 

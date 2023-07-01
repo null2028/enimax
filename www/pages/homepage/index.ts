@@ -1769,7 +1769,11 @@ if (true) {
                         }
                     }
                 } else {
-                    result.push(...await Promise.all(promises));
+                    try{
+                        result.push(...await Promise.all(promises));
+                    }catch(err){
+                        console.warn(err);
+                    }
                 }
 
                 promises.splice(0);
