@@ -1,0 +1,16 @@
+New features:
+1. Added Anna's archive (for light novels).
+2. Added casting! Not all sources will work because of some technicalities. However, you can cast any video if you have already downloaded it.
+3. Anilist anonymous mode. Can be enabled by going to the settings. When enabled, it won't sync up progress with your anilist account.
+4. Sped up Anilist importing.
+
+Minor changes:
+1. Added a button to log out from Anilist.
+2. Shows can be directly added to "Recently Watched" and "Ongoing" from the info page.
+
+Backend changes and bug fixes:
+1. Switched away from Consumet for 9anime and Fmovies.
+2. Fixed the new episode bug.
+3. Fixed a chrome storage bug.
+4. Fixed a bug where the discover page would show the wrong month.
+

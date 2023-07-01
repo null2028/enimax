@@ -1,4 +1,4 @@
 {
-    "isBeta": false,
-    "shouldPing": false
+    "isBeta": true,
+    "shouldPing": true
 }
