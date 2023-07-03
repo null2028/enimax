@@ -729,6 +729,7 @@ function ini_main() {
 }
 
 async function update(shouldCheck: number, altCurrentTime?: any, altDuration?: any) {
+
 	let currentTime: number;
 	let currentDuration: number;
 
@@ -744,9 +745,16 @@ async function update(shouldCheck: number, altCurrentTime?: any, altDuration?: a
 		currentDuration = Math.floor(vidInstance.vid.duration);
 	}
 
+	if(isNaN(currentDuration) || isNaN(currentTime) || currentTime <= 1){
+		return;
+	}
+
 	if (updateCheck == 1 && (currentTime - lastUpdate) > 60 && shouldCheck != 19) {
 		alert("Could not sync time with the server.");
 	}
+
+	console.log(currentTime, currentDuration, "HERE");
+
 
 	if ((updateCheck == 1 || getEpCheck == 1 || lastUpdate == currentTime) && shouldCheck != 19) {
 		return;
@@ -1378,6 +1386,7 @@ function enableRemote(time: number) {
 	console.log(JSON.parse(JSON.stringify(currentVidData)), hasNext, hasPrev);
 
 	vidInstance.vid.src = "";
+	clearInterval(updateCurrentTime);
 	clearInterval(remoteInterval);
 
 	remoteDOM.innerHTML = "";
@@ -1495,7 +1504,7 @@ function updateRemoteState(castState: { paused: boolean, currentTime: number, du
 	slider.value = castState.currentTime.toString();
 	slider.setAttribute("max", castState.duration.toString());
 
-	if (parseInt(slider.getAttribute("value")) != 0) {
+	if (parseInt(slider.getAttribute("value")) >= 1 && castState.paused === false) {
 		update(19, slider.getAttribute("value"), slider.getAttribute("max"));
 	}
 	
