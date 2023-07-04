@@ -668,7 +668,6 @@ async function update(shouldCheck, altCurrentTime, altDuration) {
     if (updateCheck == 1 && (currentTime - lastUpdate) > 60 && shouldCheck != 19) {
         alert("Could not sync time with the server.");
     }
-    console.log(currentTime, currentDuration, "HERE");
     if ((updateCheck == 1 || getEpCheck == 1 || lastUpdate == currentTime) && shouldCheck != 19) {
         return;
     }

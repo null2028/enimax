@@ -1582,7 +1582,7 @@ var zoro = {
             let sourceId = sourceIdArray[sourceIdArray.length - 1];
             sourceId = sourceId.split("?")[0];
             let token = localStorage.getItem("rapidToken");
-            let sourceJSON = JSON.parse((await MakeFetchZoro(`${urlHost}/ajax/embed-6/getSources?id=${sourceId}&token=${token}`, {})));
+            let sourceJSON = JSON.parse((await MakeFetchZoro(`${urlHost}/embed-2/ajax/e-1/getSources?id=${sourceId}&token=${token}`, {})));
             if (sourceJSON.status === false) {
                 shouldThrow = true;
             }
