@@ -1382,7 +1382,7 @@ var fmovies = {
     }
 };
 var zoro = {
-    baseURL: "https://zoro.to",
+    baseURL: "https://aniwatch.to",
     type: "anime",
     supportsMalsync: true,
     disableAutoDownload: false,
@@ -1392,7 +1392,7 @@ var zoro = {
     searchApi: async function (query) {
         let dom = document.createElement("div");
         try {
-            let searchHTML = await MakeFetchZoro(`https://zoro.to/search?keyword=${query}`, {});
+            let searchHTML = await MakeFetchZoro(`${this.baseURL}/search?keyword=${query}`, {});
             dom.innerHTML = DOMPurify.sanitize(searchHTML);
             let itemsDOM = dom.querySelectorAll('.flw-item');
             let data = [];
@@ -1482,7 +1482,7 @@ var zoro = {
     },
     getAnimeInfoInter: async function (url) {
         url = url.split("&engine")[0];
-        const rawURL = `https://zoro.to/${url}`;
+        const rawURL = `${this.baseURL}/${url}`;
         const animeDOM = document.createElement("div");
         const dom = document.createElement("div");
         try {
@@ -1495,7 +1495,7 @@ var zoro = {
                 "episodes": [],
                 "mainName": ""
             };
-            let animeHTML = await MakeFetchZoro(`https://zoro.to/${url}`, {});
+            let animeHTML = await MakeFetchZoro(`${this.baseURL}/${url}`, {});
             animeDOM.innerHTML = DOMPurify.sanitize(animeHTML);
             let name = (new URLSearchParams(`?watch=${url}`)).get("watch");
             const nameSplit = name.split("-");
@@ -1515,7 +1515,7 @@ var zoro = {
             catch (err) {
                 console.error(err);
             }
-            let episodeHTML = JSON.parse(await MakeFetchZoro(`https://zoro.to/ajax/v2/episode/list/${id}`, {})).html;
+            let episodeHTML = JSON.parse(await MakeFetchZoro(`${this.baseURL}/ajax/v2/episode/list/${id}`, {})).html;
             dom.innerHTML = DOMPurify.sanitize(episodeHTML);
             let episodeListDOM = dom.querySelectorAll('.ep-item');
             let data = [];
@@ -1545,7 +1545,7 @@ var zoro = {
     getEpisodeListFromAnimeId: async function getEpisodeListFromAnimeId(showID, episodeId) {
         let dom = document.createElement("div");
         try {
-            let res = JSON.parse((await MakeFetchZoro(`https://zoro.to/ajax/v2/episode/list/${showID}`, {})));
+            let res = JSON.parse((await MakeFetchZoro(`${this.baseURL}/ajax/v2/episode/list/${showID}`, {})));
             res = res.html;
             let ogDOM = dom;
             dom.innerHTML = DOMPurify.sanitize(res);
@@ -1575,7 +1575,7 @@ var zoro = {
     addSource: async function addSource(type, id, subtitlesArray, sourceURLs) {
         let shouldThrow = false;
         try {
-            let sources = await MakeFetchZoro(`https://zoro.to/ajax/v2/episode/sources?id=${id}`, {});
+            let sources = await MakeFetchZoro(`${this.baseURL}/ajax/v2/episode/sources?id=${id}`, {});
             sources = JSON.parse(sources).link;
             let urlHost = (new URL(sources)).origin;
             let sourceIdArray = sources.split("/");
@@ -1673,7 +1673,7 @@ var zoro = {
             episodeId = parseFloat(url.split("&ep=")[1]).toString();
             animeId = url.replace("?watch=", "").split("-");
             animeId = animeId[animeId.length - 1].split("&")[0];
-            let a = await MakeFetchZoro(`https://zoro.to/ajax/v2/episode/servers?episodeId=${episodeId}`, {});
+            let a = await MakeFetchZoro(`${this.baseURL}/ajax/v2/episode/servers?episodeId=${episodeId}`, {});
             let domIn = JSON.parse(a).html;
             dom.innerHTML = DOMPurify.sanitize(domIn);
             let promises = [];
@@ -1741,7 +1741,7 @@ var zoro = {
     discover: async function () {
         let temp = document.createElement("div");
         try {
-            temp.innerHTML = DOMPurify.sanitize(await MakeFetchZoro(`https://zoro.to/top-airing`, {}));
+            temp.innerHTML = DOMPurify.sanitize(await MakeFetchZoro(`${this.baseURL}/top-airing`, {}));
             let data = [];
             for (let elem of temp.querySelectorAll(".flw-item")) {
                 let image = elem.querySelector("img").getAttribute("data-src");
