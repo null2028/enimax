@@ -332,6 +332,17 @@ let DMenu = new dropDownMenu([
                 }
             },
             {
+                "text": "Automatically skip filler",
+                "toggle": true,
+                "on": localStorage.getItem("skipFiller") === "true",
+                "toggleOn": function () {
+                    localStorage.setItem("skipFiller", "true");
+                },
+                "toggleOff": function () {
+                    localStorage.setItem("skipFiller", "false");
+                }
+            },
+            {
                 "text": "Autoplay",
                 "toggle": true,
                 "on": localStorage.getItem("autoplay") === "true",
@@ -642,8 +653,10 @@ function changeEp(nextOrPrev, msg = null) {
         clearInterval(updateCurrentTime);
         document.getElementById("ep_dis").innerHTML = "loading...";
         document.getElementById("total").innerHTML = "";
-        updateEpListSelected();
-        ini_main();
+        const shouldFetch = updateEpListSelected();
+        if (shouldFetch !== false) {
+            ini_main();
+        }
     }
 }
 function ini_main() {
@@ -1192,8 +1205,27 @@ document.querySelector("#episodeList").addEventListener("click", function () {
     DMenu.open("episodes");
 });
 function updateEpListSelected() {
-    var _a;
-    (_a = DMenu === null || DMenu === void 0 ? void 0 : DMenu.selections[location.search]) === null || _a === void 0 ? void 0 : _a.select();
+    var _a, _b;
+    let nextElem = (_a = DMenu === null || DMenu === void 0 ? void 0 : DMenu.selections[location.search]) === null || _a === void 0 ? void 0 : _a.element;
+    if (localStorage.getItem("skipFiller") !== "true" || (nextElem === null || nextElem === void 0 ? void 0 : nextElem.getAttribute("data-filler")) !== "true") {
+        (_b = DMenu === null || DMenu === void 0 ? void 0 : DMenu.selections[location.search]) === null || _b === void 0 ? void 0 : _b.select();
+        return true;
+    }
+    else {
+        while (nextElem) {
+            if (nextElem.getAttribute("data-filler") !== "true") {
+                break;
+            }
+            nextElem = nextElem.previousElementSibling;
+        }
+        if (nextElem && nextElem.classList.contains("menuItem")) {
+            nextElem.click();
+        }
+        else {
+            alert("Could not find a non-filler episode");
+        }
+        return false;
+    }
 }
 function enableRemote(time) {
     const currentTime = time;
@@ -1419,8 +1451,13 @@ window.onmessage = async function (message) {
                     if (ep.altTruncatedTitle) {
                         truncatedTitle = ep.altTruncatedTitle;
                     }
+                    const attributes = {};
+                    if (ep.isFiller) {
+                        attributes["data-filler"] = "true";
+                    }
                     DMenu.getScene("episodes").addItem({
                         highlightable: true,
+                        attributes,
                         html: (ep.isFiller ? `<div class="filler">Filler</div>` : "") + ep.title + (ep.date ? `<div class="menuDate">${ep.date.toLocaleString()}</div>` : ""),
                         altText: truncatedTitle,
                         selected: location.search === ep.link,

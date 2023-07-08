@@ -371,6 +371,17 @@ let DMenu = new dropDownMenu(
 					}
 				},
 				{
+					"text": "Automatically skip filler",
+					"toggle": true,
+					"on": localStorage.getItem("skipFiller") === "true",
+					"toggleOn": function () {
+						localStorage.setItem("skipFiller", "true");
+					},
+					"toggleOff": function () {
+						localStorage.setItem("skipFiller", "false");
+					}
+				},
+				{
 					"text": "Autoplay",
 					"toggle": true,
 					"on": localStorage.getItem("autoplay") === "true",
@@ -711,8 +722,12 @@ function changeEp(nextOrPrev: number, msg: null | string = null) {
 		clearInterval(updateCurrentTime);
 		document.getElementById("ep_dis").innerHTML = "loading...";
 		document.getElementById("total").innerHTML = "";
-		updateEpListSelected();
-		ini_main();
+
+		const shouldFetch = updateEpListSelected();
+
+		if(shouldFetch !== false){
+			ini_main();
+		}
 	}
 }
 
@@ -1391,7 +1406,28 @@ document.querySelector("#episodeList").addEventListener("click", function () {
 });
 
 function updateEpListSelected() {
-	DMenu?.selections[location.search]?.select();
+	let nextElem: HTMLElement | undefined = DMenu?.selections[location.search]?.element;
+	
+	if (localStorage.getItem("skipFiller") !== "true" || nextElem?.getAttribute("data-filler") !== "true") {
+		DMenu?.selections[location.search]?.select();
+		return true;
+	} else {
+		while (nextElem) {
+			if (nextElem.getAttribute("data-filler") !== "true") {
+				break;
+			}
+
+			nextElem = nextElem.previousElementSibling as HTMLElement;
+		}
+
+		if(nextElem && nextElem.classList.contains("menuItem")){
+			nextElem.click();
+		}else{
+			alert("Could not find a non-filler episode");
+		}
+
+		return false;
+	}
 }
 
 function enableRemote(time: number) {
@@ -1659,8 +1695,15 @@ window.onmessage = async function (message: MessageEvent) {
 						truncatedTitle = ep.altTruncatedTitle;
 					}
 
+					const attributes = {};
+
+					if (ep.isFiller) {
+						attributes["data-filler"] = "true"
+					}
+
 					DMenu.getScene("episodes").addItem({
 						highlightable: true,
+						attributes,
 						html: (ep.isFiller ? `<div class="filler">Filler</div>` : "") + ep.title + (ep.date ? `<div class="menuDate">${ep.date.toLocaleString()}</div>` : ""),
 						altText: truncatedTitle,
 						selected: location.search === ep.link,
