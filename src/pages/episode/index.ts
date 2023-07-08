@@ -74,6 +74,7 @@ let pullTabArray = [];
 let webviewLink = "";
 let averageColor = "";
 let downloadedIsManga = false;
+let addedCover = false;
 
 try {
     const search = new URLSearchParams(location.search);
@@ -354,6 +355,10 @@ function ini() {
 
             imageDOM.src = data.image;
             imageDOM.onload = function () {
+                if(addedCover || imageDOM.style.display === "none"){
+                    return;
+                }
+
                 let color = getAverageRGB(imageDOM);
                 averageColor = rgbToHex(color.r, color.g, color.b);
                 document.documentElement.style.setProperty('--theme-color', averageColor);
@@ -419,8 +424,6 @@ function ini() {
                         metaData = await (window.parent as cordovaWindow).getMetaByAniID(search.get("aniID"), isManga ? "MANGA" : "ANIME");
                     }
 
-                    let addedCover = false;
-
                     if (metaData.nextAiringEpisode) {
                         nextDOM.style.display = "inline-block";
                         nextDOM.textContent = `Episode ${metaData.nextAiringEpisode.episode} in ${(window.parent as cordovaWindow).secondsToHuman(metaData.nextAiringEpisode.timeUntilAiring)}`;
@@ -469,7 +472,7 @@ function ini() {
 
                     if (addedCover) {
                         imageDOM.style.display = "none";
-                        document.documentElement.style.setProperty('--theme-color', averageColor + "60");
+                        document.documentElement.style.setProperty('--theme-color', "#00000060");
                     }
 
                     malDOM.onclick = function () {

@@ -1797,14 +1797,15 @@ var zoro = {
         return `?watch=${url.pathname}&engine=3`;
     }
 };
-// try {
-//     (async function () {
-//         const keys: Array<string> = JSON.parse(await MakeFetchZoro(`https://raw.githubusercontent.com/enimax-anime/gogo/main/zoro.json`));
-//         zoro.baseURL = keys[0];
-//     })();
-// } catch (err) {
-//     console.error(err);
-// }
+try {
+    (async function () {
+        const keys = JSON.parse(await MakeFetchZoro(`https://raw.githubusercontent.com/enimax-anime/gogo/main/zoro.json`));
+        zoro.baseURL = keys[0];
+    })();
+}
+catch (err) {
+    console.error(err);
+}
 var twitch = {
     baseURL: "https://twitch.tv",
     type: "others",
