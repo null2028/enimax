@@ -37,6 +37,7 @@ var mangaFire = {
         var _a, _b, _c, _d, _e;
         const id = (new URLSearchParams(`?watch=${url}`)).get("watch");
         const infoDOM = document.createElement("div");
+        const rawURL = `${this.baseURL}/${id.replace("mangafire-", "manga/")}`;
         let response = {
             "name": "",
             "image": "",
@@ -46,7 +47,7 @@ var mangaFire = {
             "isManga": true,
         };
         try {
-            const infoHTML = await MakeFetch(`${this.baseURL}/${id.replace("mangafire-", "manga/")}`);
+            const infoHTML = await MakeFetch(rawURL);
             infoDOM.innerHTML = DOMPurify.sanitize(infoHTML);
             response.name = ((_a = infoDOM === null || infoDOM === void 0 ? void 0 : infoDOM.querySelector(".info")) === null || _a === void 0 ? void 0 : _a.querySelector(".name")).innerText;
             response.image = (_c = (_b = infoDOM.querySelector(".poster")) === null || _b === void 0 ? void 0 : _b.querySelector("img")) === null || _c === void 0 ? void 0 : _c.getAttribute("src");
@@ -66,6 +67,7 @@ var mangaFire = {
             return response;
         }
         catch (err) {
+            err.url = rawURL;
             throw err;
         }
         finally {

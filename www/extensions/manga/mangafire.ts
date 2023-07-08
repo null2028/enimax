@@ -40,7 +40,7 @@ var mangaFire: extension = {
     getAnimeInfo: async function (url): Promise<extensionInfo> {
         const id = (new URLSearchParams(`?watch=${url}`)).get("watch");
         const infoDOM = document.createElement("div");
-
+        const rawURL = `${this.baseURL}/${id.replace("mangafire-", "manga/")}`;
         let response: extensionInfo = {
             "name": "",
             "image": "",
@@ -51,7 +51,7 @@ var mangaFire: extension = {
         };
 
         try {
-            const infoHTML = await MakeFetch(`${this.baseURL}/${id.replace("mangafire-", "manga/")}`);
+            const infoHTML = await MakeFetch(rawURL);
             infoDOM.innerHTML = DOMPurify.sanitize(infoHTML);
 
             response.name = (infoDOM?.querySelector(".info")?.querySelector(".name") as HTMLElement).innerText;
@@ -75,6 +75,7 @@ var mangaFire: extension = {
 
             return response;
         } catch (err) {
+            err.url = rawURL;
             throw err;
         } finally {
             removeDOM(infoDOM);

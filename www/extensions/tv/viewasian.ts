@@ -37,7 +37,6 @@ var viewAsian: extension = {
     getAnimeInfo: async function (url: string): Promise<extensionInfo> {
         url = url.split("&engine")[0];
         const rawURL = `${this.baseURL}/${url}`;
-        console.log(this, this.baseURL, rawURL);
 
         const animeDOM = document.createElement("div");
         const episodeDOM = document.createElement("div");
@@ -100,8 +99,8 @@ var viewAsian: extension = {
             err.url = rawURL;
             throw err;
         } finally {
-            // removeDOM(animeDOM);
-            // removeDOM(episodeDOM);
+            removeDOM(animeDOM);
+            removeDOM(episodeDOM);
         }
     },
     getLinkFromUrl: async function (url: string): Promise<extensionVidSource> {
@@ -226,8 +225,8 @@ var viewAsian: extension = {
         } catch (err) {
             throw err;
         } finally {
-            // removeDOM(watchDOM);
-            // removeDOM(embedDOM);
+            removeDOM(watchDOM);
+            removeDOM(embedDOM);
         }
 
     },

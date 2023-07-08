@@ -37,7 +37,6 @@ var viewAsian = {
     getAnimeInfo: async function (url) {
         url = url.split("&engine")[0];
         const rawURL = `${this.baseURL}/${url}`;
-        console.log(this, this.baseURL, rawURL);
         const animeDOM = document.createElement("div");
         const episodeDOM = document.createElement("div");
         try {
@@ -85,8 +84,8 @@ var viewAsian = {
             throw err;
         }
         finally {
-            // removeDOM(animeDOM);
-            // removeDOM(episodeDOM);
+            removeDOM(animeDOM);
+            removeDOM(episodeDOM);
         }
     },
     getLinkFromUrl: async function (url) {
@@ -182,8 +181,8 @@ var viewAsian = {
             throw err;
         }
         finally {
-            // removeDOM(watchDOM);
-            // removeDOM(embedDOM);
+            removeDOM(watchDOM);
+            removeDOM(embedDOM);
         }
     },
     fixTitle(title) {
