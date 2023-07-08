@@ -518,11 +518,15 @@ class vid {
         document.body.style.backgroundColor = "black";
         if (this.check == 99 && this.downTown >= 100 && !this.config.chrome) {
             window.parent.postMessage({ "action": 400 }, "*");
+            const self = this;
             requestAnimationFrame(function () {
                 document.getElementById('con').style.transform = `translateY(0px)`;
                 document.getElementById('popOut').style.display = "block";
                 document.getElementById('bar_con').style.display = "none";
                 document.getElementById('pop').style.display = "none";
+                self.metaData.style.display = "none";
+                self.popControls.style.display = "none";
+                self.back.style.display = "none";
             });
         }
         else {

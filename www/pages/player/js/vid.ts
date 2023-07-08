@@ -93,7 +93,7 @@ class vid {
 		this.epCon = document.querySelector("#epCon");
 		this.bar = document.querySelector("#bar");
 
-		
+
 		this.locked = false;
 		this.downTown = 0;
 		this.seekMode = false;
@@ -771,14 +771,16 @@ class vid {
 		if (this.check == 99 && this.downTown >= 100 && !this.config.chrome) {
 
 			window.parent.postMessage({ "action": 400 }, "*");
+			const self = this;
 
 			requestAnimationFrame(function () {
 				document.getElementById('con').style.transform = `translateY(0px)`;
 				document.getElementById('popOut').style.display = "block";
 				document.getElementById('bar_con').style.display = "none";
 				document.getElementById('pop').style.display = "none";
-
-
+				self.metaData.style.display = "none";
+				self.popControls.style.display = "none";
+				self.back.style.display = "none";
 			});
 		} else {
 			requestAnimationFrame(function () {
@@ -974,14 +976,14 @@ class vid {
 
 	}
 
-		timeToString(timeInSeconds: number): string {
-			var h = Math.floor(timeInSeconds / 3600);
-			var m = Math.floor(timeInSeconds % 3600 / 60);
-			var s = Math.floor(timeInSeconds % 3600 % 60);
-		
-			var hDisplay = h > 0 ? (h < 10 ? "0" : "") + h + ":": "";
-			var mDisplay = (m < 10 ? "0" : "") + m + ":"
-			var sDisplay = (s < 10 ? "0" : "") + s
-			return hDisplay + mDisplay + sDisplay; 
-		}
+	timeToString(timeInSeconds: number): string {
+		var h = Math.floor(timeInSeconds / 3600);
+		var m = Math.floor(timeInSeconds % 3600 / 60);
+		var s = Math.floor(timeInSeconds % 3600 % 60);
+
+		var hDisplay = h > 0 ? (h < 10 ? "0" : "") + h + ":" : "";
+		var mDisplay = (m < 10 ? "0" : "") + m + ":"
+		var sDisplay = (s < 10 ? "0" : "") + s
+		return hDisplay + mDisplay + sDisplay;
+	}
 }

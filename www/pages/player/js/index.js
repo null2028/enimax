@@ -552,6 +552,9 @@ function backToNormal() {
     document.getElementById('pop').style.display = "block";
     document.getElementById('popOut').style.display = "none";
     document.getElementById('bar_con').style.display = "block";
+    vidInstance.metaData.style.display = "block";
+    vidInstance.popControls.style.display = "block";
+    vidInstance.back.style.display = "block";
 }
 async function getEpIni() {
     vidInstance.setObjectSettings(1, false);

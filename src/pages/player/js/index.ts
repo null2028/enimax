@@ -609,6 +609,10 @@ function backToNormal() {
 	document.getElementById('pop').style.display = "block";
 	document.getElementById('popOut').style.display = "none";
 	document.getElementById('bar_con').style.display = "block";
+
+	vidInstance.metaData.style.display = "block";
+	vidInstance.popControls.style.display = "block";
+	vidInstance.back.style.display = "block";
 }
 
 async function getEpIni() {
@@ -765,7 +769,7 @@ async function update(shouldCheck: number, altCurrentTime?: any, altDuration?: a
 		currentDuration = Math.floor(vidInstance.vid.duration);
 	}
 
-	if(isNaN(currentDuration) || isNaN(currentTime) || currentTime <= 1){
+	if (isNaN(currentDuration) || isNaN(currentTime) || currentTime <= 1) {
 		return;
 	}
 
@@ -1494,7 +1498,7 @@ function enableRemote(time: number) {
 	// sendNoti([5, "red", "red", currentTime]);
 	shouldUpdateSlider = true;
 	(window.parent as cordovaWindow).updateCastTime(currentTime);
-	updateRemoteState({paused: true, currentTime, duration, hasFinished: false});
+	updateRemoteState({ paused: true, currentTime, duration, hasFinished: false });
 }
 
 function destroyRemote() {
@@ -1507,11 +1511,11 @@ function destroyRemote() {
 }
 
 function updateRemoteState(castState: { paused: boolean, currentTime: number, duration: number, hasFinished: boolean }) {
-	if(shouldUpdateSlider === false){
+	if (shouldUpdateSlider === false) {
 		return;
 	}
 
-	if(castState.hasFinished === true && localStorage.getItem("autoplay") === "true"){
+	if (castState.hasFinished === true && localStorage.getItem("autoplay") === "true") {
 		changeEp(1);
 		return;
 	}
@@ -1524,14 +1528,14 @@ function updateRemoteState(castState: { paused: boolean, currentTime: number, du
 	if (parseInt(slider.getAttribute("value")) >= 1 && castState.paused === false) {
 		update(19, slider.getAttribute("value"), slider.getAttribute("max"));
 	}
-	
+
 	if (castState.paused) {
 		(document.getElementById("remotePlay") as HTMLInputElement).className = "remoteIcon remotePlay";
 	} else {
 		(document.getElementById("remotePlay") as HTMLInputElement).className = "remoteIcon remotePause";
 	}
 
-	if(remoteInterval === null && castState.paused === false){
+	if (remoteInterval === null && castState.paused === false) {
 		remoteInterval = setInterval(function () {
 			try {
 				const state = (window.parent as cordovaWindow).getEstimatedState();
