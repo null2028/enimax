@@ -1,5 +1,5 @@
 var zoro: extension = {
-    baseURL: "https://aniwatch.to",
+    baseURL: "https://kaido.to",
     type: "anime",
     supportsMalsync: true,
     disableAutoDownload: false,
@@ -111,6 +111,7 @@ var zoro: extension = {
         const rawURL = `${this.baseURL}/${url}`;
         const animeDOM = document.createElement("div");
         const dom = document.createElement("div");
+        const type = this.baseURL === "https://kaido.to";
 
         try {
             let idSplit = url.replace("?watch=/", "").split("-");
@@ -147,7 +148,7 @@ var zoro: extension = {
                 console.error(err);
             }
 
-            let episodeHTML = JSON.parse(await MakeFetchZoro(`${this.baseURL}/ajax/v2/episode/list/${id}`, {})).html;
+            let episodeHTML = JSON.parse(await MakeFetchZoro(`${this.baseURL}/ajax/${type ? "" : "v2/"}episode/list/${id}`, {})).html;
             dom.innerHTML = DOMPurify.sanitize(episodeHTML);
 
             let episodeListDOM = dom.querySelectorAll('.ep-item');
@@ -178,8 +179,10 @@ var zoro: extension = {
     getEpisodeListFromAnimeId: async function getEpisodeListFromAnimeId(showID: string, episodeId: string) {
 
         let dom = document.createElement("div");
+        const type = this.baseURL === "https://kaido.to";
+
         try {
-            let res = JSON.parse((await MakeFetchZoro(`${this.baseURL}/ajax/v2/episode/list/${showID}`, {})));
+            let res = JSON.parse((await MakeFetchZoro(`${this.baseURL}/ajax/${type ? "" : "v2/"}episode/list/${showID}`, {})));
             res = res.html;
             let ogDOM = dom;
             dom.innerHTML = DOMPurify.sanitize(res);
@@ -209,8 +212,10 @@ var zoro: extension = {
     },
     addSource: async function addSource(type: string, id: string, subtitlesArray: Array<videoSubtitle>, sourceURLs: Array<videoSource>) {
         let shouldThrow = false;
+        const baseType = this.baseURL === "https://kaido.to";
+
         try {
-            let sources = await MakeFetchZoro(`${this.baseURL}/ajax/v2/episode/sources?id=${id}`, {});
+            let sources = await MakeFetchZoro(`${this.baseURL}/ajax/${baseType ? "" : "v2/"}episode/sources?id=${id}`, {});
             sources = JSON.parse(sources).link;
             let urlHost = (new URL(sources)).origin;
 
@@ -221,7 +226,7 @@ var zoro: extension = {
 
             let token = localStorage.getItem("rapidToken");
 
-            let sourceJSON = JSON.parse((await MakeFetchZoro(`${urlHost}/embed-2/ajax/e-1/getSources?id=${sourceId}&token=${token}`, {})));
+            let sourceJSON = JSON.parse((await MakeFetchZoro(`${urlHost}${baseType ? "/ajax/embed-6/getSources?id=" : "/embed-2/ajax/e-1/getSources?id="}${sourceId}&token=${token}`, {})));
             if (sourceJSON.status === false) {
                 shouldThrow = true;
             }
@@ -240,11 +245,11 @@ var zoro: extension = {
                     let encryptedURL = sourceJSON.sources;
                     let decryptKey, tempFile;
                     try {
-                        decryptKey = await extractKey(6, null, true);
+                        decryptKey = await extractKey(baseType ? 0 : 6, null, true);
                         sourceJSON.sources = JSON.parse(CryptoJS.AES.decrypt(encryptedURL, decryptKey).toString(CryptoJS.enc.Utf8));
                     } catch (err) {
                         if (err.message == "Malformed UTF-8 data") {
-                            decryptKey = await extractKey(6);
+                            decryptKey = await extractKey(baseType ? 0 : 6);
                             try {
                                 sourceJSON.sources = JSON.parse(CryptoJS.AES.decrypt(encryptedURL, decryptKey).toString(CryptoJS.enc.Utf8));
                             } catch (err) {
@@ -282,7 +287,7 @@ var zoro: extension = {
                     titleTemp.shift();
                     const title = titleTemp.join("-");
 
-                    if(title){
+                    if (title) {
                         return title?.trim();
                     }
                     return "";
@@ -311,13 +316,14 @@ var zoro: extension = {
         let episodeId: string, animeId;
 
         const dom = document.createElement("div");
+        const baseType = this.baseURL === "https://kaido.to";
 
         try {
             episodeId = parseFloat(url.split("&ep=")[1]).toString();
             animeId = url.replace("?watch=", "").split("-");
             animeId = animeId[animeId.length - 1].split("&")[0];
 
-            let a = await MakeFetchZoro(`${this.baseURL}/ajax/v2/episode/servers?episodeId=${episodeId}`, {});
+            let a = await MakeFetchZoro(`${this.baseURL}/ajax/${baseType ? "" : "v2/"}episode/servers?episodeId=${episodeId}`, {});
             let domIn = JSON.parse(a).html;
 
             dom.innerHTML = DOMPurify.sanitize(domIn);
@@ -455,3 +461,12 @@ var zoro: extension = {
         return `?watch=${url.pathname}&engine=3`;
     }
 };
+
+try {
+    (async function () {
+        const keys: Array<string> = JSON.parse(await MakeFetchZoro(`https://raw.githubusercontent.com/enimax-anime/gogo/main/zoro.json`));
+        zoro.baseURL = keys[0];
+    })();
+} catch (err) {
+    console.error(err);
+}
