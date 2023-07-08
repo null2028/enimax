@@ -3,6 +3,7 @@ var zoro: extension = {
     type: "anime",
     supportsMalsync: true,
     disableAutoDownload: false,
+    nonV2URLs: ["https://9animetv.to", "https://kaido.to"],
     disabled: false,
     name: "Zoro",
     shortenedName: "Zoro",
@@ -108,10 +109,11 @@ var zoro: extension = {
     getAnimeInfoInter: async function (url: string): Promise<extensionInfo> {
         url = url.split("&engine")[0];
 
-        const rawURL = `${this.baseURL}/${url}`;
+        const is9animeTv = this.baseURL === "https://9animetv.to";
+        const rawURL = `${this.baseURL}${is9animeTv ? "/watch/" : "/"}${url}`;
         const animeDOM = document.createElement("div");
         const dom = document.createElement("div");
-        const type = this.baseURL === "https://kaido.to";
+        const type = this.nonV2URLs.includes(this.baseURL);
 
         try {
             let idSplit = url.replace("?watch=/", "").split("-");
@@ -125,7 +127,7 @@ var zoro: extension = {
             };
 
 
-            let animeHTML = await MakeFetchZoro(`${this.baseURL}/${url}`, {});
+            let animeHTML = await MakeFetchZoro(rawURL, {});
             animeDOM.innerHTML = DOMPurify.sanitize(animeHTML);
 
             let name = (new URLSearchParams(`?watch=${url}`)).get("watch");
@@ -135,8 +137,8 @@ var zoro: extension = {
 
             response.mainName = name;
             response.name = (animeDOM.querySelector(".film-name.dynamic-name") as HTMLElement).innerText;
-            response.image = (animeDOM.querySelector(".layout-page.layout-page-detail") as HTMLElement).querySelector("img").src;
-            response.description = (animeDOM.querySelector(".film-description.m-hide") as HTMLElement).innerText;
+            response.image = (animeDOM.querySelector(is9animeTv ? ".anime-detail" : ".layout-page.layout-page-detail") as HTMLElement).querySelector("img").src;
+            response.description = (animeDOM.querySelector(".film-description") as HTMLElement).innerText;
 
             try {
                 response.genres = [];
@@ -179,7 +181,7 @@ var zoro: extension = {
     getEpisodeListFromAnimeId: async function getEpisodeListFromAnimeId(showID: string, episodeId: string) {
 
         let dom = document.createElement("div");
-        const type = this.baseURL === "https://kaido.to";
+        const type = this.nonV2URLs.includes(this.baseURL);
 
         try {
             let res = JSON.parse((await MakeFetchZoro(`${this.baseURL}/ajax/${type ? "" : "v2/"}episode/list/${showID}`, {})));
@@ -212,7 +214,8 @@ var zoro: extension = {
     },
     addSource: async function addSource(type: string, id: string, subtitlesArray: Array<videoSubtitle>, sourceURLs: Array<videoSource>) {
         let shouldThrow = false;
-        const baseType = this.baseURL === "https://kaido.to";
+        const baseType = this.nonV2URLs.includes(this.baseURL);
+
 
         try {
             let sources = await MakeFetchZoro(`${this.baseURL}/ajax/${baseType ? "" : "v2/"}episode/sources?id=${id}`, {});
@@ -316,7 +319,7 @@ var zoro: extension = {
         let episodeId: string, animeId;
 
         const dom = document.createElement("div");
-        const baseType = this.baseURL === "https://kaido.to";
+        const baseType = this.nonV2URLs.includes(this.baseURL);
 
         try {
             episodeId = parseFloat(url.split("&ep=")[1]).toString();
