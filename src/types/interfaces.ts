@@ -377,6 +377,7 @@ interface extensionDiscoverData {
 
 interface subtitleConfig {
     backgroundColor: string | null,
+    shadowColor: string | null,
     backgroundOpacity: number | null,
     fontSize: number | null,
     lineHeight: number | null,

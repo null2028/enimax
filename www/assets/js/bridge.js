@@ -744,6 +744,7 @@ function executeAction(message, reqSource) {
         mainIFrame.style.height = "100%";
         playerIFrame.style.display = "block";
         playerIFrame.classList.remove("pop");
+        mainIFrame.classList.remove("mainPop");
     }
     else if (message.action == "updateGrad") {
         updateGradient(parseInt(message.data).toString());
@@ -867,6 +868,7 @@ async function onDeviceReady() {
             castSession = null;
             playerIFrame.contentWindow.location.replace("fallback.html");
             playerIFrame.classList.remove("pop");
+            mainIFrame.classList.remove("mainPop");
             playerIFrame.style.display = "none";
             mainIFrame.style.display = "block";
             mainIFrame.style.height = "100%";

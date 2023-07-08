@@ -1,3 +1,4 @@
+var _a;
 var CustomXMLHttpRequest = XMLHttpRequest;
 var shouldReplace = false;
 var engine;
@@ -30,6 +31,7 @@ let subtitleConfig = {
     fontSize: parseInt(localStorage.getItem("subtitle-fontSize")),
     color: localStorage.getItem("subtitle-color"),
     lineHeight: parseInt(localStorage.getItem("subtitle-lineHeight")),
+    shadowColor: localStorage.getItem("subtitle-shadowColor")
 };
 let lastFragError = -10;
 let lastFragDuration = 0;
@@ -58,6 +60,9 @@ function applySubtitleConfig() {
     }
     else if (!isNaN(subtitleConfig.backgroundOpacity)) {
         subtitleStyleString += `background-color: #000000${opacityHex};`;
+    }
+    if (subtitleConfig.shadowColor) {
+        subtitleStyleString += `text-shadow: 2px 2px ${subtitleConfig.shadowColor};`;
     }
     if (!isNaN(subtitleConfig.fontSize)) {
         subtitleStyleString += `font-size: ${subtitleConfig.fontSize}px;`;
@@ -160,6 +165,21 @@ let DMenu = new dropDownMenu([
                     let target = event.target;
                     localStorage.setItem("subtitle-bgColor", target.value);
                     subtitleConfig.backgroundColor = target.value;
+                    applySubtitleConfig();
+                }
+            },
+            {
+                "text": "Shadow Color",
+                "attributes": {
+                    style: "width: 100%"
+                },
+                "classes": ["inputItem"],
+                "color": true,
+                "value": (_a = localStorage.getItem("subtitle-shadowColor")) !== null && _a !== void 0 ? _a : "transparent",
+                "onInput": function (event) {
+                    let target = event.target;
+                    localStorage.setItem("subtitle-shadowColor", target.value);
+                    subtitleConfig.shadowColor = target.value;
                     applySubtitleConfig();
                 }
             },

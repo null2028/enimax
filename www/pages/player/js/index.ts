@@ -35,6 +35,7 @@ let subtitleConfig: subtitleConfig = {
 	fontSize: parseInt(localStorage.getItem("subtitle-fontSize")),
 	color: localStorage.getItem("subtitle-color"),
 	lineHeight: parseInt(localStorage.getItem("subtitle-lineHeight")),
+	shadowColor: localStorage.getItem("subtitle-shadowColor")
 };
 let lastFragError = -10;
 let lastFragDuration = 0;
@@ -66,6 +67,10 @@ function applySubtitleConfig(): void {
 		subtitleStyleString += `background-color: ${subtitleConfig.backgroundColor}${opacityHex};`;
 	} else if (!isNaN(subtitleConfig.backgroundOpacity)) {
 		subtitleStyleString += `background-color: #000000${opacityHex};`;
+	}
+
+	if (subtitleConfig.shadowColor) {
+		subtitleStyleString += `text-shadow: 2px 2px ${subtitleConfig.shadowColor};`;
 	}
 
 	if (!isNaN(subtitleConfig.fontSize)) {
@@ -189,7 +194,22 @@ let DMenu = new dropDownMenu(
 						applySubtitleConfig();
 					}
 				},
+				{
+					"text": "Shadow Color",
+					"attributes": {
+						style: "width: 100%"
+					},
+					"classes": ["inputItem"],
+					"color": true,
+					"value": localStorage.getItem("subtitle-shadowColor") ?? "transparent",
+					"onInput": function (event: InputEvent) {
+						let target = <HTMLInputElement>event.target;
 
+						localStorage.setItem("subtitle-shadowColor", target.value);
+						subtitleConfig.shadowColor = target.value;
+						applySubtitleConfig();
+					}
+				},
 				{
 					"text": "Background Transparency",
 					"slider": true,
