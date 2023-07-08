@@ -874,7 +874,6 @@ function chooseQual(config) {
             }
         }
     }
-    alert(selectedSourceName);
     loadSubs(selectedSourceName);
     if (hls) {
         hls.destroy();

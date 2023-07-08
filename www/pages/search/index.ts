@@ -240,7 +240,7 @@ conElem.append(createElement({
                     ]
                 },
                 {
-                    class: "searchButton",
+                    class: "searchButton clickable",
                     listeners: {
                         click: function () {
                             window.parent.postMessage({ "action": 500, data: `pages/search/index.html?search=${searchInput.value}&engine=${engineID}` }, "*");
@@ -249,7 +249,7 @@ conElem.append(createElement({
                 },
                 {
                     id: "filterIcon",
-                    class: "hasBackground",
+                    class: "hasBackground clickable",
                     style: {
                         height: "40px",
                         width: "40px",
@@ -490,6 +490,7 @@ conElem.append(
         children: [
             {
                 element: "select",
+                class: "clickable",
                 style: {
                     display: "inline-block",
                     verticalAlign: "middle",

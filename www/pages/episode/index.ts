@@ -821,7 +821,7 @@ function ini() {
 
 
                         horizontalConT.append(createElement({
-                            "class": "episodesPlaySmall",
+                            "class": "episodesPlaySmall clickable",
                             "listeners": {
                                 "click": function () {
                                     localStorage.setItem("mainName", data.mainName);

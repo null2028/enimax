@@ -1004,8 +1004,6 @@ function chooseQual(config: sourceConfig) {
 		}
 	}
 
-	alert(selectedSourceName);
-
 	loadSubs(selectedSourceName);
 
 	if (hls) {
