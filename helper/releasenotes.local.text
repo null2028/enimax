@@ -7,9 +7,12 @@ New features:
 Minor changes:
 1. Added a button to log out from Anilist.
 2. Shows can be directly added to "Recently Watched" and "Ongoing" from the info page.
+3. Added the option to change subtitle's shadow.
 
 Backend changes and bug fixes:
 1. Switched away from Consumet for 9anime and Fmovies.
 2. Fixed the new episode bug.
 3. Fixed a chrome storage bug.
 4. Fixed a bug where the discover page would show the wrong month.
+5. Many minor UI bug fixes.
+6. Fixed Zoro.

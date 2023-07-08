@@ -28,7 +28,7 @@ async function ini(token, channelID, branch) {
             });
         } else if (process.env.isBeta === "true"){
             await channel.send({
-                content: `${data.shouldPing ? "@everyone " : ""} A new beta version has been released!\n${fs.readFileSync(path.join(__dirname, "./releasenotes.txt"), "utf-8")}`,
+                content: `${data.shouldPing ? "@everyone " : ""} A new beta version has been released!\n\n${fs.readFileSync(path.join(__dirname, "./releasenotes.txt"), "utf-8")}`,
                 files: [
                     path.join(__dirname, "../../app-release.apk"),
                 ]

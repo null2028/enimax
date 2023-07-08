@@ -973,14 +973,17 @@ function chooseQual(config: sourceConfig) {
 		}
 
 	} else {
-		skipTo = config.skipTo;
-		defURL = currentVidData.sources[0].url;
 
 		let sName = localStorage.getItem(`${engine}-sourceName`);
 		let qCon = DMenu.getScene("source").element.querySelectorAll(".menuItem");
-		selectedSourceName = sName;
+
+		skipTo = config.skipTo;
+		defURL = currentVidData.sources[0].url;
+		selectedSourceName = currentVidData.sources[0].name;
+
 		for (let i = 0; i < qCon.length; i++) {
 			if (sName == qCon[i].getAttribute("data-name")) {
+				selectedSourceName = sName;
 				defURL = currentVidData.sources[i].url;
 				if (qCon[i].getAttribute("data-intro") === "true") {
 					skipIntroInfo.start = parseInt(qCon[i].getAttribute("data-start"));
