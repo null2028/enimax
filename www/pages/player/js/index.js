@@ -1,4 +1,4 @@
-var _a;
+var _a, _b, _c, _d, _e, _f, _g;
 var CustomXMLHttpRequest = XMLHttpRequest;
 var shouldReplace = false;
 var engine;
@@ -31,7 +31,10 @@ let subtitleConfig = {
     fontSize: parseInt(localStorage.getItem("subtitle-fontSize")),
     color: localStorage.getItem("subtitle-color"),
     lineHeight: parseInt(localStorage.getItem("subtitle-lineHeight")),
-    shadowColor: localStorage.getItem("subtitle-shadowColor")
+    shadowColor: localStorage.getItem("subtitle-shadowColor"),
+    shadowOffsetX: parseInt(localStorage.getItem("subtitle-shadowOffsetX")),
+    shadowOffsetY: parseInt(localStorage.getItem("subtitle-shadowOffsetY")),
+    shadowBlur: parseInt(localStorage.getItem("subtitle-shadowBlur")),
 };
 let lastFragError = -10;
 let lastFragDuration = 0;
@@ -41,6 +44,7 @@ let loadsLocally = false;
 let remoteInterval = null;
 let castingMode = false;
 let shouldUpdateSlider = true;
+let shadowOffsetXDOM, shadowOffsetYDOM, shadowBlurDOM;
 function applySubtitleConfig() {
     let subtitleStyle = document.getElementById("subtitleStyle");
     while (subtitleStyle.sheet.cssRules.length > 0) {
@@ -61,8 +65,29 @@ function applySubtitleConfig() {
     else if (!isNaN(subtitleConfig.backgroundOpacity)) {
         subtitleStyleString += `background-color: #000000${opacityHex};`;
     }
-    if (subtitleConfig.shadowColor) {
-        subtitleStyleString += `text-shadow: 2px 2px ${subtitleConfig.shadowColor};`;
+    if (subtitleConfig.shadowColor ||
+        !isNaN(subtitleConfig.shadowOffsetX) ||
+        !isNaN(subtitleConfig.shadowOffsetY) ||
+        !isNaN(subtitleConfig.shadowBlur)) {
+        let offsetX = subtitleConfig.shadowOffsetX, offsetY = subtitleConfig.shadowOffsetY, blur = subtitleConfig.shadowBlur;
+        if (isNaN(offsetX))
+            offsetX = 0;
+        if (isNaN(offsetY))
+            offsetY = 0;
+        if (isNaN(blur))
+            blur = 0;
+        const iters = 5;
+        let shadowString = "";
+        for (let i = 0; i <= iters; i++) {
+            shadowString += `${offsetX}px ${offsetY}px ${blur}px ${subtitleConfig.shadowColor},`;
+        }
+        for (let i = 0; i <= iters; i++) {
+            shadowString += `${Math.sign(offsetX) * -1}px ${offsetY}px ${blur}px ${subtitleConfig.shadowColor}`;
+            if (i != iters) {
+                shadowString += ",";
+            }
+        }
+        subtitleStyleString += `text-shadow: ${shadowString};`;
     }
     if (!isNaN(subtitleConfig.fontSize)) {
         subtitleStyleString += `font-size: ${subtitleConfig.fontSize}px;`;
@@ -147,6 +172,84 @@ let DMenu = new dropDownMenu([
         "items": []
     },
     {
+        "id": "textShadow",
+        "selectableScene": true,
+        "heading": {
+            "text": "Text Shadow",
+        },
+        "items": [
+            {
+                "text": "Shadow Color",
+                "attributes": {
+                    style: "width: 100%"
+                },
+                "classes": ["inputItem"],
+                "color": true,
+                "value": (_a = localStorage.getItem("subtitle-shadowColor")) !== null && _a !== void 0 ? _a : "transparent",
+                "onInput": function (event) {
+                    let target = event.target;
+                    localStorage.setItem("subtitle-shadowColor", target.value);
+                    subtitleConfig.shadowColor = target.value;
+                    applySubtitleConfig();
+                }
+            },
+            {
+                "html": "Offset X <div id=\"shadowOffsetX\" ></div>",
+                "slider": true,
+                "sliderConfig": {
+                    "max": 10,
+                    "min": -10,
+                    "step": 1
+                },
+                "classes": ["inputItem", "sliderMenu"],
+                "value": (_b = localStorage.getItem("subtitle-shadowOffsetX")) !== null && _b !== void 0 ? _b : "0",
+                "onInput": function (event) {
+                    let target = event.target;
+                    localStorage.setItem("subtitle-shadowOffsetX", target.value);
+                    subtitleConfig.shadowOffsetX = parseInt(target.value);
+                    applySubtitleConfig();
+                    shadowOffsetXDOM ? shadowOffsetXDOM.innerText = `(${target.value})` : undefined;
+                }
+            },
+            {
+                "html": "Offset Y <div id=\"shadowOffsetY\" ></div>",
+                "slider": true,
+                "sliderConfig": {
+                    "max": 10,
+                    "min": -10,
+                    "step": 1
+                },
+                "classes": ["inputItem", "sliderMenu"],
+                "value": (_c = localStorage.getItem("subtitle-shadowOffsetY")) !== null && _c !== void 0 ? _c : "0",
+                "onInput": function (event) {
+                    let target = event.target;
+                    localStorage.setItem("subtitle-shadowOffsetY", target.value);
+                    subtitleConfig.shadowOffsetY = parseInt(target.value);
+                    applySubtitleConfig();
+                    shadowOffsetYDOM ? shadowOffsetYDOM.innerText = `(${target.value})` : undefined;
+                }
+            },
+            {
+                "html": "Blur <div id=\"shadowBlur\" ></div>",
+                "slider": true,
+                "sliderConfig": {
+                    "max": 10,
+                    "min": 0,
+                    "step": 1
+                },
+                "classes": ["inputItem", "sliderMenu"],
+                "value": (_d = localStorage.getItem("subtitle-shadowBlur")) !== null && _d !== void 0 ? _d : "0",
+                "onInput": function (event) {
+                    let target = event.target;
+                    localStorage.setItem("subtitle-shadowBlur", target.value);
+                    subtitleConfig.shadowBlur = parseInt(target.value);
+                    applySubtitleConfig();
+                    shadowBlurDOM ? shadowBlurDOM.innerText = `(${target.value})` : undefined;
+                }
+            },
+        ]
+    },
+    {
         "id": "subtitlesOptions",
         "selectableScene": true,
         "heading": {
@@ -169,19 +272,9 @@ let DMenu = new dropDownMenu([
                 }
             },
             {
-                "text": "Shadow Color",
-                "attributes": {
-                    style: "width: 100%"
-                },
-                "classes": ["inputItem"],
-                "color": true,
-                "value": (_a = localStorage.getItem("subtitle-shadowColor")) !== null && _a !== void 0 ? _a : "transparent",
-                "onInput": function (event) {
-                    let target = event.target;
-                    localStorage.setItem("subtitle-shadowColor", target.value);
-                    subtitleConfig.shadowColor = target.value;
-                    applySubtitleConfig();
-                }
+                "text": "Text Shadow",
+                "iconID": "shadowIcon",
+                "open": "textShadow"
             },
             {
                 "text": "Background Transparency",
@@ -1725,4 +1818,10 @@ applySubtitleConfig();
 document.getElementById("cast").onclick = function () {
     startCasting();
 };
+shadowOffsetXDOM = document.getElementById("shadowOffsetX");
+shadowOffsetYDOM = document.getElementById("shadowOffsetY");
+shadowBlurDOM = document.getElementById("shadowBlur");
+shadowOffsetXDOM.innerText = `(${(_e = localStorage.getItem("subtitle-shadowOffsetX")) !== null && _e !== void 0 ? _e : "0"})`;
+shadowOffsetYDOM.innerText = `(${(_f = localStorage.getItem("subtitle-shadowOffsetY")) !== null && _f !== void 0 ? _f : "0"})`;
+shadowBlurDOM.innerText = `(${(_g = localStorage.getItem("subtitle-shadowBlurDOM")) !== null && _g !== void 0 ? _g : "0"})`;
 updateCasting(false);

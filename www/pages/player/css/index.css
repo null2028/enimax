@@ -14,7 +14,11 @@ body {
 
 }
 
-#playbackDOM{
+#playbackDOM,
+#shadowOffsetX,
+#shadowOffsetY,
+#shadowBlur
+{
     color: #857d7d;
     display: inline-block;
 }

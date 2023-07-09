@@ -35,7 +35,11 @@ let subtitleConfig: subtitleConfig = {
 	fontSize: parseInt(localStorage.getItem("subtitle-fontSize")),
 	color: localStorage.getItem("subtitle-color"),
 	lineHeight: parseInt(localStorage.getItem("subtitle-lineHeight")),
-	shadowColor: localStorage.getItem("subtitle-shadowColor")
+	shadowColor: localStorage.getItem("subtitle-shadowColor"),
+	shadowOffsetX: parseInt(localStorage.getItem("subtitle-shadowOffsetX")),
+	shadowOffsetY: parseInt(localStorage.getItem("subtitle-shadowOffsetY")),
+	shadowBlur: parseInt(localStorage.getItem("subtitle-shadowBlur")),
+	
 };
 let lastFragError = -10;
 let lastFragDuration = 0;
@@ -45,6 +49,10 @@ let loadsLocally = false;
 let remoteInterval = null;
 let castingMode = false;
 let shouldUpdateSlider = true;
+let shadowOffsetXDOM: HTMLElement, 
+	shadowOffsetYDOM: HTMLElement, 
+	shadowBlurDOM: HTMLElement;
+
 
 function applySubtitleConfig(): void {
 	let subtitleStyle = document.getElementById("subtitleStyle") as HTMLStyleElement;
@@ -69,8 +77,36 @@ function applySubtitleConfig(): void {
 		subtitleStyleString += `background-color: #000000${opacityHex};`;
 	}
 
-	if (subtitleConfig.shadowColor) {
-		subtitleStyleString += `text-shadow: 2px 2px ${subtitleConfig.shadowColor};`;
+	if (
+		subtitleConfig.shadowColor ||
+		!isNaN(subtitleConfig.shadowOffsetX) || 
+		!isNaN(subtitleConfig.shadowOffsetY) ||
+		!isNaN(subtitleConfig.shadowBlur) 
+	) {
+
+		let offsetX = subtitleConfig.shadowOffsetX, 
+			offsetY = subtitleConfig.shadowOffsetY, 
+			blur = subtitleConfig.shadowBlur;
+		 
+		if(isNaN(offsetX)) offsetX = 0;
+		if(isNaN(offsetY)) offsetY = 0;
+		if(isNaN(blur)) blur = 0;
+		
+		const iters = 5;
+		let shadowString = "";
+		for(let i = 0; i <= iters; i++){
+			shadowString += `${offsetX}px ${offsetY}px ${blur}px ${subtitleConfig.shadowColor},`;
+		}
+
+		for(let i = 0; i <= iters; i++){
+			shadowString += `${Math.sign(offsetX) * -1}px ${offsetY}px ${blur}px ${subtitleConfig.shadowColor}`;
+			
+			if(i != iters){
+				shadowString += ",";
+			}
+		}
+
+		subtitleStyleString += `text-shadow: ${shadowString};`;
 	}
 
 	if (!isNaN(subtitleConfig.fontSize)) {
@@ -170,7 +206,88 @@ let DMenu = new dropDownMenu(
 
 			]
 		},
+		{
+			"id": "textShadow",
+			"selectableScene": true,
+			"heading": {
+				"text": "Text Shadow",
+			},
+			"items": [
+				{
+					"text": "Shadow Color",
+					"attributes": {
+						style: "width: 100%"
+					},
+					"classes": ["inputItem"],
+					"color": true,
+					"value": localStorage.getItem("subtitle-shadowColor") ?? "transparent",
+					"onInput": function (event: InputEvent) {
+						let target = <HTMLInputElement>event.target;
 
+						localStorage.setItem("subtitle-shadowColor", target.value);
+						subtitleConfig.shadowColor = target.value;
+						applySubtitleConfig();
+					}
+				},
+				{
+					"html": "Offset X <div id=\"shadowOffsetX\" ></div>",
+					"slider": true,
+					"sliderConfig": {
+						"max": 10,
+						"min": -10,
+						"step": 1
+					},
+					"classes": ["inputItem", "sliderMenu"],
+					"value": localStorage.getItem("subtitle-shadowOffsetX") ?? "0",
+					"onInput": function (event: InputEvent) {
+						let target = <HTMLInputElement>event.target;
+
+						localStorage.setItem("subtitle-shadowOffsetX", target.value);
+						subtitleConfig.shadowOffsetX = parseInt(target.value);
+						applySubtitleConfig();
+						shadowOffsetXDOM ? shadowOffsetXDOM.innerText = `(${target.value})` : undefined;
+					}
+				},
+				{
+					"html": "Offset Y <div id=\"shadowOffsetY\" ></div>",
+					"slider": true,
+					"sliderConfig": {
+						"max": 10,
+						"min": -10,
+						"step": 1
+					},
+					"classes": ["inputItem", "sliderMenu"],
+					"value": localStorage.getItem("subtitle-shadowOffsetY") ?? "0",
+					"onInput": function (event: InputEvent) {
+						let target = <HTMLInputElement>event.target;
+
+						localStorage.setItem("subtitle-shadowOffsetY", target.value);
+						subtitleConfig.shadowOffsetY = parseInt(target.value);
+						applySubtitleConfig();
+						shadowOffsetYDOM ? shadowOffsetYDOM.innerText = `(${target.value})` : undefined;
+					}
+				},
+				{
+					"html": "Blur <div id=\"shadowBlur\" ></div>",
+					"slider": true,
+					"sliderConfig": {
+						"max": 10,
+						"min": 0,
+						"step": 1
+					},
+					"classes": ["inputItem", "sliderMenu"],
+					"value": localStorage.getItem("subtitle-shadowBlur") ?? "0",
+					"onInput": function (event: InputEvent) {
+						let target = <HTMLInputElement>event.target;
+
+						localStorage.setItem("subtitle-shadowBlur", target.value);
+						subtitleConfig.shadowBlur = parseInt(target.value);
+						applySubtitleConfig();
+						shadowBlurDOM ? shadowBlurDOM.innerText = `(${target.value})` : undefined;
+					}
+				},
+			]
+		},
 		{
 			"id": "subtitlesOptions",
 			"selectableScene": true,
@@ -195,20 +312,9 @@ let DMenu = new dropDownMenu(
 					}
 				},
 				{
-					"text": "Shadow Color",
-					"attributes": {
-						style: "width: 100%"
-					},
-					"classes": ["inputItem"],
-					"color": true,
-					"value": localStorage.getItem("subtitle-shadowColor") ?? "transparent",
-					"onInput": function (event: InputEvent) {
-						let target = <HTMLInputElement>event.target;
-
-						localStorage.setItem("subtitle-shadowColor", target.value);
-						subtitleConfig.shadowColor = target.value;
-						applySubtitleConfig();
-					}
+					"text": "Text Shadow",
+					"iconID": "shadowIcon",
+					"open": "textShadow"
 				},
 				{
 					"text": "Background Transparency",
@@ -1990,5 +2096,14 @@ applySubtitleConfig();
 document.getElementById("cast").onclick = function () {
 	startCasting();
 };
+
+shadowOffsetXDOM = document.getElementById("shadowOffsetX");
+shadowOffsetYDOM = document.getElementById("shadowOffsetY");
+shadowBlurDOM = document.getElementById("shadowBlur");
+
+shadowOffsetXDOM.innerText = `(${localStorage.getItem("subtitle-shadowOffsetX") ?? "0"})`;
+shadowOffsetYDOM.innerText = `(${localStorage.getItem("subtitle-shadowOffsetY") ?? "0"})`;
+shadowBlurDOM.innerText = `(${localStorage.getItem("subtitle-shadowBlurDOM") ?? "0"})`;
+
 
 updateCasting(false);

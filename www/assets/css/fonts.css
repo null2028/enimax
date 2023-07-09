@@ -2,6 +2,17 @@
 @font-face {
     font-display: swap;
     /* Check https://developer.mozilla.org/en-US/docs/Web/CSS/@font-face/font-display for other options. */
+    font-family: 'outlined';
+    font-style: normal;
+    font-weight: normal;
+    src: url('../fonts/outlined.ttf') format('ttf'),
+}
+
+
+/* montserrat-300 - latin */
+@font-face {
+    font-display: swap;
+    /* Check https://developer.mozilla.org/en-US/docs/Web/CSS/@font-face/font-display for other options. */
     font-family: 'Montserrat';
     font-style: normal;
     font-weight: 300;
