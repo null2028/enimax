@@ -8,7 +8,7 @@ var fmoviesto: extension = {
     searchApi: async function (query) {
 
         let rawURL = "";
-        let searchDOM = document.createElement("div");
+        let searchDOM = new DOMHandler();
 
         try {
             query = query.replace(" ", "+");
@@ -17,7 +17,7 @@ var fmoviesto: extension = {
             rawURL = `https://fmovies.to/filter?keyword=${encodeURIComponent(query)}&vrf=${vrf[0]}&sort=most_relevance`;
             const searchHTML = await MakeFetchZoro(`https://fmovies.to/filter?keyword=${encodeURIComponent(query)}&vrf=${vrf[0]}&sort=most_relevance`);
             searchDOM.innerHTML = DOMPurify.sanitize(searchHTML);
-            const searchElem = searchDOM.querySelector(".movies.items");
+            const searchElem = searchDOM.document.querySelector(".movies.items");
 
             if (!searchElem) {
                 throw new Error("No results found.");
@@ -47,8 +47,6 @@ var fmoviesto: extension = {
         } catch (err) {
             err.rawURL = rawURL;
             throw err;
-        } finally {
-            removeDOM(searchDOM);
         }
     },
     getAnimeInfo: async function (url: string, nextPrev: Boolean = false): Promise<extensionInfo> {
@@ -63,8 +61,8 @@ var fmoviesto: extension = {
 
         let id = url.replace("?watch=/", "");
         const rawURL = `https://fmovies.to/${id}`;
-        let episodesDOM = document.createElement("div");
-        let infoDOM = document.createElement("div");
+        let episodesDOM = new DOMHandler();
+        let infoDOM = new DOMHandler();
 
         try {
             let infoHTML = await MakeFetchZoro(`https://fmovies.to/${id}`);
@@ -73,7 +71,7 @@ var fmoviesto: extension = {
             });
 
 
-            const container = infoDOM.querySelector("#w-info");
+            const container = infoDOM.document.querySelector("#w-info");
             response.mainName = id.replace("series/", "").replace("movie/", "").replace("tv/", "");
             response.name = (container.querySelector(`.name`) as HTMLElement).innerText;
             response.image = container.querySelector(`img`).getAttribute("src");
@@ -84,7 +82,7 @@ var fmoviesto: extension = {
 
             try {
                 response.genres = [];
-                const metaCon = infoDOM.querySelector(".bmeta").querySelector(".meta");
+                const metaCon = infoDOM.document.querySelector(".bmeta").querySelector(".meta");
                 for (const genreAnchor of metaCon.querySelectorAll("a")) {
                     const href = genreAnchor.getAttribute("href");
                     if (href && href.includes("/genre/")) {
@@ -96,7 +94,7 @@ var fmoviesto: extension = {
             }
 
             let episodes: extensionInfoEpisode[] = [];
-            const uid = infoDOM.querySelector(".watch").getAttribute("data-id");
+            const uid = infoDOM.document.querySelector(".watch").getAttribute("data-id");
             let IDVRF = await this.getVRF(uid, "fmovies-vrf");
 
             let episodesHTML = "";
@@ -116,7 +114,7 @@ var fmoviesto: extension = {
 
             episodesDOM.innerHTML = DOMPurify.sanitize(episodesHTML);
 
-            let episodeElem = episodesDOM.querySelectorAll(".episodes a");
+            let episodeElem = episodesDOM.document.querySelectorAll(".episodes a");
             console.log(episodesDOM, episodeElem);
             response.totalPages = 0;
             response.pageInfo = [];
@@ -192,9 +190,6 @@ var fmoviesto: extension = {
             console.log(err);
             err.url = rawURL;
             throw err;
-        } finally {
-            removeDOM(episodesDOM);
-            removeDOM(infoDOM);
         }
     },
     getLinkFromUrl: async function (url: string) {
@@ -211,8 +206,8 @@ var fmoviesto: extension = {
             prev: null
         };
 
-        const infoDOM = document.createElement("div");
-        const serverDOM = document.createElement("div");
+        const infoDOM = new DOMHandler();
+        const serverDOM = new DOMHandler();
 
         try {
             const searchParams = new URLSearchParams(url);
@@ -224,7 +219,7 @@ var fmoviesto: extension = {
 
             const infoHTML = await MakeFetchZoro(`https://fmovies.to/${searchParams.get("watch")}`);
             infoDOM.innerHTML = DOMPurify.sanitize(infoHTML);
-            const uid = infoDOM.querySelector(".watch").getAttribute("data-id");
+            const uid = infoDOM.document.querySelector(".watch").getAttribute("data-id");
             const epsiodeServers = [];
 
 
@@ -243,7 +238,7 @@ var fmoviesto: extension = {
                 "ADD_ATTR": ["data-kname", "data-id"]
             });
 
-            const serverDIVs = serverDOM.querySelectorAll(".server");
+            const serverDIVs = serverDOM.document.querySelectorAll(".server");
 
             for (let i = 0; i < serverDIVs.length; i++) {
                 const curServer = serverDIVs[i];
@@ -395,9 +390,6 @@ var fmoviesto: extension = {
             return response;
         } catch (err) {
             throw err;
-        } finally {
-            removeDOM(infoDOM);
-            removeDOM(serverDOM);
         }
     },
     checkConfig: function () {
