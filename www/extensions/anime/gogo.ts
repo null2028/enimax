@@ -204,6 +204,7 @@ var gogo: extension = {
             const epList: extensionInfo = await this.getAnimeInfo(params.get("watch").replace("gogo-", "category/"));
             const link = epList.episodes.find((ep) => ep.id === epNum).sourceID;
             const watchHTML = await MakeFetchZoro(`${this.baseURL}/${link}`);
+            
             watchDOM.innerHTML = DOMPurify.sanitize(watchHTML, { ADD_TAGS: ["iframe"] });
 
             try {

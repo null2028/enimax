@@ -1,0 +1,5 @@
+class RapidCloud {
+    async extract() {
+
+    }
+}

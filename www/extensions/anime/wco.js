@@ -5,147 +5,138 @@ var wco = {
     disabled: false,
     name: "WCOForever",
     shortenedName: "WCO",
-    searchApi: function (query) {
-        let baseURL = this.baseURL;
-        let tempDiv = document.createElement("div");
-        return (new Promise(function (resolve, reject) {
-            let formData = new FormData();
-            formData.append('catara', query);
-            formData.append('konuara', 'series');
-            fetch(`${baseURL}/search`, {
+    searchApi: async function (query) {
+        const baseURL = this.baseURL;
+        const tempDiv = new DOMHandler();
+        const formData = new FormData();
+        formData.append('catara', query);
+        formData.append('konuara', 'series');
+        try {
+            const searchHTML = await MakeFetchZoro(`${baseURL}/search`, {
                 method: 'POST', body: formData
-            }).then(response => response.text()).then(function (x) {
-                tempDiv.innerHTML = DOMPurify.sanitize(x);
-                var conDIV = tempDiv.querySelector(".items").children;
-                let data = [];
-                for (var i = 0; i < conDIV.length; i++) {
-                    data.push({
-                        "image": conDIV[i].getElementsByTagName("img")[0].getAttribute("src"),
-                        "name": conDIV[i].getElementsByTagName("a")[1].innerText,
-                        "link": conDIV[i].getElementsByTagName("a")[1].getAttribute("href").replace(baseURL, "") + "&engine=0",
-                    });
-                }
-                resolve({
-                    "status": 200,
-                    "data": data
+            });
+            tempDiv.innerHTML = DOMPurify.sanitize(searchHTML);
+            const conDIV = tempDiv.document.querySelector(".items").children;
+            const searchData = [];
+            for (var i = 0; i < conDIV.length; i++) {
+                searchData.push({
+                    "image": conDIV[i].getElementsByTagName("img")[0].getAttribute("src"),
+                    "name": conDIV[i].getElementsByTagName("a")[1].innerText,
+                    "link": conDIV[i].getElementsByTagName("a")[1].getAttribute("href").replace(baseURL, "") + "&engine=0",
                 });
-            }).catch(function (x) {
-                reject(x);
-            }).finally(() => {
-                removeDOM(tempDiv);
-            });
-        }));
+            }
+            return {
+                "status": 200,
+                "data": searchData
+            };
+        }
+        catch (err) {
+            throw err;
+        }
     },
-    getAnimeInfo: function (url) {
-        let baseURL = this.baseURL;
-        let rawURL = "";
-        return (new Promise(function (resolve, reject) {
-            url = url.split("&engine")[0];
-            url = baseURL + "/" + url;
-            rawURL = url;
-            let temp = document.createElement("div");
-            fetch(url).then(response => response.text()).then(function (response) {
-                temp.innerHTML = DOMPurify.sanitize(response);
-                let data = {
-                    "name": "",
-                    "image": "",
-                    "description": "",
-                    "episodes": [],
-                    "mainName": ""
-                };
-                data.name = temp.querySelectorAll(".video-title")[0].innerText;
-                data.image = temp.querySelector("#sidebar_cat").querySelectorAll(".img5")[0].getAttribute("src");
-                if (data.image.indexOf("//") == 0) {
-                    data.image = "https:" + data.image;
-                }
-                data.description = temp.querySelector("#sidebar_cat").querySelectorAll("p")[0].innerText;
-                data.totalPages = 1;
-                data.pageInfo = [{
-                        "pageName": "Season 1",
-                        "pageSize": 0
-                    }];
-                let lastSeason = "1";
-                let episodesDOM = temp.querySelector("#sidebar_right3");
-                let animeEps = data.episodes;
-                let animeDOM = episodesDOM.querySelectorAll("a");
-                let animeName;
-                for (var i = animeDOM.length - 1; i >= 0; i--) {
-                    let season = lastSeason;
-                    try {
-                        let hasSeason = parseInt(animeDOM[i].innerText.toLowerCase().split("season")[1]);
-                        if (!isNaN(hasSeason)) {
-                            season = hasSeason.toString();
-                        }
-                        else {
-                            season = "1";
-                        }
-                    }
-                    catch (err) {
-                    }
-                    if (season != lastSeason) {
-                        lastSeason = season;
-                        data.totalPages++;
-                        data.pageInfo[data.totalPages - 1] = {
-                            "pageSize": 0,
-                            "pageName": `Season ${season}`
-                        };
-                    }
-                    data.pageInfo[data.totalPages - 1].pageSize++;
-                    const title = animeDOM[i].innerText;
-                    const episodeNumTemp = title === null || title === void 0 ? void 0 : title.toLowerCase().split("episode");
-                    let epNum = 1;
-                    try {
-                        if (episodeNumTemp && episodeNumTemp.length >= 2) {
-                            epNum = parseFloat(episodeNumTemp[1]);
-                        }
-                    }
-                    catch (err) {
-                        console.warn(err);
-                    }
-                    animeEps.push({
-                        "link": animeDOM[i].href.replace(baseURL, "?watch=") + "&engine=0",
-                        "title": title,
-                        "altTitle": `Season ${season} Episode ${epNum}`,
-                        "altTruncatedTitle": `S${season} E${epNum}`
-                    });
-                }
-                // Very convoluted but it works
+    getAnimeInfo: async function (url) {
+        url = new URLSearchParams(`?watch=${url}`).get("watch");
+        const baseURL = this.baseURL;
+        const rawURL = baseURL + "/" + url;
+        const infoDOM = new DOMHandler();
+        try {
+            const infoHTML = await MakeFetchZoro(rawURL);
+            infoDOM.innerHTML = DOMPurify.sanitize(infoHTML);
+            let infoData = {
+                name: infoDOM.document.querySelectorAll(".video-title")[0].innerText,
+                image: infoDOM.document.querySelector("#sidebar_cat").querySelectorAll(".img5")[0].getAttribute("src"),
+                description: infoDOM.document.querySelector("#sidebar_cat").querySelectorAll("p")[0].innerText,
+                episodes: [],
+                mainName: "",
+                totalPages: 1,
+                pageInfo: [{
+                        pageName: "Season 1",
+                        pageSize: 0
+                    }]
+            };
+            if (infoData.image.indexOf("//") == 0) {
+                infoData.image = "https:" + infoData.image;
+            }
+            let lastSeason = "1";
+            let episodesDOM = infoDOM.document.querySelector("#sidebar_right3");
+            let animeEps = infoData.episodes;
+            let animeDOM = episodesDOM.querySelectorAll("a");
+            let animeName;
+            for (var i = animeDOM.length - 1; i >= 0; i--) {
+                let season = lastSeason;
                 try {
-                    let animeNameMain = animeEps[0].link.replace(baseURL, "?watch=").split("?watch=/")[1];
-                    animeName = animeNameMain.trim();
-                    animeName = animeName.split("episode")[0];
-                    if (animeNameMain.split("episode").length == 1) {
-                        animeName = animeName.split("?id=")[0];
-                        animeName = animeName.trim();
-                        animeName = animeName + "-";
-                        animeName = animeName.trim();
+                    let hasSeason = parseInt(animeDOM[i].innerText.toLowerCase().split("season")[1]);
+                    if (!isNaN(hasSeason)) {
+                        season = hasSeason.toString();
                     }
-                    try {
-                        if (animeName.indexOf("season") > -1) {
-                            animeName = animeName.split("season")[0];
-                        }
-                    }
-                    catch (err) {
+                    else {
+                        season = "1";
                     }
                 }
                 catch (err) {
+                }
+                if (season != lastSeason) {
+                    lastSeason = season;
+                    infoData.totalPages++;
+                    infoData.pageInfo[infoData.totalPages - 1] = {
+                        "pageSize": 0,
+                        "pageName": `Season ${season}`
+                    };
+                }
+                infoData.pageInfo[infoData.totalPages - 1].pageSize++;
+                const title = animeDOM[i].innerText;
+                const episodeNumTemp = title === null || title === void 0 ? void 0 : title.toLowerCase().split("episode");
+                let epNum = 1;
+                try {
+                    if (episodeNumTemp && episodeNumTemp.length >= 2) {
+                        epNum = parseFloat(episodeNumTemp[1]);
+                    }
+                }
+                catch (err) {
+                    console.warn(err);
+                }
+                animeEps.push({
+                    link: animeDOM[i].href.replace(baseURL, "?watch=") + "&engine=0",
+                    title: title,
+                    altTitle: `Season ${season} Episode ${epNum}`,
+                    altTruncatedTitle: `S${season} E${epNum}`
+                });
+            }
+            // Very convoluted but it works
+            try {
+                let animeNameMain = animeEps[0].link.replace(baseURL, "?watch=").split("?watch=/")[1];
+                animeName = animeNameMain.trim();
+                animeName = animeName.split("episode")[0];
+                if (animeNameMain.split("episode").length == 1) {
+                    animeName = animeName.split("?id=")[0];
+                    animeName = animeName.trim();
                     animeName = animeName + "-";
+                    animeName = animeName.trim();
                 }
-                data.episodes = animeEps;
                 try {
-                    data.mainName = (new URL(url)).pathname.replace("/anime/", "") + "-";
+                    if (animeName.indexOf("season") > -1) {
+                        animeName = animeName.split("season")[0];
+                    }
                 }
                 catch (err) {
-                    data.mainName = url.split("/anime/")[1] + "-";
                 }
-                resolve(data);
-            }).catch(function (err) {
-                err.url = rawURL;
-                reject(err);
-            }).finally(() => {
-                removeDOM(temp);
-            });
-        }));
+            }
+            catch (err) {
+                animeName = animeName + "-";
+            }
+            infoData.episodes = animeEps;
+            try {
+                infoData.mainName = (new URL(url)).pathname.replace("/anime/", "") + "-";
+            }
+            catch (err) {
+                infoData.mainName = url.split("/anime/")[1] + "-";
+            }
+            return infoData;
+        }
+        catch (err) {
+            err.url = rawURL;
+            throw err;
+        }
     },
     getLinkFromUrl: async function (url) {
         let baseURL = this.baseURL;
@@ -194,7 +185,7 @@ var wco = {
             next: null,
             prev: null,
         };
-        let dom = document.createElement("div");
+        let dom = new DOMHandler();
         try {
             let reqOption = {
                 'headers': {
@@ -206,14 +197,14 @@ var wco = {
             let sources = data.sources;
             dom.innerHTML = DOMPurify.sanitize(pageHTML);
             try {
-                let tmpName = dom.querySelector('[rel="category tag"]').getAttribute("href").replace(`${baseURL}/anime/`, "");
+                let tmpName = dom.document.querySelector('[rel="category tag"]').getAttribute("href").replace(`${baseURL}/anime/`, "");
                 if (tmpName != "") {
                     animeName = tmpName + "-";
                 }
             }
             catch (err) {
             }
-            let nextPrev = dom.getElementsByClassName("prev-next");
+            let nextPrev = dom.document.getElementsByClassName("prev-next");
             for (let npi = 0; npi < nextPrev.length; npi++) {
                 try {
                     let tempData = nextPrev[npi].children[0].getAttribute("rel").trim().toLowerCase();
@@ -329,17 +320,14 @@ var wco = {
             data.message = "Couldn't get the link";
             return data;
         }
-        finally {
-            removeDOM(dom);
-        }
     },
     discover: async function () {
         let baseURL = this.baseURL;
-        let temp = document.createElement("div");
+        let temp = new DOMHandler();
         try {
             temp.innerHTML = DOMPurify.sanitize(await MakeFetch(baseURL, {}));
             let data = [];
-            for (let elem of temp.querySelectorAll(".items")[1].querySelectorAll("li")) {
+            for (let elem of temp.document.querySelectorAll(".items")[1].querySelectorAll("li")) {
                 let image = "https:" + elem.querySelector("img").getAttribute("src");
                 let tempAnchor = elem.querySelectorAll("a")[1];
                 let name = tempAnchor.innerText;
@@ -359,23 +347,17 @@ var wco = {
         catch (err) {
             throw err;
         }
-        finally {
-            removeDOM(temp);
-        }
     },
     getDiscoverLink: async function (mainLink) {
         let baseURL = this.baseURL;
-        let temp = document.createElement("div");
+        let temp = new DOMHandler();
         try {
             temp.innerHTML = DOMPurify.sanitize(await MakeFetch(`${baseURL}${mainLink}`, {}));
-            mainLink = temp.querySelector('[rel="category tag"]').getAttribute("href").replace(baseURL, "");
+            mainLink = temp.document.querySelector('[rel="category tag"]').getAttribute("href").replace(baseURL, "");
             return mainLink;
         }
         catch (err) {
             throw err;
-        }
-        finally {
-            removeDOM(temp);
         }
     }
 };
