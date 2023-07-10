@@ -7,7 +7,7 @@ var anna: extension = {
     name: "Anna's Archive",
     shortenedName: "Anna",
     searchApi: async function (query) {
-        const searchDOM = document.createElement("div");
+        const searchDOM = new DOMHandler();
 
         try {
             const searchHTML = await MakeFetch(`${this.baseURL}/search?q=${query}`);
@@ -15,7 +15,7 @@ var anna: extension = {
                 ADD_TAGS: ["#comment"]
             });
 
-            const itemsDOM = searchDOM.querySelectorAll(".h-\\[125\\]");
+            const itemsDOM = searchDOM.document.querySelectorAll(".h-\\[125\\]");
             const data = [];
 
             for (let i = 0; i < itemsDOM.length; i++) {
@@ -35,12 +35,10 @@ var anna: extension = {
             return ({ data, "status": 200 });
         } catch (err) {
             throw err;
-        } finally {
-            // removeDOM(searchDOM);
         }
     },
     getAnimeInfo: async function (url): Promise<extensionInfo> {
-        const infoDOM = document.createElement("div");
+        const infoDOM = new DOMHandler();
 
         try {
 
@@ -60,29 +58,26 @@ var anna: extension = {
             infoDOM.innerHTML = DOMPurify.sanitize(infoHTML);
 
             response.mainName = identifier.replace("md5/", "anna-");
-            response.image = infoDOM.querySelector("main")?.querySelector("img")?.getAttribute("src");
-            response.name = infoDOM.querySelector("main")?.querySelector<HTMLElement>(".font-bold")?.innerText;
-            response.description = infoDOM.querySelector<HTMLElement>(".js-md5-top-box-description")?.innerText;
+            response.image = infoDOM.document.querySelector("main")?.querySelector("img")?.getAttribute("src");
+            response.name = infoDOM.document.querySelector("main")?.querySelector<HTMLElement>(".font-bold")?.innerText;
+            response.description = infoDOM.document.querySelector<HTMLElement>(".js-md5-top-box-description")?.innerText;
             response.mainName = `${response.mainName}-${window.btoa(response.name.replace(/[^\x00-\x7F]/g, ""))?.trim()}`;
 
             response.episodes = [
                 {
                     link: `?watch=${identifier}&engine=12`,
-                    title: infoDOM.querySelector<HTMLElement>(".text-sm")?.innerText
+                    title: infoDOM.document.querySelector<HTMLElement>(".text-sm")?.innerText
                 }
             ];
 
             return response;
         } catch (err) {
             throw err;
-        } finally {
-            removeDOM(infoDOM);
         }
     },
 
     getLinkFromUrl: async function (url): Promise<extensionMangaSource> {
-
-        const linkDOM = document.createElement("div");
+        const linkDOM = new DOMHandler();
 
         try {
 
@@ -105,11 +100,11 @@ var anna: extension = {
 
             linkDOM.innerHTML = DOMPurify.sanitize(linkHTML);
 
-            response.name = linkDOM.querySelector("main")?.querySelector<HTMLElement>(".font-bold")?.innerText;
+            response.name = linkDOM.document.querySelector("main")?.querySelector<HTMLElement>(".font-bold")?.innerText;
             response.sources = [];
 
             let sourceCount = 0;
-            const downloadLinks = linkDOM.querySelectorAll(".js-download-link");
+            const downloadLinks = linkDOM.document.querySelectorAll(".js-download-link");
             for (const elem of downloadLinks) {
                 if (elem.getAttribute("href")?.endsWith(".epub")) {
                     response.sources.push({
@@ -132,8 +127,6 @@ var anna: extension = {
             return response;
         } catch (err) {
             throw err;
-        } finally {
-            removeDOM(linkDOM);
         }
     },
     fixTitle(title: string) {

@@ -2044,13 +2044,13 @@ var anna = {
     shortenedName: "Anna",
     searchApi: async function (query) {
         var _a, _b, _c;
-        const searchDOM = document.createElement("div");
+        const searchDOM = new DOMHandler();
         try {
             const searchHTML = await MakeFetch(`${this.baseURL}/search?q=${query}`);
             searchDOM.innerHTML = DOMPurify.sanitize(searchHTML, {
                 ADD_TAGS: ["#comment"]
             });
-            const itemsDOM = searchDOM.querySelectorAll(".h-\\[125\\]");
+            const itemsDOM = searchDOM.document.querySelectorAll(".h-\\[125\\]");
             const data = [];
             for (let i = 0; i < itemsDOM.length; i++) {
                 const con = itemsDOM[i];
@@ -2068,13 +2068,10 @@ var anna = {
         catch (err) {
             throw err;
         }
-        finally {
-            // removeDOM(searchDOM);
-        }
     },
     getAnimeInfo: async function (url) {
         var _a, _b, _c, _d, _e, _f, _g;
-        const infoDOM = document.createElement("div");
+        const infoDOM = new DOMHandler();
         try {
             const response = {
                 "name": "",
@@ -2089,14 +2086,14 @@ var anna = {
             const infoHTML = await MakeFetch(`${this.baseURL}/${identifier}`);
             infoDOM.innerHTML = DOMPurify.sanitize(infoHTML);
             response.mainName = identifier.replace("md5/", "anna-");
-            response.image = (_b = (_a = infoDOM.querySelector("main")) === null || _a === void 0 ? void 0 : _a.querySelector("img")) === null || _b === void 0 ? void 0 : _b.getAttribute("src");
-            response.name = (_d = (_c = infoDOM.querySelector("main")) === null || _c === void 0 ? void 0 : _c.querySelector(".font-bold")) === null || _d === void 0 ? void 0 : _d.innerText;
-            response.description = (_e = infoDOM.querySelector(".js-md5-top-box-description")) === null || _e === void 0 ? void 0 : _e.innerText;
+            response.image = (_b = (_a = infoDOM.document.querySelector("main")) === null || _a === void 0 ? void 0 : _a.querySelector("img")) === null || _b === void 0 ? void 0 : _b.getAttribute("src");
+            response.name = (_d = (_c = infoDOM.document.querySelector("main")) === null || _c === void 0 ? void 0 : _c.querySelector(".font-bold")) === null || _d === void 0 ? void 0 : _d.innerText;
+            response.description = (_e = infoDOM.document.querySelector(".js-md5-top-box-description")) === null || _e === void 0 ? void 0 : _e.innerText;
             response.mainName = `${response.mainName}-${(_f = window.btoa(response.name.replace(/[^\x00-\x7F]/g, ""))) === null || _f === void 0 ? void 0 : _f.trim()}`;
             response.episodes = [
                 {
                     link: `?watch=${identifier}&engine=12`,
-                    title: (_g = infoDOM.querySelector(".text-sm")) === null || _g === void 0 ? void 0 : _g.innerText
+                    title: (_g = infoDOM.document.querySelector(".text-sm")) === null || _g === void 0 ? void 0 : _g.innerText
                 }
             ];
             return response;
@@ -2104,13 +2101,10 @@ var anna = {
         catch (err) {
             throw err;
         }
-        finally {
-            removeDOM(infoDOM);
-        }
     },
     getLinkFromUrl: async function (url) {
         var _a, _b, _c, _d;
-        const linkDOM = document.createElement("div");
+        const linkDOM = new DOMHandler();
         try {
             const response = {
                 sources: [],
@@ -2128,10 +2122,10 @@ var anna = {
             const identifier = searchParam.get("watch");
             const linkHTML = await MakeFetch(`${this.baseURL}/${identifier}`);
             linkDOM.innerHTML = DOMPurify.sanitize(linkHTML);
-            response.name = (_b = (_a = linkDOM.querySelector("main")) === null || _a === void 0 ? void 0 : _a.querySelector(".font-bold")) === null || _b === void 0 ? void 0 : _b.innerText;
+            response.name = (_b = (_a = linkDOM.document.querySelector("main")) === null || _a === void 0 ? void 0 : _a.querySelector(".font-bold")) === null || _b === void 0 ? void 0 : _b.innerText;
             response.sources = [];
             let sourceCount = 0;
-            const downloadLinks = linkDOM.querySelectorAll(".js-download-link");
+            const downloadLinks = linkDOM.document.querySelectorAll(".js-download-link");
             for (const elem of downloadLinks) {
                 if ((_c = elem.getAttribute("href")) === null || _c === void 0 ? void 0 : _c.endsWith(".epub")) {
                     response.sources.push({
@@ -2153,9 +2147,6 @@ var anna = {
         }
         catch (err) {
             throw err;
-        }
-        finally {
-            removeDOM(linkDOM);
         }
     },
     fixTitle(title) {
