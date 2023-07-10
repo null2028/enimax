@@ -13,13 +13,13 @@ var gogo: extension = {
         CryptoJS.enc.Utf8.parse("3134003223491201")
     ],
     searchApi: async function (query: string): Promise<extensionSearch> {
-        let dom = document.createElement("div");
+        let dom = new DOMHandler();
 
         try {
             let searchHTML = await MakeFetchZoro(`${this.baseURL}/search.html?keyword=${encodeURIComponent(query)}`, {});
             dom.innerHTML = DOMPurify.sanitize(searchHTML);
 
-            let itemsDOM = dom.querySelectorAll("ul.items li");
+            let itemsDOM = dom.document.querySelectorAll("ul.items li");
             let data = [];
             for (var i = 0; i < itemsDOM.length; i++) {
                 let con = itemsDOM[i];
@@ -33,8 +33,6 @@ var gogo: extension = {
             return ({ data, "status": 200 });
         } catch (err) {
             throw err;
-        } finally {
-            removeDOM(dom);
         }
     },
     getAnimeInfo: async function (url): Promise<extensionInfo> {
@@ -113,8 +111,8 @@ var gogo: extension = {
         url = url.split("&engine")[0];
 
         const rawURL = `${this.baseURL}/${url}`;
-        const animeDOM = document.createElement("div");
-        const episodeDOM = document.createElement("div");
+        const animeDOM = new DOMHandler();
+        const episodeDOM = new DOMHandler();
 
         try {
             const response: extensionInfo = {
@@ -132,21 +130,21 @@ var gogo: extension = {
             animeDOM.innerHTML = DOMPurify.sanitize(animeHTML, { ADD_ATTR: ["ep_start", "ep_end"] });
 
             response.mainName = id;
-            response.image = (animeDOM.querySelector(".anime_info_body_bg img") as HTMLElement).getAttribute("src");
-            response.name = (animeDOM.querySelector(".anime_info_body_bg h1") as HTMLElement).innerText.trim();
-            response.description = (animeDOM.querySelectorAll(".anime_info_body_bg p.type")[1] as HTMLElement).innerText.trim();
+            response.image = (animeDOM.document.querySelector(".anime_info_body_bg img") as HTMLElement).getAttribute("src");
+            response.name = (animeDOM.document.querySelector(".anime_info_body_bg h1") as HTMLElement).innerText.trim();
+            response.description = (animeDOM.document.querySelectorAll(".anime_info_body_bg p.type")[1] as HTMLElement).innerText.trim();
 
-            const episodeCon = animeDOM.querySelector("#episode_page").children;
+            const episodeCon = animeDOM.document.querySelector("#episode_page").children;
             const epStart = episodeCon[0].querySelector("a").getAttribute("ep_start");
             const epEnd = episodeCon[episodeCon.length - 1].querySelector("a").getAttribute("ep_end");
-            const movieID = animeDOM.querySelector("#movie_id").getAttribute("value");
-            const alias = animeDOM.querySelector("#alias_anime").getAttribute("value");
+            const movieID = animeDOM.document.querySelector("#movie_id").getAttribute("value");
+            const alias = animeDOM.document.querySelector("#alias_anime").getAttribute("value");
             const epData: Array<extensionInfoEpisode> = [];
 
             const episodeHTML = await MakeFetchZoro(`${this.ajaxURL}/load-list-episode?ep_start=${epStart}&ep_end=${epEnd}&id=${movieID}&default_ep=${0}&alias=${alias}`);
             episodeDOM.innerHTML = DOMPurify.sanitize(episodeHTML);
 
-            const episodesLI = episodeDOM.querySelectorAll("#episode_related li");
+            const episodesLI = episodeDOM.document.querySelectorAll("#episode_related li");
 
             for (let i = 0; i < episodesLI.length; i++) {
                 const el = episodesLI[i];
@@ -172,23 +170,14 @@ var gogo: extension = {
         } catch (err) {
             err.url = rawURL;
             throw err;
-        } finally {
-            removeDOM(animeDOM);
-            removeDOM(episodeDOM);
         }
     },
     getLinkFromUrl: async function (url: string): Promise<extensionVidSource> {
-
-        const watchDOM = document.createElement("div");
-        const embedDOM = document.createElement("div");
-
+        const watchDOM = new DOMHandler();
+        const embedDOM = new DOMHandler();
         try {
             const params = new URLSearchParams("?watch=" + url);
             const sourceURLs: Array<videoSource> = [];
-
-            watchDOM.style.display = "none";
-            embedDOM.style.display = "none";
-
             const resp: extensionVidSource = {
                 sources: sourceURLs,
                 name: "",
@@ -208,7 +197,7 @@ var gogo: extension = {
             watchDOM.innerHTML = DOMPurify.sanitize(watchHTML, { ADD_TAGS: ["iframe"] });
 
             try {
-                const prevTemp = watchDOM.querySelector(".anime_video_body_episodes_l a").getAttribute("href");
+                const prevTemp = watchDOM.document.querySelector(".anime_video_body_episodes_l a").getAttribute("href");
                 let ep = parseFloat(prevTemp.split("-episode-")[1]);
 
                 if (ep == 0) {
@@ -222,7 +211,7 @@ var gogo: extension = {
 
 
             try {
-                const nextTemp = watchDOM.querySelector(".anime_video_body_episodes_r a").getAttribute("href");
+                const nextTemp = watchDOM.document.querySelector(".anime_video_body_episodes_r a").getAttribute("href");
                 let ep = parseFloat(nextTemp.split("-episode-")[1]);
 
                 if (ep == 0) {
@@ -234,7 +223,7 @@ var gogo: extension = {
                 console.error(err);
             }
 
-            let videoURLTemp = watchDOM.querySelector("#load_anime iframe").getAttribute("src");
+            let videoURLTemp = watchDOM.document.querySelector("#load_anime iframe").getAttribute("src");
             if (videoURLTemp.substring(0, 2) === "//") {
                 videoURLTemp = "https:" + videoURLTemp;
             }
@@ -280,9 +269,6 @@ var gogo: extension = {
             return resp;
         } catch (err) {
             throw err;
-        } finally {
-            removeDOM(watchDOM);
-            removeDOM(embedDOM);
         }
 
     },
