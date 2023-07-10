@@ -7,7 +7,7 @@ var mangaFire: extension = {
     name: "MangaFire",
     shortenedName: "MFire",
     searchApi: async function (query: string): Promise<extensionSearch> {
-        const searchDOM = document.createElement("div");
+        const searchDOM = new DOMHandler();
 
         try {
             const searchHTML = await MakeFetchZoro(
@@ -20,7 +20,7 @@ var mangaFire: extension = {
 
             searchDOM.innerHTML = DOMPurify.sanitize(searchHTML);
 
-            for (const mangaCard of searchDOM.querySelectorAll(".item")) {
+            for (const mangaCard of searchDOM.document.querySelectorAll(".item")) {
 
                 const nameDOM = mangaCard.querySelector(".name")?.querySelector("a");
                 results.data.push({
@@ -33,13 +33,11 @@ var mangaFire: extension = {
             return results;
         } catch (err) {
             throw err;
-        } finally {
-            removeDOM(searchDOM);
         }
     },
     getAnimeInfo: async function (url): Promise<extensionInfo> {
         const id = (new URLSearchParams(`?watch=${url}`)).get("watch");
-        const infoDOM = document.createElement("div");
+        const infoDOM = new DOMHandler();
         const rawURL = `${this.baseURL}/${id.replace("mangafire-", "manga/")}`;
         let response: extensionInfo = {
             "name": "",
@@ -54,12 +52,12 @@ var mangaFire: extension = {
             const infoHTML = await MakeFetch(rawURL);
             infoDOM.innerHTML = DOMPurify.sanitize(infoHTML);
 
-            response.name = (infoDOM?.querySelector(".info")?.querySelector(".name") as HTMLElement).innerText;
-            response.image = infoDOM.querySelector(".poster")?.querySelector("img")?.getAttribute("src");
-            response.description = (infoDOM.querySelector(".summary") as HTMLElement)?.innerText;
+            response.name = (infoDOM?.document.querySelector(".info")?.querySelector(".name") as HTMLElement).innerText;
+            response.image = infoDOM.document.querySelector(".poster")?.querySelector("img")?.getAttribute("src");
+            response.description = (infoDOM.document.querySelector(".summary") as HTMLElement)?.innerText;
             response.mainName = id;
 
-            const episodeListDOM = infoDOM.querySelector(".chapter-list[data-name=\"EN\"]")?.querySelectorAll("li.item");
+            const episodeListDOM = infoDOM.document.querySelector(".chapter-list[data-name=\"EN\"]")?.querySelectorAll("li.item");
 
             for (let i = episodeListDOM.length - 1; i >= 0; i--) {
                 const episodeLI = episodeListDOM[i];
@@ -77,8 +75,6 @@ var mangaFire: extension = {
         } catch (err) {
             err.url = rawURL;
             throw err;
-        } finally {
-            removeDOM(infoDOM);
         }
     },
 
@@ -131,8 +127,7 @@ var mangaFire: extension = {
         const chapterSplit = chapterId.split(".");
         const identifier = chapterSplit[1].split("/")[0];
         const name = fix_title(chapterSplit[0].replace("/read/", ""));
-
-        const chapterListDOM = document.createElement("div");
+        const chapterListDOM = new DOMHandler();
 
         try {
             const chapterListHTML = JSON.parse(await MakeFetch(`${this.baseURL}/ajax/read/${identifier}/list?viewby=chapter`)).result.html;
@@ -150,7 +145,7 @@ var mangaFire: extension = {
 
             chapterListDOM.innerHTML = DOMPurify.sanitize(chapterListHTML);
 
-            const chapterList = chapterListDOM.querySelector(".numberlist[data-lang=\"en\"]")?.querySelectorAll("a");
+            const chapterList = chapterListDOM.document.querySelector(".numberlist[data-lang=\"en\"]")?.querySelectorAll("a");
             let currentIndex = -1;
             let chapterMainID = "";
 
@@ -199,8 +194,6 @@ var mangaFire: extension = {
             return response;
         } catch (err) {
             throw new Error((err as Error).message);
-        } finally {
-            removeDOM(chapterListDOM);
         }
     },
     fixTitle(title: string) {

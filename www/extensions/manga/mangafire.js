@@ -8,7 +8,7 @@ var mangaFire = {
     shortenedName: "MFire",
     searchApi: async function (query) {
         var _a, _b;
-        const searchDOM = document.createElement("div");
+        const searchDOM = new DOMHandler();
         try {
             const searchHTML = await MakeFetchZoro(`${this.baseURL}/filter?keyword=${encodeURIComponent(query)}`);
             const results = {
@@ -16,7 +16,7 @@ var mangaFire = {
                 data: []
             };
             searchDOM.innerHTML = DOMPurify.sanitize(searchHTML);
-            for (const mangaCard of searchDOM.querySelectorAll(".item")) {
+            for (const mangaCard of searchDOM.document.querySelectorAll(".item")) {
                 const nameDOM = (_a = mangaCard.querySelector(".name")) === null || _a === void 0 ? void 0 : _a.querySelector("a");
                 results.data.push({
                     link: (nameDOM === null || nameDOM === void 0 ? void 0 : nameDOM.getAttribute("href").replace("manga/", "mangafire-")) + "&engine=9",
@@ -29,14 +29,11 @@ var mangaFire = {
         catch (err) {
             throw err;
         }
-        finally {
-            removeDOM(searchDOM);
-        }
     },
     getAnimeInfo: async function (url) {
         var _a, _b, _c, _d, _e;
         const id = (new URLSearchParams(`?watch=${url}`)).get("watch");
-        const infoDOM = document.createElement("div");
+        const infoDOM = new DOMHandler();
         const rawURL = `${this.baseURL}/${id.replace("mangafire-", "manga/")}`;
         let response = {
             "name": "",
@@ -49,11 +46,11 @@ var mangaFire = {
         try {
             const infoHTML = await MakeFetch(rawURL);
             infoDOM.innerHTML = DOMPurify.sanitize(infoHTML);
-            response.name = ((_a = infoDOM === null || infoDOM === void 0 ? void 0 : infoDOM.querySelector(".info")) === null || _a === void 0 ? void 0 : _a.querySelector(".name")).innerText;
-            response.image = (_c = (_b = infoDOM.querySelector(".poster")) === null || _b === void 0 ? void 0 : _b.querySelector("img")) === null || _c === void 0 ? void 0 : _c.getAttribute("src");
-            response.description = (_d = infoDOM.querySelector(".summary")) === null || _d === void 0 ? void 0 : _d.innerText;
+            response.name = ((_a = infoDOM === null || infoDOM === void 0 ? void 0 : infoDOM.document.querySelector(".info")) === null || _a === void 0 ? void 0 : _a.querySelector(".name")).innerText;
+            response.image = (_c = (_b = infoDOM.document.querySelector(".poster")) === null || _b === void 0 ? void 0 : _b.querySelector("img")) === null || _c === void 0 ? void 0 : _c.getAttribute("src");
+            response.description = (_d = infoDOM.document.querySelector(".summary")) === null || _d === void 0 ? void 0 : _d.innerText;
             response.mainName = id;
-            const episodeListDOM = (_e = infoDOM.querySelector(".chapter-list[data-name=\"EN\"]")) === null || _e === void 0 ? void 0 : _e.querySelectorAll("li.item");
+            const episodeListDOM = (_e = infoDOM.document.querySelector(".chapter-list[data-name=\"EN\"]")) === null || _e === void 0 ? void 0 : _e.querySelectorAll("li.item");
             for (let i = episodeListDOM.length - 1; i >= 0; i--) {
                 const episodeLI = episodeListDOM[i];
                 const linkSplit = episodeLI.querySelector("a").getAttribute("href").split("/read/");
@@ -69,9 +66,6 @@ var mangaFire = {
         catch (err) {
             err.url = rawURL;
             throw err;
-        }
-        finally {
-            removeDOM(infoDOM);
         }
     },
     descramble: function (imageURL, key) {
@@ -120,7 +114,7 @@ var mangaFire = {
         const chapterSplit = chapterId.split(".");
         const identifier = chapterSplit[1].split("/")[0];
         const name = fix_title(chapterSplit[0].replace("/read/", ""));
-        const chapterListDOM = document.createElement("div");
+        const chapterListDOM = new DOMHandler();
         try {
             const chapterListHTML = JSON.parse(await MakeFetch(`${this.baseURL}/ajax/read/${identifier}/list?viewby=chapter`)).result.html;
             const response = {
@@ -135,7 +129,7 @@ var mangaFire = {
                 type: "manga"
             };
             chapterListDOM.innerHTML = DOMPurify.sanitize(chapterListHTML);
-            const chapterList = (_a = chapterListDOM.querySelector(".numberlist[data-lang=\"en\"]")) === null || _a === void 0 ? void 0 : _a.querySelectorAll("a");
+            const chapterList = (_a = chapterListDOM.document.querySelector(".numberlist[data-lang=\"en\"]")) === null || _a === void 0 ? void 0 : _a.querySelectorAll("a");
             let currentIndex = -1;
             let chapterMainID = "";
             for (let i = 0; i < chapterList.length; i++) {
@@ -177,9 +171,6 @@ var mangaFire = {
         }
         catch (err) {
             throw new Error(err.message);
-        }
-        finally {
-            removeDOM(chapterListDOM);
         }
     },
     fixTitle(title) {
