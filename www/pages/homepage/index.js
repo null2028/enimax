@@ -129,9 +129,10 @@ async function populateDownloadedArray() {
 async function testIt(idx = -1) {
     let searchQuery = "odd";
     let errored = false;
-    const searchQueries = ["odd taxi", "", "friends", "odd taxi", "petezahhutt", "odd taxi", "friends", "odd taxi"];
+    // const extensions = [wco, animixplay, fmovies, zoro, twitch, nineAnime, fmoviesto, gogo, mangaDex, mangaFire, viewAsian, anilist, anna];
+    const searchQueries = ["odd taxi", "", "friends", "odd taxi", "petezahhutt", "odd taxi", "friends", "odd taxi", "86", "86", "red", "", "86"];
     for (let i = 0; i < extensionList.length; i++) {
-        if (extensionDisabled[i]) {
+        if (extensionDisabled[i] || extensionList[i].name === "Anilist") {
             continue;
         }
         if (idx != -1 && i != idx) {
@@ -165,7 +166,7 @@ async function testIt(idx = -1) {
             alert(`${extensionNames[i]} - player :  ${err.toString()}`);
         }
         try {
-            alert(`${extensionNames[i]} - Here's the link: ${playerResult.sources[0].url}`);
+            alert(`${extensionNames[i]} - Here's the link: ${extensionList[i].type === "manga" ? playerResult.pages[0].img : playerResult.sources[0].url}`);
         }
         catch (err) {
             alert(extensionNames[i] + " Failed");
