@@ -8,11 +8,11 @@ var zoro = {
     name: "Zoro",
     shortenedName: "Zoro",
     searchApi: async function (query) {
-        let dom = document.createElement("div");
+        let dom = new DOMHandler();
         try {
             let searchHTML = await MakeFetchZoro(`${this.baseURL}/search?keyword=${query}`, {});
             dom.innerHTML = DOMPurify.sanitize(searchHTML);
-            let itemsDOM = dom.querySelectorAll('.flw-item');
+            let itemsDOM = dom.document.querySelectorAll('.flw-item');
             let data = [];
             for (var i = 0; i < itemsDOM.length; i++) {
                 let con = itemsDOM[i];
@@ -27,9 +27,6 @@ var zoro = {
         }
         catch (err) {
             throw err;
-        }
-        finally {
-            removeDOM(dom);
         }
     },
     getAnimeInfo: async function (url) {
@@ -102,8 +99,10 @@ var zoro = {
         url = url.split("&engine")[0];
         const is9animeTv = this.baseURL === "https://9animetv.to";
         const rawURL = `${this.baseURL}${is9animeTv ? "/watch/" : "/"}${url}`;
-        const animeDOM = document.createElement("div");
-        const dom = document.createElement("div");
+        const animeDOM = new DOMHandler();
+        ;
+        const dom = new DOMHandler();
+        ;
         const type = this.nonV2URLs.includes(this.baseURL);
         try {
             let idSplit = url.replace("?watch=/", "").split("-");
@@ -122,12 +121,12 @@ var zoro = {
             nameSplit.pop();
             name = nameSplit.join("-");
             response.mainName = name;
-            response.name = animeDOM.querySelector(".film-name.dynamic-name").innerText;
-            response.image = animeDOM.querySelector(is9animeTv ? ".anime-detail" : ".layout-page.layout-page-detail").querySelector("img").src;
-            response.description = animeDOM.querySelector(".film-description").innerText;
+            response.name = animeDOM.document.querySelector(".film-name.dynamic-name").innerText;
+            response.image = animeDOM.document.querySelector(is9animeTv ? ".anime-detail" : ".layout-page.layout-page-detail").querySelector("img").src;
+            response.description = animeDOM.document.querySelector(".film-description").innerText;
             try {
                 response.genres = [];
-                const metaCon = animeDOM.querySelector(".item.item-list");
+                const metaCon = animeDOM.document.querySelector(".item.item-list");
                 for (const genreAnchor of metaCon.querySelectorAll("a")) {
                     response.genres.push(genreAnchor.innerText);
                 }
@@ -137,7 +136,7 @@ var zoro = {
             }
             let episodeHTML = JSON.parse(await MakeFetchZoro(`${this.baseURL}/ajax/${type ? "" : "v2/"}episode/list/${id}`, {})).html;
             dom.innerHTML = DOMPurify.sanitize(episodeHTML);
-            let episodeListDOM = dom.querySelectorAll('.ep-item');
+            let episodeListDOM = dom.document.querySelectorAll('.ep-item');
             let data = [];
             for (var i = 0; i < episodeListDOM.length; i++) {
                 let tempEp = {
@@ -157,20 +156,16 @@ var zoro = {
             err.url = rawURL;
             throw err;
         }
-        finally {
-            removeDOM(animeDOM);
-            removeDOM(dom);
-        }
     },
     getEpisodeListFromAnimeId: async function getEpisodeListFromAnimeId(showID, episodeId) {
-        let dom = document.createElement("div");
+        let dom = new DOMHandler();
         const type = this.nonV2URLs.includes(this.baseURL);
         try {
             let res = JSON.parse((await MakeFetchZoro(`${this.baseURL}/ajax/${type ? "" : "v2/"}episode/list/${showID}`, {})));
             res = res.html;
             let ogDOM = dom;
             dom.innerHTML = DOMPurify.sanitize(res);
-            let epItemsDOM = dom.querySelectorAll('.ep-item');
+            let epItemsDOM = dom.document.querySelectorAll('.ep-item');
             let data = [];
             for (var i = 0; i < epItemsDOM.length; i++) {
                 let temp = {
@@ -188,9 +183,6 @@ var zoro = {
         }
         catch (err) {
             throw err;
-        }
-        finally {
-            removeDOM(dom);
         }
     },
     addSource: async function addSource(type, id, subtitlesArray, sourceURLs) {
@@ -290,7 +282,7 @@ var zoro = {
             prev: null,
         };
         let episodeId, animeId;
-        const dom = document.createElement("div");
+        const dom = new DOMHandler();
         const baseType = this.nonV2URLs.includes(this.baseURL);
         try {
             episodeId = parseFloat(url.split("&ep=")[1]).toString();
@@ -301,13 +293,13 @@ var zoro = {
             dom.innerHTML = DOMPurify.sanitize(domIn);
             let promises = [];
             promises.push(this.getEpisodeListFromAnimeId(animeId, episodeId));
-            let tempDom = dom.querySelectorAll('[data-server-id="4"]');
+            let tempDom = dom.document.querySelectorAll('[data-server-id="4"]');
             let hasSource = false;
             for (var i = 0; i < tempDom.length; i++) {
                 hasSource = true;
                 promises.push(this.addSource(tempDom[i].getAttribute("data-type"), tempDom[i].getAttribute('data-id'), subtitles, sourceURLs));
             }
-            tempDom = dom.querySelectorAll('[data-server-id="1"]');
+            tempDom = dom.document.querySelectorAll('[data-server-id="1"]');
             for (var i = 0; i < tempDom.length; i++) {
                 promises.push(this.addSource(tempDom[i].getAttribute("data-type"), tempDom[i].getAttribute('data-id'), subtitles, sourceURLs));
             }
@@ -357,16 +349,13 @@ var zoro = {
         catch (err) {
             throw err;
         }
-        finally {
-            removeDOM(dom);
-        }
     },
     discover: async function () {
-        let temp = document.createElement("div");
+        let temp = new DOMHandler();
         try {
             temp.innerHTML = DOMPurify.sanitize(await MakeFetchZoro(`${this.baseURL}/top-airing`, {}));
             let data = [];
-            for (let elem of temp.querySelectorAll(".flw-item")) {
+            for (let elem of temp.document.querySelectorAll(".flw-item")) {
                 let image = elem.querySelector("img").getAttribute("data-src");
                 let tempAnchor = elem.querySelector("a");
                 let name = tempAnchor.getAttribute("title");
@@ -381,9 +370,6 @@ var zoro = {
         }
         catch (err) {
             throw err;
-        }
-        finally {
-            removeDOM(temp);
         }
     },
     genToken: async function genToken() {
