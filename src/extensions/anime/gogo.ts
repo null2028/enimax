@@ -161,7 +161,8 @@ var gogo: extension = {
                         title: `Episode ${epNum}`,
                         link: `?watch=${id}&ep=${epNum}&engine=7`,
                         id: epNum.toString(),
-                        altTitle: `Episode ${epNum}`
+                        altTitle: `Episode ${epNum}`,
+                        sourceID: el.querySelector("a")?.getAttribute("href")
                     }
                 );
             }
@@ -199,7 +200,11 @@ var gogo: extension = {
                 prev: null,
             };
 
-            const watchHTML = await MakeFetchZoro(`${this.baseURL}/${params.get("watch").replace("gogo-", "")}-episode-${params.get("ep")}`);
+            const epNum = params.get("ep");
+            const epList: extensionInfo = await this.getAnimeInfo(params.get("watch").replace("gogo-", "category/"));
+            const link = epList.episodes.find((ep) => ep.id === epNum).sourceID;
+            const watchHTML = await MakeFetchZoro(`${this.baseURL}/${link}`);
+            
             watchDOM.innerHTML = DOMPurify.sanitize(watchHTML, { ADD_TAGS: ["iframe"] });
 
             try {

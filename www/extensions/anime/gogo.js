@@ -104,6 +104,7 @@ var gogo = {
         }
     },
     getAnimeInfoInter: async function (url) {
+        var _a;
         url = url.split("&engine")[0];
         const rawURL = `${this.baseURL}/${url}`;
         const animeDOM = document.createElement("div");
@@ -142,7 +143,8 @@ var gogo = {
                     title: `Episode ${epNum}`,
                     link: `?watch=${id}&ep=${epNum}&engine=7`,
                     id: epNum.toString(),
-                    altTitle: `Episode ${epNum}`
+                    altTitle: `Episode ${epNum}`,
+                    sourceID: (_a = el.querySelector("a")) === null || _a === void 0 ? void 0 : _a.getAttribute("href")
                 });
             }
             response.episodes = epData;
@@ -176,7 +178,10 @@ var gogo = {
                 next: null,
                 prev: null,
             };
-            const watchHTML = await MakeFetchZoro(`${this.baseURL}/${params.get("watch").replace("gogo-", "")}-episode-${params.get("ep")}`);
+            const epNum = params.get("ep");
+            const epList = await this.getAnimeInfo(params.get("watch").replace("gogo-", "category/"));
+            const link = epList.episodes.find((ep) => ep.id === epNum).sourceID;
+            const watchHTML = await MakeFetchZoro(`${this.baseURL}/${link}`);
             watchDOM.innerHTML = DOMPurify.sanitize(watchHTML, { ADD_TAGS: ["iframe"] });
             try {
                 const prevTemp = watchDOM.querySelector(".anime_video_body_episodes_l a").getAttribute("href");
