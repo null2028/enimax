@@ -33,6 +33,15 @@ function sendNoti() {
     return document.createElement("div");
 }
 
+function openWebview(url: string) {
+    if (config.chrome) {
+        window.open(url, "_blank");
+    } else {
+        // @ts-ignore
+        window.parent.getWebviewHTML(url, false, null, "console.log()");
+    }
+}
+
 function search() {
     const conID = `room_${catIDs[currentCatIndex]}`;
 
@@ -97,16 +106,7 @@ function search() {
 
         if (main_div.length == 0) {
             document.getElementById(conID).innerHTML = "";
-            constructErrorPage(
-                document.getElementById(conID),
-                "No results",
-                {
-                    hasLink: false,
-                    hasReload: false,
-                    isError: false,
-                    customConClass: "absolute"
-                }
-            )
+            throw new Error("No results");
         } else {
             document.getElementById(conID).innerHTML = "";
         }
@@ -154,7 +154,16 @@ function search() {
             document.getElementById(conID),
             error.toString(),
             {
-                hasLink: false,
+                hasLink: true,
+                clickEvent: () => {
+                    let url = (currentEngine as extension).baseURL;
+
+                    if(!url.startsWith("http")){
+                        url = "https://" + url;
+                    }
+
+                    openWebview(url);
+                },
                 hasReload: false,
                 isError: false,             // It already has the "Error:" prefix, so this is not needed
                 customConClass: "absolute",
@@ -191,7 +200,7 @@ let catDataCon = createElement({
 
 
 const catDataCons = [];
-const cats = ["Anime", "Manga", "TV/Movies", "Others"];
+const cats = ["Anime", "Manga/Light novels", "TV/Movies", "Others"];
 const catIDs = ["anime", "manga", "tv", "others"];
 
 conElem.append(createElement({
@@ -231,7 +240,7 @@ conElem.append(createElement({
                     ]
                 },
                 {
-                    class: "searchButton",
+                    class: "searchButton clickable",
                     listeners: {
                         click: function () {
                             window.parent.postMessage({ "action": 500, data: `pages/search/index.html?search=${searchInput.value}&engine=${engineID}` }, "*");
@@ -240,7 +249,7 @@ conElem.append(createElement({
                 },
                 {
                     id: "filterIcon",
-                    class: "hasBackground",
+                    class: "hasBackground clickable",
                     style: {
                         height: "40px",
                         width: "40px",
@@ -481,6 +490,7 @@ conElem.append(
         children: [
             {
                 element: "select",
+                class: "clickable",
                 style: {
                     display: "inline-block",
                     verticalAlign: "middle",

@@ -1,11 +1,226 @@
-let playerIFrame = document.getElementById("player") as HTMLIFrameElement;
-let mainIFrame = document.getElementById("frame") as HTMLIFrameElement;
+const playerIFrame = document.getElementById("player") as HTMLIFrameElement;
+const mainIFrame = document.getElementById("frame") as HTMLIFrameElement;
+const anonDOM = document.getElementById("anonMode") as HTMLElement;
 let thisWindow = (window as unknown as cordovaWindow);
 var socket;
 let frameHistory: Array<string> = [];
 var token;
 let seekCheck = true;
 let backFunction: Function;
+let castSession = null;
+let lastRequestTime = 0;
+function isCasting() {
+    try {
+        if (castSession && "status" in castSession) {
+            return castSession.status == "connected";
+        } else {
+            return false;
+        }
+    } catch (err) {
+        return false;
+    }
+}
+
+function updateCastTime(time: string) {
+    try {
+        const currentTime = parseFloat(time);
+        const seekObj = new thisWindow.chrome.cast.media.SeekRequest;
+        seekObj.currentTime = currentTime;
+        castSession.media[0].seek(seekObj);
+    } catch (err) {
+        console.error(err);
+    }
+}
+
+function getCurrentCastState() {
+    return {
+        paused: castSession.media[0].playerState === thisWindow.chrome.cast.media.PlayerState.PAUSED,
+        currentTime: castSession.media[0].currentTime,
+        duration: castSession.media[0].media.duration,
+        hasFinished: castSession.media[0].idleReason === thisWindow.chrome.cast.media.IdleReason.FINISHED
+    };
+}
+
+function castStateUpdated() {
+    try {
+        const currentState = getCurrentCastState();
+        playerIFrame.contentWindow.postMessage({
+            action: "castStateUpdated",
+            data: currentState
+        }, "*");
+    } catch (err) {
+        console.error(err);
+    }
+}
+
+function getEstimatedState() {
+    try {
+        return {
+            paused: castSession.media[0].playerState === thisWindow.chrome.cast.media.PlayerState.PAUSED,
+            currentTime: castSession.media[0].getEstimatedTime(),
+            duration: castSession.media[0].media.duration
+        };
+    } catch (err) {
+        return undefined;
+    }
+}
+
+function toggleCastState() {
+    const media = castSession.media[0];
+    if (media.playerState === thisWindow.chrome.cast.media.PlayerState.PAUSED) {
+        media.play();
+    } else {
+        media.pause();
+    }
+}
+
+function fixTitle(title: string, extension?: extension) {
+    try {
+        if (extension && "fixTitle" in extension) {
+            title = extension.fixTitle(title);
+        }
+
+        let titleArray = title.split("-");
+        let temp = "";
+        for (var i = 0; i < titleArray.length; i++) {
+            temp = temp + titleArray[i].substring(0, 1).toUpperCase() + titleArray[i].substring(1) + " ";
+        }
+        return temp;
+    } catch (err) {
+        return title;
+    }
+}
+
+function destroySession() {
+    return new Promise((resolve, reject) => {
+        try {
+            if (castSession && "stop" in castSession) {
+                castSession.stop(() => {
+                    resolve(true);
+                }, () => {
+                    resolve(false);
+                });
+            } else {
+                resolve(false);
+            }
+        } catch (err) {
+            resolve(false);
+        }
+    });
+}
+function startServer() {
+    return new Promise((resolve, reject) => {
+        thisWindow.webserver.start((x) => {
+            resolve(x);
+        }, (err) => {
+            if (err === "Server already running") {
+                resolve("running");
+            } else {
+                reject(err);
+            }
+        }, 56565);
+    });
+}
+
+async function setUpWebServer() {
+    await startServer();
+
+    thisWindow.webserver.onRequest(async (request: cordovaServerRequest) => {
+
+        console.log(request);
+
+        lastRequestTime = Date.now();
+        const requestResponse = {
+            status: 200,
+            headers: {
+                "Access-Control-Allow-Origin": "*"
+            }
+        }
+
+        try {
+            const isMP4 = request.path.endsWith(".mp4");
+
+            if (isMP4) {
+                requestResponse.headers["Content-Type"] = "video/mp4";
+            }
+
+            requestResponse["path"] = `${thisWindow.cordova.file.externalDataDirectory}${request.path}`.replace("file://", "");
+            if (isMP4) {
+                requestResponse["path"] = requestResponse["path"].substring(
+                    0,
+                    requestResponse["path"].length - 4
+                ) + ".m3u8";
+            }
+
+        } catch (err) {
+            requestResponse.status = 400;
+            requestResponse["body"] = "An unexpected error has occurred.";
+        }
+
+        thisWindow.webserver.sendResponse(request.requestId, requestResponse, () => { }, () => { })
+    });
+}
+
+function killServer() {
+    return new Promise((resolve, reject) => {
+        thisWindow.webserver.stop((x) => {
+            resolve(x);
+        }, (x) => {
+            reject(x);
+        });
+    });
+}
+
+function handleUpperBar() {
+    const anonIsActive = localStorage.getItem("anon-anilist") === "true";
+    const offlineIsActive = localStorage.getItem("offline") === "true";
+
+    if (offlineIsActive) {
+        mainIFrame.classList.add("anon");
+        anonDOM.classList.add("active");
+        anonDOM.textContent = "Downloaded-only mode";
+    } else if (anonIsActive) {
+        mainIFrame.classList.add("anon");
+        anonDOM.classList.add("active");
+        anonDOM.textContent = "Anilist-anon mode";
+    } else {
+        mainIFrame.classList.remove("anon");
+        anonDOM.classList.remove("active");
+    }
+}
+
+function castVid(data, requiresWebServer: boolean) {
+    console.log(data, requiresWebServer);
+
+    return new Promise(async (resolve, reject) => {
+        try {
+            if (requiresWebServer) {
+                await setUpWebServer();
+            }
+        } catch (err) {
+            sendNoti([3, "red", "Alert", "Could not start the webserver, or the webserver wasn't killed. The video may not play."]);
+        }
+
+        try {
+            if (castSession?.status === thisWindow.chrome.cast.SessionStatus.CONNECTED) {
+                onSessionRequestSuccess(castSession, data);
+                resolve(true);
+            } else {
+                thisWindow.chrome.cast.requestSession((session) => {
+                    onSessionRequestSuccess(session, data);
+                    resolve(true);
+                }, () => {
+                    alert("Could not cast the video. Try again.");
+                    resolve(false);
+                });
+            }
+
+        } catch (err) {
+            resolve(false);
+        }
+    });
+}
+
 
 function returnExtensionList() {
     return extensionList;
@@ -425,14 +640,14 @@ function executeAction(message: MessageAction, reqSource: Window) {
     else if (message.action == 400) {
         screen.orientation.lock("any").then(() => { }).catch(() => { });
         playerIFrame.classList.add("pop");
-        mainIFrame.style.height = "calc(100% - 200px)";
+        mainIFrame.classList.add("mainPop");
         mainIFrame.style.display = "block";
         playerIFrame.style.display = "block";
     }
     else if (message.action == 401) {
         screen.orientation.lock("landscape").then(() => { }).catch(() => { });
         playerIFrame.classList.remove("pop");
-        mainIFrame.style.height = "100%";
+        mainIFrame.classList.remove("mainPop");
         mainIFrame.style.display = "none";
         playerIFrame.style.display = "block";
 
@@ -648,6 +863,7 @@ function executeAction(message: MessageAction, reqSource: Window) {
         mainIFrame.style.height = "100%";
         playerIFrame.style.display = "block";
         playerIFrame.classList.remove("pop");
+        mainIFrame.classList.remove("mainPop");
     }
     else if (message.action == "updateGrad") {
         updateGradient(parseInt(message.data).toString());
@@ -693,19 +909,19 @@ function back() {
 
 function disableFullScreen(count = 1) {
     // @ts-ignore
-    AndroidFullScreen.showSystemUI(() => {}, () => {});
+    AndroidFullScreen.showSystemUI(() => { }, () => { });
 }
 
 function enableFullScreen() {
     // @ts-ignore
-    AndroidFullScreen.immersiveMode(() => {}, () => {});
+    AndroidFullScreen.immersiveMode(() => { }, () => { });
 }
 
-function handleFullscreen(){
-    if(config.chrome){
+function handleFullscreen() {
+    if (config.chrome) {
         return;
     }
-    
+
     if (localStorage.getItem("fullscreenMode") === "true") {
         // @ts-ignore
         disableFullScreen();
@@ -713,6 +929,39 @@ function handleFullscreen(){
         // @ts-ignore
         enableFullScreen();
     }
+}
+
+function getLocalIP() {
+    return new Promise(function (resolve, reject) {
+        // @ts-ignore
+        networkinterface.getWiFiIPAddress(resolve, reject);
+    });
+}
+
+
+function onSessionRequestSuccess(session, data) {
+
+
+    castSession = session;
+
+    const mediaInfo = new thisWindow.chrome.cast.media.MediaInfo(
+        data.url,
+        data.type
+    );
+
+    const request = new thisWindow.chrome.cast.media.LoadRequest(mediaInfo);
+    session.loadMedia(request, () => {
+        try {
+            castSession._getMedia().seek({ currentTime: data.currentTime });
+            castSession.media[0].addUpdateListener(castStateUpdated);
+        } catch (err) {
+            console.error(err);
+            alert("Could not seek");
+        }
+    }, (err) => {
+        console.error(err);
+        alert("Could not load the video");
+    });
 }
 
 async function onDeviceReady() {
@@ -730,7 +979,33 @@ async function onDeviceReady() {
         thisWindow.cordova.plugins.backgroundMode.disableBatteryOptimizations();
     });
 
-    // @ts-ignore
+
+    const initializeCastApi = function () {
+
+        const sessionRequest = new thisWindow.chrome.cast.SessionRequest(
+            thisWindow.chrome.cast.media.DEFAULT_MEDIA_RECEIVER_APP_ID
+        );
+
+        const apiConfig = new thisWindow.chrome.cast.ApiConfig(
+            sessionRequest,
+            () => { },
+            receiverListener
+        );
+
+        thisWindow.chrome.cast.initialize(apiConfig, () => { }, () => { });
+    };
+
+    function receiverListener(availability) {
+        console.log('receiverListener', availability);
+
+        if (availability === thisWindow.chrome.cast.ReceiverAvailability.AVAILABLE) {
+
+        }
+    }
+
+    initializeCastApi();
+
+
     token = thisWindow.cordova.plugin.http.getCookieString(config.remoteWOport);
     downloadQueueInstance = new downloadQueue();
     mainIFrame.src = "pages/homepage/index.html";
@@ -754,12 +1029,14 @@ async function onDeviceReady() {
         const homePageOpen = frameLocation.pathname.indexOf("www/pages/homepage/index.html") > -1;
         if (homePageOpen || frameWasOpen) {
 
-            if(!config.chrome && localStorage.getItem("fullscreenMode") === "true"){
+            if (!config.chrome && localStorage.getItem("fullscreenMode") === "true") {
                 disableFullScreen();
             }
 
+            castSession = null;
             playerIFrame.contentWindow.location.replace("fallback.html");
             playerIFrame.classList.remove("pop");
+            mainIFrame.classList.remove("mainPop");
             playerIFrame.style.display = "none";
             mainIFrame.style.display = "block";
             mainIFrame.style.height = "100%";
@@ -801,6 +1078,17 @@ async function onDeviceReady() {
     document.addEventListener("backbutton", () => { backFunction() }, false);
     document.addEventListener("pause", onPause, false);
     document.addEventListener("resume", onResume, false);
+
+    setInterval(async function () {
+        if (!isCasting() || (Date.now() - lastRequestTime) > 3600000) {
+            try {
+                await killServer();
+                console.log("Killed the server");
+            } catch (err) {
+                console.error(err);
+            }
+        }
+    }, 120000); // 2 minutes
 }
 
 document.addEventListener("deviceready", onDeviceReady, false);
@@ -809,7 +1097,9 @@ if (config.chrome) {
     (mainIFrame as HTMLIFrameElement).src = "pages/homepage/index.html";
 }
 
+localStorage.removeItem("pdfjs.history");
 updateTheme();
 setGradient();
 setOpacity();
 applyTheme();
+handleUpperBar();

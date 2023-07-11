@@ -54,6 +54,7 @@ let pullTabArray = [];
 let webviewLink = "";
 let averageColor = "";
 let downloadedIsManga = false;
+let addedCover = false;
 try {
     const search = new URLSearchParams(location.search);
     downloadedIsManga = search.get("isManga") === "true";
@@ -143,6 +144,17 @@ function fix_title(title) {
 // @ts-ignore
 // todo
 function normalise(url) {
+    let engine = 0;
+    try {
+        const params = new URLSearchParams(url);
+        engine = parseInt(params.get("engine"));
+        if (engine === 12) {
+            url = url.split("&current=")[0];
+        }
+    }
+    catch (err) {
+        console.warn(err);
+    }
     url = url.replace("?watch=", "");
     url = url.split("&engine=")[0];
     url = url.split("&isManga=")[0];
@@ -285,6 +297,9 @@ function ini() {
             }
             imageDOM.src = data.image;
             imageDOM.onload = function () {
+                if (addedCover || imageDOM.style.display === "none") {
+                    return;
+                }
                 let color = getAverageRGB(imageDOM);
                 averageColor = rgbToHex(color.r, color.g, color.b);
                 document.documentElement.style.setProperty('--theme-color', averageColor);
@@ -343,7 +358,6 @@ function ini() {
                     else {
                         metaData = await window.parent.getMetaByAniID(search.get("aniID"), isManga ? "MANGA" : "ANIME");
                     }
-                    let addedCover = false;
                     if (metaData.nextAiringEpisode) {
                         nextDOM.style.display = "inline-block";
                         nextDOM.textContent = `Episode ${metaData.nextAiringEpisode.episode} in ${window.parent.secondsToHuman(metaData.nextAiringEpisode.timeUntilAiring)}`;
@@ -387,7 +401,7 @@ function ini() {
                     }
                     if (addedCover) {
                         imageDOM.style.display = "none";
-                        document.documentElement.style.setProperty('--theme-color', averageColor + "60");
+                        document.documentElement.style.setProperty('--theme-color', "#00000060");
                     }
                     malDOM.onclick = function () {
                         openWebview(`https://myanimelist.net/anime/${metaData.idMal}`);
@@ -675,7 +689,7 @@ function ini() {
                         horizontalConT.append(tempDiv3);
                         tempDiv3.className = 'episodesTitle aLeft';
                         horizontalConT.append(createElement({
-                            "class": "episodesPlaySmall",
+                            "class": "episodesPlaySmall clickable",
                             "listeners": {
                                 "click": function () {
                                     localStorage.setItem("mainName", data.mainName);
@@ -1011,6 +1025,7 @@ addToLibrary.onclick = function () {
                     }
                     window.parent.apiCall("POST", { "username": "", "action": 4 }, (response) => {
                         const rooms = response.data[1];
+                        rooms.unshift("Recently Watched", 0, "Ongoing", -1);
                         if (rooms.length === 0) {
                             return;
                         }
@@ -1037,6 +1052,14 @@ addToLibrary.onclick = function () {
             });
         }
         else {
+            const searchQuery = new URLSearchParams(location.search);
+            if (!!localStorage.getItem("anilist-token") && searchQuery.has("aniID") && searchQuery.get("aniID")) {
+                const aniID = parseInt(searchQuery.get("aniID"));
+                const shouldDelete = confirm("Do you want to delete this show from your anilist account?");
+                if (shouldDelete) {
+                    window.parent.deleteAnilistShow(aniID);
+                }
+            }
             const shouldDelete = confirm("Are you sure that you want to remove this show from your library?");
             if (shouldDelete) {
                 window.parent.apiCall("POST", { "username": "", "action": 6, "name": showMainName }, () => {
@@ -1047,14 +1070,6 @@ addToLibrary.onclick = function () {
             }
             else {
                 addToLibrary.classList.remove("isWaiting");
-            }
-            const searchQuery = new URLSearchParams(location.search);
-            if (!!localStorage.getItem("anilist-token") && searchQuery.has("aniID") && searchQuery.get("aniID")) {
-                const aniID = parseInt(searchQuery.get("aniID"));
-                const shouldDelete = confirm("Do you want to delete this show from your anilist account?");
-                if (shouldDelete) {
-                    window.parent.deleteAnilistShow(aniID);
-                }
             }
         }
     }

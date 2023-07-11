@@ -10,13 +10,13 @@ var viewAsian: extension = {
         CryptoJS.enc.Utf8.parse("9262859232435825"),
     ],
     searchApi: async function (query: string): Promise<extensionSearch> {
-        let dom = document.createElement("div");
+        let dom = new DOMHandler();
 
         try {
             let searchHTML = await MakeFetchZoro(`${this.baseURL}/movie/search/${query.replace(/[\W_]+/g, '-')}`, {});
             dom.innerHTML = DOMPurify.sanitize(searchHTML);
 
-            let itemsDOM = dom.querySelectorAll(".movies-list-full .ml-item");
+            let itemsDOM = dom.document.querySelectorAll(".movies-list-full .ml-item");
             let data = [];
             for (var i = 0; i < itemsDOM.length; i++) {
                 let con = itemsDOM[i];
@@ -30,17 +30,14 @@ var viewAsian: extension = {
             return ({ data, "status": 200 });
         } catch (err) {
             throw err;
-        } finally {
-            removeDOM(dom);
         }
     },
     getAnimeInfo: async function (url: string): Promise<extensionInfo> {
         url = url.split("&engine")[0];
         const rawURL = `${this.baseURL}/${url}`;
-        console.log(this, this.baseURL, rawURL);
 
-        const animeDOM = document.createElement("div");
-        const episodeDOM = document.createElement("div");
+        const animeDOM = new DOMHandler();
+        const episodeDOM = new DOMHandler();
 
         try {
             const response: extensionInfo = {
@@ -60,19 +57,19 @@ var viewAsian: extension = {
             animeDOM.innerHTML = DOMPurify.sanitize(animeHTML);
 
             response.mainName = id;
-            response.image = (animeDOM.querySelector(".detail-mod img") as HTMLElement).getAttribute("src");
-            response.name = (animeDOM.querySelector(".detail-mod h3") as HTMLElement).innerText.trim();
-            response.description = (animeDOM.querySelector(".desc") as HTMLElement).innerText.trim();
+            response.image = (animeDOM.document.querySelector(".detail-mod img") as HTMLElement).getAttribute("src");
+            response.name = (animeDOM.document.querySelector(".detail-mod h3") as HTMLElement).innerText.trim();
+            response.description = (animeDOM.document.querySelector(".desc") as HTMLElement).innerText.trim();
 
 
             const epData: Array<extensionInfoEpisode> = [];
-            const episodeHTML = await MakeFetchZoro(`${this.baseURL}/${animeDOM.querySelector(".bwac-btn").getAttribute("href")}`);
+            const episodeHTML = await MakeFetchZoro(`${this.baseURL}/${animeDOM.document.querySelector(".bwac-btn").getAttribute("href")}`);
             episodeDOM.innerHTML = DOMPurify.sanitize(episodeHTML, {
                 ADD_ATTR: ["episode-data"]
             });
 
 
-            const episodeCon = episodeDOM.querySelectorAll("ul#episodes-sv-1 li");
+            const episodeCon = episodeDOM.document.querySelectorAll("ul#episodes-sv-1 li");
             for (let i = 0; i < episodeCon.length; i++) {
                 const el = episodeCon[i];
                 const anchorTag = el.querySelector("a");
@@ -99,23 +96,16 @@ var viewAsian: extension = {
         } catch (err) {
             err.url = rawURL;
             throw err;
-        } finally {
-            // removeDOM(animeDOM);
-            // removeDOM(episodeDOM);
         }
     },
     getLinkFromUrl: async function (url: string): Promise<extensionVidSource> {
 
-        const watchDOM = document.createElement("div");
-        const embedDOM = document.createElement("div");
+        const watchDOM = new DOMHandler();
+        const embedDOM = new DOMHandler();
 
         try {
             const params = new URLSearchParams("?watch=" + url);
             const sourceURLs: Array<videoSource> = [];
-
-            watchDOM.style.display = "none";
-            embedDOM.style.display = "none";
-
             const resp: extensionVidSource = {
                 sources: sourceURLs,
                 name: "",
@@ -130,7 +120,7 @@ var viewAsian: extension = {
             const watchHTML = await MakeFetchZoro(`${this.baseURL}/watch/${params.get("watch").replace("viewasian-", "")}/watching.html?ep=${params.get("ep")}`);
             watchDOM.innerHTML = DOMPurify.sanitize(watchHTML, { ADD_TAGS: ["iframe"] });
 
-            const episodeCon = watchDOM.querySelectorAll("ul#episodes-sv-1 li");
+            const episodeCon = watchDOM.document.querySelectorAll("ul#episodes-sv-1 li");
 
             let foundCurrentEp = false;
 
@@ -157,7 +147,7 @@ var viewAsian: extension = {
             }
 
             let asianLoadURL = "";
-            const links = watchDOM.querySelectorAll('.anime_muti_link li');
+            const links = watchDOM.document.querySelectorAll('.anime_muti_link li');
 
             for (let i = 0; i < links.length; i++) {
                 const curElem = (links[i] as HTMLElement);
@@ -225,11 +215,7 @@ var viewAsian: extension = {
             return resp;
         } catch (err) {
             throw err;
-        } finally {
-            // removeDOM(watchDOM);
-            // removeDOM(embedDOM);
         }
-
     },
     fixTitle(title: string) {
         try {

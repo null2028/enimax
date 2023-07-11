@@ -37,6 +37,9 @@ async function makeAnilistReq(query, variables, accessToken) {
     }
 }
 async function updateEpWatched(anilistID, epNum) {
+    if (localStorage.getItem("anon-anilist") === "true") {
+        return;
+    }
     const accessToken = localStorage.getItem("anilist-token");
     if (!accessToken || isNaN(parseInt(anilistID)) || isNaN(parseInt(epNum))) {
         return;
@@ -212,6 +215,81 @@ async function changeShowStatus(anilistID, status) {
     };
     await makeAnilistReq(query, variables, accessToken);
 }
+async function infoPromise(showURL, engine, index) {
+    const result = await engine.getAnimeInfo(showURL.replace("?watch=/", ""));
+    return {
+        index,
+        result
+    };
+}
+async function batchPromises(showURLs, batchSize, links, permNoti) {
+    const allSettled = "allSettled" in Promise;
+    const promises = [];
+    for (let i = 0; i < showURLs.length; i++) {
+        const showURL = showURLs[i].showURL;
+        permNoti.updateBody(showURL);
+        promises.push(infoPromise(showURL, showURLs[i].engine, i));
+        if (promises.length >= batchSize || i == showURLs.length - 1) {
+            if (allSettled) {
+                const res = await Promise.allSettled(promises);
+                for (const promise of res) {
+                    if (promise.status === "fulfilled") {
+                        links[promise.value.index].result = promise.value.result;
+                    }
+                }
+            }
+            else {
+                try {
+                    const res = await Promise.all(promises);
+                    for (const result of res) {
+                        links[result.index].result = result.result;
+                    }
+                }
+                catch (err) {
+                    console.warn(err);
+                }
+            }
+            promises.splice(0);
+        }
+    }
+}
+async function malsyncPromise(url, id) {
+    const result = await MakeFetch(url);
+    return {
+        id,
+        result
+    };
+}
+async function batchPromisesMalSync(URLs, batchSize, anilistData, permNoti) {
+    const allSettled = "allSettled" in Promise;
+    const promises = [];
+    for (let i = 0; i < URLs.length; i++) {
+        promises.push(malsyncPromise(URLs[i].url, URLs[i].id));
+        permNoti.updateBody(`Getting link for anilist ID: ${URLs[i].id}`);
+        if (promises.length >= batchSize || i == URLs.length - 1) {
+            if (allSettled) {
+                const res = await Promise.allSettled(promises);
+                for (const promise of res) {
+                    if (promise.status === "fulfilled") {
+                        anilistData[promise.value.id] = promise.value.result;
+                    }
+                }
+            }
+            else {
+                try {
+                    const res = await Promise.all(promises);
+                    for (const result of res) {
+                        anilistData[result.id] = result.result;
+                    }
+                }
+                catch (err) {
+                    console.warn(err);
+                }
+            }
+            promises.splice(0);
+        }
+    }
+}
 async function getAllItems() {
     const accessToken = localStorage.getItem("anilist-token");
     if (!accessToken) {
@@ -302,11 +380,20 @@ async function getAllItems() {
                 }
             }
             const links = [];
+            const anilistData = {};
+            const malsyncURLs = [];
+            for (let i = 0; i < anilistIDs.length; i++) {
+                const id = anilistIDs[i];
+                malsyncURLs.push({
+                    url: `https://raw.githubusercontent.com/MALSync/MAL-Sync-Backup/master/data/anilist/${type.toLowerCase()}/${id}.json`,
+                    id: parseInt(id)
+                });
+            }
+            await batchPromisesMalSync(malsyncURLs, 5, anilistData, permNoti);
             for (let i = 0; i < anilistIDs.length; i++) {
                 const id = anilistIDs[i];
                 try {
-                    permNoti.updateBody(`Getting link for anilist ID: ${id}`);
-                    const page = JSON.parse(await MakeFetch(`https://raw.githubusercontent.com/MALSync/MAL-Sync-Backup/master/data/anilist/${type.toLowerCase()}/${id}.json`)).Pages[pageKey];
+                    const page = JSON.parse(anilistData[parseInt(id)]).Pages[pageKey];
                     links.push({
                         link: currentExtension.rawURLtoInfo(new URL(page[Object.keys(page)[0]].url)),
                         progress: anilistProgress[i],
@@ -318,10 +405,21 @@ async function getAllItems() {
                     console.warn(err);
                 }
             }
+            const promiseInput = [];
+            for (const link of links) {
+                promiseInput.push({
+                    showURL: link.link,
+                    engine: currentExtension,
+                });
+            }
+            await batchPromises(promiseInput, 5, links, permNoti);
             for (const link of links) {
                 try {
+                    if (!link.result) {
+                        continue;
+                    }
                     permNoti.updateBody(`Trying to get the info for ${link.link}`);
-                    const currentInfo = await currentExtension.getAnimeInfo(link.link.replace("?watch=/", ""));
+                    const currentInfo = link.result;
                     let currentEp = currentInfo.episodes.find((ep) => {
                         return parseFloat(ep[numberKey]) >= link.progress;
                     });

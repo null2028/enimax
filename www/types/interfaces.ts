@@ -3,7 +3,7 @@ type RequestFullscreen = typeof document.documentElement.requestFullscreen
 type TypeFunc = (res: Response) => Promise<string>
 type anilistType = "9anime" | "Zoro" | "Gogoanime" | "Mangadex" | "MangaFire"
 type anilistStatus = "CURRENT" | "PLANNING" | "COMPLETED" | "DROPPED" | "PAUSED" | "REPEATING";
-
+type AnilistLinks = { link: string, progress: number, aniID: number, anilistCategory: string, result?: extensionInfo }[];
 interface Document {
     webkitExitFullscreen: ExitFullscreen;
     mozCancelFullScreen: ExitFullscreen;
@@ -93,6 +93,7 @@ interface videoSource {
     name: string,
     type: string,
     url: string,
+    castURL?: string,
     skipIntro?: skipData
 }
 
@@ -136,7 +137,26 @@ interface videoChangedFillModeEvent extends CustomEvent {
     }
 }
 
+interface cordovaServerRequest {
+    headers: string;
+    method: string;
+    path: string;
+    requestId: string;
+    query: string,
+}
 interface cordovaWindow extends Window {
+    fixTitle(title: string, extension?: extension): string,
+    getEstimatedState: Function,
+    handleUpperBar: Function,
+    toggleCastState: Function,
+    getCurrentCastState: Function,
+    updateCastTime: Function,
+    webserver: any,
+    getLocalIP: any,
+    chrome: any,
+    castVid: (data: any, requiresWebServer: boolean) => Promise<boolean>,
+    destroySession: () => Promise<boolean>,
+    isCasting: () => boolean,
     cordova: any,
     handleFullscreen: () => void;
     returnAnilistStatus: () => anilistStatus[],
@@ -227,6 +247,8 @@ interface extension {
 
 interface extensionMangaSource {
     pages: MangaPage[],
+    readerType?: "epub",
+    sources? : Array<videoSource>,
     next: string | null,
     nextTitle: string | null,
     prev: string | null,
@@ -355,6 +377,10 @@ interface extensionDiscoverData {
 
 interface subtitleConfig {
     backgroundColor: string | null,
+    shadowColor: string | null,
+    shadowOffsetX: number | null,
+    shadowOffsetY: number | null,
+    shadowBlur: number | null,
     backgroundOpacity: number | null,
     fontSize: number | null,
     lineHeight: number | null,

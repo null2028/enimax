@@ -1711,3 +1711,29 @@ input:checked+.slider:before {
 	background-color: black;
     color: white;
 }
+
+
+.clickable,
+.menuItem,
+.categories,
+#back,
+.card_menu_item,
+.s_card_play,
+.meta,
+.showCard
+{
+	transform: scale(1);
+    transition-duration: 200ms;   
+}
+
+.clickable:active:hover,
+.menuItem:active:hover,
+.categories:active:hover,
+#back:active:hover,
+.card_menu_item:active:hover,
+.s_card_play:active:hover,
+.meta:active:hover,
+.showCard:active:hover
+{
+    transform: scale(0.9);
+}

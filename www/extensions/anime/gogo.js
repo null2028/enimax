@@ -14,11 +14,11 @@ var gogo = {
     ],
     searchApi: async function (query) {
         var _a, _b;
-        let dom = document.createElement("div");
+        let dom = new DOMHandler();
         try {
             let searchHTML = await MakeFetchZoro(`${this.baseURL}/search.html?keyword=${encodeURIComponent(query)}`, {});
             dom.innerHTML = DOMPurify.sanitize(searchHTML);
-            let itemsDOM = dom.querySelectorAll("ul.items li");
+            let itemsDOM = dom.document.querySelectorAll("ul.items li");
             let data = [];
             for (var i = 0; i < itemsDOM.length; i++) {
                 let con = itemsDOM[i];
@@ -32,9 +32,6 @@ var gogo = {
         }
         catch (err) {
             throw err;
-        }
-        finally {
-            removeDOM(dom);
         }
     },
     getAnimeInfo: async function (url) {
@@ -104,10 +101,11 @@ var gogo = {
         }
     },
     getAnimeInfoInter: async function (url) {
+        var _a;
         url = url.split("&engine")[0];
         const rawURL = `${this.baseURL}/${url}`;
-        const animeDOM = document.createElement("div");
-        const episodeDOM = document.createElement("div");
+        const animeDOM = new DOMHandler();
+        const episodeDOM = new DOMHandler();
         try {
             const response = {
                 "name": "",
@@ -120,18 +118,18 @@ var gogo = {
             const id = url.replace("category/", "gogo-");
             animeDOM.innerHTML = DOMPurify.sanitize(animeHTML, { ADD_ATTR: ["ep_start", "ep_end"] });
             response.mainName = id;
-            response.image = animeDOM.querySelector(".anime_info_body_bg img").getAttribute("src");
-            response.name = animeDOM.querySelector(".anime_info_body_bg h1").innerText.trim();
-            response.description = animeDOM.querySelectorAll(".anime_info_body_bg p.type")[1].innerText.trim();
-            const episodeCon = animeDOM.querySelector("#episode_page").children;
+            response.image = animeDOM.document.querySelector(".anime_info_body_bg img").getAttribute("src");
+            response.name = animeDOM.document.querySelector(".anime_info_body_bg h1").innerText.trim();
+            response.description = animeDOM.document.querySelectorAll(".anime_info_body_bg p.type")[1].innerText.trim();
+            const episodeCon = animeDOM.document.querySelector("#episode_page").children;
             const epStart = episodeCon[0].querySelector("a").getAttribute("ep_start");
             const epEnd = episodeCon[episodeCon.length - 1].querySelector("a").getAttribute("ep_end");
-            const movieID = animeDOM.querySelector("#movie_id").getAttribute("value");
-            const alias = animeDOM.querySelector("#alias_anime").getAttribute("value");
+            const movieID = animeDOM.document.querySelector("#movie_id").getAttribute("value");
+            const alias = animeDOM.document.querySelector("#alias_anime").getAttribute("value");
             const epData = [];
             const episodeHTML = await MakeFetchZoro(`${this.ajaxURL}/load-list-episode?ep_start=${epStart}&ep_end=${epEnd}&id=${movieID}&default_ep=${0}&alias=${alias}`);
             episodeDOM.innerHTML = DOMPurify.sanitize(episodeHTML);
-            const episodesLI = episodeDOM.querySelectorAll("#episode_related li");
+            const episodesLI = episodeDOM.document.querySelectorAll("#episode_related li");
             for (let i = 0; i < episodesLI.length; i++) {
                 const el = episodesLI[i];
                 let epNum = parseFloat(el.querySelector(`div.name`).innerText.replace('EP ', ''));
@@ -142,7 +140,8 @@ var gogo = {
                     title: `Episode ${epNum}`,
                     link: `?watch=${id}&ep=${epNum}&engine=7`,
                     id: epNum.toString(),
-                    altTitle: `Episode ${epNum}`
+                    altTitle: `Episode ${epNum}`,
+                    sourceID: (_a = el.querySelector("a")) === null || _a === void 0 ? void 0 : _a.getAttribute("href")
                 });
             }
             response.episodes = epData;
@@ -152,20 +151,14 @@ var gogo = {
             err.url = rawURL;
             throw err;
         }
-        finally {
-            removeDOM(animeDOM);
-            removeDOM(episodeDOM);
-        }
     },
     getLinkFromUrl: async function (url) {
         var _a;
-        const watchDOM = document.createElement("div");
-        const embedDOM = document.createElement("div");
+        const watchDOM = new DOMHandler();
+        const embedDOM = new DOMHandler();
         try {
             const params = new URLSearchParams("?watch=" + url);
             const sourceURLs = [];
-            watchDOM.style.display = "none";
-            embedDOM.style.display = "none";
             const resp = {
                 sources: sourceURLs,
                 name: "",
@@ -176,10 +169,13 @@ var gogo = {
                 next: null,
                 prev: null,
             };
-            const watchHTML = await MakeFetchZoro(`${this.baseURL}/${params.get("watch").replace("gogo-", "")}-episode-${params.get("ep")}`);
+            const epNum = params.get("ep");
+            const epList = await this.getAnimeInfo(params.get("watch").replace("gogo-", "category/"));
+            const link = epList.episodes.find((ep) => ep.id === epNum).sourceID;
+            const watchHTML = await MakeFetchZoro(`${this.baseURL}/${link}`);
             watchDOM.innerHTML = DOMPurify.sanitize(watchHTML, { ADD_TAGS: ["iframe"] });
             try {
-                const prevTemp = watchDOM.querySelector(".anime_video_body_episodes_l a").getAttribute("href");
+                const prevTemp = watchDOM.document.querySelector(".anime_video_body_episodes_l a").getAttribute("href");
                 let ep = parseFloat(prevTemp.split("-episode-")[1]);
                 if (ep == 0) {
                     ep = 0.1;
@@ -190,7 +186,7 @@ var gogo = {
                 console.error(err);
             }
             try {
-                const nextTemp = watchDOM.querySelector(".anime_video_body_episodes_r a").getAttribute("href");
+                const nextTemp = watchDOM.document.querySelector(".anime_video_body_episodes_r a").getAttribute("href");
                 let ep = parseFloat(nextTemp.split("-episode-")[1]);
                 if (ep == 0) {
                     ep = 0.1;
@@ -200,7 +196,7 @@ var gogo = {
             catch (err) {
                 console.error(err);
             }
-            let videoURLTemp = watchDOM.querySelector("#load_anime iframe").getAttribute("src");
+            let videoURLTemp = watchDOM.document.querySelector("#load_anime iframe").getAttribute("src");
             if (videoURLTemp.substring(0, 2) === "//") {
                 videoURLTemp = "https:" + videoURLTemp;
             }
@@ -233,10 +229,6 @@ var gogo = {
         }
         catch (err) {
             throw err;
-        }
-        finally {
-            removeDOM(watchDOM);
-            removeDOM(embedDOM);
         }
     },
     fixTitle(title) {

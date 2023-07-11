@@ -87,6 +87,17 @@ function checkIfExists(localURL) {
     }));
 }
 function normalise(url) {
+    let engine = 0;
+    try {
+        const params = new URLSearchParams(url);
+        engine = parseInt(params.get("engine"));
+        if (engine === 12) {
+            url = url.split("&current=")[0];
+        }
+    }
+    catch (err) {
+        console.warn(err);
+    }
     url = url.replace("?watch=", "");
     url = url.split("&engine=")[0];
     url = url.split("&isManga=")[0];
@@ -118,9 +129,10 @@ async function populateDownloadedArray() {
 async function testIt(idx = -1) {
     let searchQuery = "odd";
     let errored = false;
-    const searchQueries = ["odd taxi", "", "friends", "odd taxi", "petezahhutt", "odd taxi", "friends", "odd taxi"];
+    // const extensions = [wco, animixplay, fmovies, zoro, twitch, nineAnime, fmoviesto, gogo, mangaDex, mangaFire, viewAsian, anilist, anna];
+    const searchQueries = ["odd taxi", "", "friends", "odd taxi", "petezahhutt", "odd taxi", "friends", "odd taxi", "86", "86", "red", "", "86"];
     for (let i = 0; i < extensionList.length; i++) {
-        if (extensionDisabled[i]) {
+        if (extensionDisabled[i] || extensionList[i].name === "Anilist") {
             continue;
         }
         if (idx != -1 && i != idx) {
@@ -154,7 +166,7 @@ async function testIt(idx = -1) {
             alert(`${extensionNames[i]} - player :  ${err.toString()}`);
         }
         try {
-            alert(`${extensionNames[i]} - Here's the link: ${playerResult.sources[0].url}`);
+            alert(`${extensionNames[i]} - Here's the link: ${extensionList[i].type === "manga" ? playerResult.pages[0].img : playerResult.sources[0].url}`);
         }
         catch (err) {
             alert(extensionNames[i] + " Failed");
@@ -455,6 +467,7 @@ offlineDOM.onchange = function () {
         localStorage.setItem("offline", "true");
         window.parent.postMessage({ "action": 500, data: "pages/homepage/index.html" }, "*");
     }
+    window.parent.handleUpperBar();
 };
 async function logout() {
     try {
@@ -552,6 +565,10 @@ document.getElementById("hideNotification").onchange = function () {
 document.getElementById("alwaysDown").onchange = function () {
     localStorage.setItem("alwaysDown", this.checked.toString());
 };
+document.getElementById("anonModeToggle").onchange = function () {
+    localStorage.setItem("anon-anilist", this.checked.toString());
+    window.parent.handleUpperBar();
+};
 document.getElementById("9animeHelper").oninput = function () {
     localStorage.setItem("9anime", this.value);
 };
@@ -579,6 +596,11 @@ document.getElementById("rangeCon").addEventListener("touchmove", function (even
     event.stopPropagation();
 });
 document.getElementById("anilistLogin").addEventListener("click", function (event) {
+    if (hasAnilistToken) {
+        localStorage.removeItem("anilist-token");
+        window.location.reload();
+        return;
+    }
     if (config.chrome) {
         try {
             alert("A new tab will open asking you to log in, and then you will be redirected to a new page. Copy the URL of the new page and paste it when prompted");
@@ -631,6 +653,7 @@ document.getElementById("fullscreenMode").checked = localStorage.getItem("fullsc
 document.getElementById("hideNotification").checked = localStorage.getItem("hideNotification") === "true";
 document.getElementById("alwaysDown").checked = localStorage.getItem("alwaysDown") === "true";
 document.getElementById("useImageBack").checked = localStorage.getItem("useImageBack") === "true";
+document.getElementById("anonModeToggle").checked = localStorage.getItem("anon-anilist") === "true";
 document.getElementById("offline").checked = (localStorage.getItem("offline") === 'true');
 document.getElementById("reset").addEventListener("click", function () {
     window.parent.postMessage({ "action": 22, data: "" }, "*");
@@ -1004,7 +1027,7 @@ function makeDiscoverCard(data) {
 function humanDate(date) {
     const thisDate = new Date();
     thisDate.setDate(date.day);
-    thisDate.setMonth(date.month);
+    thisDate.setMonth(date.month - 1);
     thisDate.setFullYear(date.year);
     return `${thisDate.getDate()} ${thisDate.toLocaleString('en-us', { month: "short" })} ${thisDate.getFullYear()}`;
 }
@@ -1351,15 +1374,44 @@ if (true) {
         catch (err) {
         }
     }
+    // async function batchPromises(showURLs, batchSize){
+    async function batchPromises(showURLs, batchSize) {
+        const allSettled = "allSettled" in Promise;
+        const result = [];
+        const promises = [];
+        for (let i = 0; i < showURLs.length; i++) {
+            promises.push(showURLs[i].engine.getAnimeInfo(showURLs[i].showURL));
+            if (promises.length >= batchSize || i == showURLs.length - 1) {
+                if (allSettled) {
+                    const res = await Promise.allSettled(promises);
+                    for (const promise of res) {
+                        if (promise.status === "fulfilled") {
+                            result.push(promise.value);
+                        }
+                        else {
+                            result.push(null);
+                        }
+                    }
+                }
+                else {
+                    try {
+                        result.push(...await Promise.all(promises));
+                    }
+                    catch (err) {
+                        console.warn(err);
+                    }
+                }
+                promises.splice(0);
+            }
+        }
+        return result;
+    }
     async function updateNewEp() {
         let updateLibNoti = sendNoti([0, null, "Message", "Updating Libary"]);
-        let updatedShow = [];
         let downloadQueue = window.parent.returnDownloadQueue();
         let extensionList = window.parent.returnExtensionList();
-        let promises = [];
+        let showURLs = [];
         let promiseShowData = [];
-        let allSettled = "allSettled" in Promise;
-        // let allSettled = false;
         for (let show of flaggedShow) {
             let showURL = show.showURL;
             showURL = showURL.replace("?watch=/", "");
@@ -1373,7 +1425,10 @@ if (true) {
                 currentEngine = parseInt(temp[1]);
                 currentEngine = extensionList[currentEngine];
             }
-            promises.push(currentEngine.getAnimeInfo(showURL));
+            showURLs.push({
+                showURL,
+                engine: currentEngine
+            });
             promiseShowData.push({
                 "ep": currentEp,
                 "dom": show.dom,
@@ -1383,22 +1438,8 @@ if (true) {
                 "isManga": currentEngine.type === "manga"
             });
         }
-        let promiseResult = [];
         try {
-            if (allSettled) {
-                let res = await Promise.allSettled(promises);
-                for (let promise of res) {
-                    if (promise.status === "fulfilled") {
-                        promiseResult.push(promise.value);
-                    }
-                    else {
-                        promiseResult.push(null);
-                    }
-                }
-            }
-            else {
-                promiseResult = await Promise.all(promises);
-            }
+            const promiseResult = await batchPromises(showURLs, 5);
             await showLastEpDB.lastestEp.clear();
             let count = 0;
             for (let promise of promiseResult) {
@@ -2087,4 +2128,10 @@ for (const div of document.querySelectorAll("div")) {
 }
 for (const input of document.querySelectorAll("input")) {
     input.setAttribute("tabindex", "0");
+}
+if (hasAnilistToken) {
+    const anilistMenuItem = document.querySelector("#anilistLogin .menuTitle");
+    if (anilistMenuItem) {
+        anilistMenuItem.textContent = "Anilist Log out";
+    }
 }

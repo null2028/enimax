@@ -6,7 +6,7 @@ var fmovies: extension = {
     name: "FlixHQ",
     shortenedName: "Flix",
     searchApi: async function (query: string): Promise<extensionSearch> {
-        let tempDOM = document.createElement("div");
+        let tempDOM = new DOMHandler();
 
         try {
             query = decodeURIComponent(query);
@@ -15,7 +15,7 @@ var fmovies: extension = {
             tempDOM.innerHTML = DOMPurify.sanitize(response);
             let data: Array<extensionSearchData> = [];
 
-            let section = tempDOM.querySelectorAll(".flw-item");
+            let section = tempDOM.document.querySelectorAll(".flw-item");
             for (var i = 0; i < section.length; i++) {
 
                 let current = section[i];
@@ -47,20 +47,18 @@ var fmovies: extension = {
             };
         } catch (err) {
             throw err;
-        } finally {
-            removeDOM(tempDOM);
         }
     },
     getSeason: async function getSeason(showID: string, showURL: string) {
-        let tempSeasonDIV = document.createElement("div");
-        let tempMetaDataDIV = document.createElement("div");
+        let tempSeasonDIV = new DOMHandler();
+        let tempMetaDataDIV = new DOMHandler();
 
         try {
             const isInk = fmoviesBaseURL.includes(".ink");
             let seasonHTML = await MakeFetch(`https://${fmoviesBaseURL}/ajax/v2/tv/seasons/${showID}`);
 
             tempSeasonDIV.innerHTML = DOMPurify.sanitize(seasonHTML);
-            let tempDOM = tempSeasonDIV.getElementsByClassName("dropdown-item ss-item");
+            let tempDOM = tempSeasonDIV.document.getElementsByClassName("dropdown-item ss-item");
             let seasonInfo = {};
 
             for (var i = 0; i < tempDOM.length; i++) {
@@ -72,21 +70,21 @@ var fmovies: extension = {
             let metaData;
             if (isInk) {
                 metaData = {
-                    "name": (tempMetaDataDIV.querySelector(".detail_page-infor").querySelector(".heading-name") as HTMLElement).innerText,
-                    "image": (tempMetaDataDIV.querySelector(".detail_page-infor").querySelector(".film-poster-img") as HTMLImageElement).src,
-                    "des": (tempMetaDataDIV.querySelector(".detail_page-infor").querySelector(".description") as HTMLElement).innerText,
+                    "name": (tempMetaDataDIV.document.querySelector(".detail_page-infor").querySelector(".heading-name") as HTMLElement).innerText,
+                    "image": (tempMetaDataDIV.document.querySelector(".detail_page-infor").querySelector(".film-poster-img") as HTMLImageElement).src,
+                    "des": (tempMetaDataDIV.document.querySelector(".detail_page-infor").querySelector(".description") as HTMLElement).innerText,
                 };
             } else {
                 metaData = {
-                    "name": (tempMetaDataDIV.querySelector(".movie_information").querySelector(".heading-name") as HTMLElement).innerText,
-                    "image": (tempMetaDataDIV.querySelector(".movie_information").querySelector(".film-poster-img") as HTMLImageElement).src,
-                    "des": (tempMetaDataDIV.querySelector(".m_i-d-content").querySelector(".description") as HTMLElement).innerText,
+                    "name": (tempMetaDataDIV.document.querySelector(".movie_information").querySelector(".heading-name") as HTMLElement).innerText,
+                    "image": (tempMetaDataDIV.document.querySelector(".movie_information").querySelector(".film-poster-img") as HTMLImageElement).src,
+                    "des": (tempMetaDataDIV.document.querySelector(".m_i-d-content").querySelector(".description") as HTMLElement).innerText,
                 };
             }
 
             try {
                 metaData.genres = [];
-                const metaCon = tempMetaDataDIV.querySelector(".elements");
+                const metaCon = tempMetaDataDIV.document.querySelector(".elements");
 
                 for (const genreAnchor of metaCon.querySelectorAll("a")) {
                     const href = genreAnchor.getAttribute("href");
@@ -102,18 +100,15 @@ var fmovies: extension = {
 
         } catch (error) {
             return { "status": 400, "data": error.toString() };
-        } finally {
-            removeDOM(tempSeasonDIV);
-            removeDOM(tempMetaDataDIV);
         }
     },
     getEpisode: async function getEpisode(seasonID: string) {
-        let temp = document.createElement("div");
+        let temp = new DOMHandler();
 
         try {
             let r = await MakeFetch(`https://${fmoviesBaseURL}/ajax/v2/season/episodes/${seasonID}`);
             temp.innerHTML = DOMPurify.sanitize(r);
-            let tempDOM = temp.getElementsByClassName("nav-link btn btn-sm btn-secondary eps-item");
+            let tempDOM = temp.document.getElementsByClassName("nav-link btn btn-sm btn-secondary eps-item");
             let data = [];
             for (var i = 0; i < tempDOM.length; i++) {
                 let episodeData = {
@@ -127,8 +122,6 @@ var fmovies: extension = {
 
         } catch (error) {
             return { "status": 400, "data": error.toString() };
-        } finally {
-            removeDOM(temp);
         }
     },
     getAnimeInfo: async function (url: string): Promise<extensionInfo> {
@@ -359,9 +352,9 @@ var fmovies: extension = {
         let showIdSplit = url.split("-");
         let showId = showIdSplit[showIdSplit.length - 1].split(".")[0];
 
-        const infoDOM = document.createElement("div");
-        const tempGetDom = document.createElement("div");
-        const temp = document.createElement("div");
+        const infoDOM = new DOMHandler();
+        const tempGetDom = new DOMHandler();
+        const temp = new DOMHandler();
 
         try {
             const option = {
@@ -394,7 +387,7 @@ var fmovies: extension = {
                 let getLink2 = responseAPI;
                 infoDOM.innerHTML = DOMPurify.sanitize(getLink2);
 
-                let tempDOM = infoDOM.getElementsByClassName("nav-link btn btn-sm btn-secondary");
+                let tempDOM = infoDOM.document.getElementsByClassName("nav-link btn btn-sm btn-secondary");
 
                 for (var i = 0; i < tempDOM.length; i++) {
                     if (tempDOM[i].getAttribute("title").toLowerCase().indexOf("vidcloud") > -1) {
@@ -407,7 +400,7 @@ var fmovies: extension = {
             } else {
                 let getLink2 = responseAPI;
                 infoDOM.innerHTML = DOMPurify.sanitize(getLink2);
-                let tempDOM = infoDOM.getElementsByClassName("nav-link btn btn-sm btn-secondary");
+                let tempDOM = infoDOM.document.getElementsByClassName("nav-link btn btn-sm btn-secondary");
 
                 for (var i = 0; i < tempDOM.length; i++) {
                     if (tempDOM[i].getAttribute("title").toLowerCase().indexOf("vidcloud") > -1) {
@@ -428,7 +421,7 @@ var fmovies: extension = {
             let getSeason = seasonLinkData[0];
 
             tempGetDom.innerHTML = DOMPurify.sanitize(getSeason);
-            let currentSeason = tempGetDom.querySelector(".detail_page-watch").getAttribute("data-season");
+            let currentSeason = tempGetDom.document.querySelector(".detail_page-watch").getAttribute("data-season");
 
 
             let getLink = seasonLinkData[1];
@@ -448,7 +441,7 @@ var fmovies: extension = {
             if (seasonNotEmpty) {
                 let r = parallelReqs[1];
                 temp.innerHTML = DOMPurify.sanitize(r);
-                let tempDOM = temp.getElementsByClassName("nav-link btn btn-sm btn-secondary eps-item");
+                let tempDOM = temp.document.getElementsByClassName("nav-link btn btn-sm btn-secondary eps-item");
                 for (var i = 0; i < tempDOM.length; i++) {
                     if (ep == tempDOM[i].getAttribute("data-id")) {
                         if (i != 0) {
@@ -526,19 +519,15 @@ var fmovies: extension = {
         } catch (err) {
             console.error(err);
             throw (new Error("Couldn't get the link"));
-        } finally {
-            removeDOM(infoDOM);
-            removeDOM(tempGetDom);
-            removeDOM(temp);
         }
     },
     discover: async function (): Promise<Array<extensionDiscoverData>> {
-        let temp = document.createElement("div");
+        let temp = new DOMHandler()
 
         try {
             temp.innerHTML = DOMPurify.sanitize(await MakeFetch(`https://fmovies.ink/tv-show`, {}));
             let data = [];
-            for (const elem of temp.querySelectorAll(".flw-item")) {
+            for (const elem of temp.document.querySelectorAll(".flw-item")) {
                 let image = elem.querySelector("img").getAttribute("data-src");
                 let tempAnchor = elem.querySelector(".film-name");
                 let name = (tempAnchor as HTMLElement).innerText.trim();
@@ -560,8 +549,6 @@ var fmovies: extension = {
             return data;
         } catch (err) {
             throw err;
-        } finally {
-            removeDOM(temp);
         }
     },
     fixTitle: function (title: string) {

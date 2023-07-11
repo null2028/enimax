@@ -214,6 +214,7 @@ class dropDownMenu {
     openMenu() {
         this.menuCon.style.pointerEvents = "auto";
         this.menuCon.style.opacity = "1";
+        this.menuCon.setAttribute("data-open", "true");
     }
 
 
@@ -223,6 +224,7 @@ class dropDownMenu {
     closeMenu() {
         this.menuCon.style.pointerEvents = "none";
         this.menuCon.style.opacity = "0";
+        this.menuCon.setAttribute("data-open", "false");
     }
 
 

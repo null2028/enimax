@@ -103,20 +103,28 @@ if (config && config.chrome) {
         }, { urls: ['https://*.watchanimesub.net/*'] }, ['blocking', 'requestHeaders', 'extraHeaders']);
         // @ts-ignore
         chrome.webRequest.onBeforeSendHeaders.addListener(function (details) {
-            details.requestHeaders.push({
-                "name": "Referer",
-                "value": "https://mcloud.to"
-            });
+            if (details.url.includes("vidstream.") || details.url.includes("vizcloud.")) {
+                details.requestHeaders.push({
+                    "name": "Referer",
+                    "value": "https://vidstream.pro/"
+                });
+                details.requestHeaders.push({
+                    "name": "x-requested-with",
+                    "value": "XMLHttpRequest"
+                });
+            }
+            else if (details.url.includes("mcloud.")) {
+                details.requestHeaders.push({
+                    "name": "Referer",
+                    "value": "https://mcloud.to/"
+                });
+                details.requestHeaders.push({
+                    "name": "x-requested-with",
+                    "value": "XMLHttpRequest"
+                });
+            }
             return { requestHeaders: details.requestHeaders };
-        }, { urls: ['https://*.mcloud.to/*'] }, ['blocking', 'requestHeaders', 'extraHeaders']);
-        // @ts-ignore
-        chrome.webRequest.onBeforeSendHeaders.addListener(function (details) {
-            details.requestHeaders.push({
-                "name": "Referer",
-                "value": "https://vizcloud.club"
-            });
-            return { requestHeaders: details.requestHeaders };
-        }, { urls: ['https://*.vizcloud.club/*'] }, ['blocking', 'requestHeaders', 'extraHeaders']);
+        }, { urls: ["<all_urls>"] }, ['blocking', 'requestHeaders', 'extraHeaders']);
     }
     MakeCusReqFmovies = async function (url, options) {
         if ("headers" in options) {
@@ -465,147 +473,138 @@ var wco = {
     disabled: false,
     name: "WCOForever",
     shortenedName: "WCO",
-    searchApi: function (query) {
-        let baseURL = this.baseURL;
-        let tempDiv = document.createElement("div");
-        return (new Promise(function (resolve, reject) {
-            let formData = new FormData();
-            formData.append('catara', query);
-            formData.append('konuara', 'series');
-            fetch(`${baseURL}/search`, {
+    searchApi: async function (query) {
+        const baseURL = this.baseURL;
+        const tempDiv = new DOMHandler();
+        const formData = new FormData();
+        formData.append('catara', query);
+        formData.append('konuara', 'series');
+        try {
+            const searchHTML = await MakeFetchZoro(`${baseURL}/search`, {
                 method: 'POST', body: formData
-            }).then(response => response.text()).then(function (x) {
-                tempDiv.innerHTML = DOMPurify.sanitize(x);
-                var conDIV = tempDiv.querySelector(".items").children;
-                let data = [];
-                for (var i = 0; i < conDIV.length; i++) {
-                    data.push({
-                        "image": conDIV[i].getElementsByTagName("img")[0].getAttribute("src"),
-                        "name": conDIV[i].getElementsByTagName("a")[1].innerText,
-                        "link": conDIV[i].getElementsByTagName("a")[1].getAttribute("href").replace(baseURL, "") + "&engine=0",
-                    });
-                }
-                resolve({
-                    "status": 200,
-                    "data": data
+            });
+            tempDiv.innerHTML = DOMPurify.sanitize(searchHTML);
+            const conDIV = tempDiv.document.querySelector(".items").children;
+            const searchData = [];
+            for (var i = 0; i < conDIV.length; i++) {
+                searchData.push({
+                    "image": conDIV[i].getElementsByTagName("img")[0].getAttribute("src"),
+                    "name": conDIV[i].getElementsByTagName("a")[1].innerText,
+                    "link": conDIV[i].getElementsByTagName("a")[1].getAttribute("href").replace(baseURL, "") + "&engine=0",
                 });
-            }).catch(function (x) {
-                reject(x);
-            }).finally(() => {
-                removeDOM(tempDiv);
-            });
-        }));
+            }
+            return {
+                "status": 200,
+                "data": searchData
+            };
+        }
+        catch (err) {
+            throw err;
+        }
     },
-    getAnimeInfo: function (url) {
-        let baseURL = this.baseURL;
-        let rawURL = "";
-        return (new Promise(function (resolve, reject) {
-            url = url.split("&engine")[0];
-            url = baseURL + "/" + url;
-            rawURL = url;
-            let temp = document.createElement("div");
-            fetch(url).then(response => response.text()).then(function (response) {
-                temp.innerHTML = DOMPurify.sanitize(response);
-                let data = {
-                    "name": "",
-                    "image": "",
-                    "description": "",
-                    "episodes": [],
-                    "mainName": ""
-                };
-                data.name = temp.querySelectorAll(".video-title")[0].innerText;
-                data.image = temp.querySelector("#sidebar_cat").querySelectorAll(".img5")[0].getAttribute("src");
-                if (data.image.indexOf("//") == 0) {
-                    data.image = "https:" + data.image;
-                }
-                data.description = temp.querySelector("#sidebar_cat").querySelectorAll("p")[0].innerText;
-                data.totalPages = 1;
-                data.pageInfo = [{
-                        "pageName": "Season 1",
-                        "pageSize": 0
-                    }];
-                let lastSeason = "1";
-                let episodesDOM = temp.querySelector("#sidebar_right3");
-                let animeEps = data.episodes;
-                let animeDOM = episodesDOM.querySelectorAll("a");
-                let animeName;
-                for (var i = animeDOM.length - 1; i >= 0; i--) {
-                    let season = lastSeason;
-                    try {
-                        let hasSeason = parseInt(animeDOM[i].innerText.toLowerCase().split("season")[1]);
-                        if (!isNaN(hasSeason)) {
-                            season = hasSeason.toString();
-                        }
-                        else {
-                            season = "1";
-                        }
-                    }
-                    catch (err) {
-                    }
-                    if (season != lastSeason) {
-                        lastSeason = season;
-                        data.totalPages++;
-                        data.pageInfo[data.totalPages - 1] = {
-                            "pageSize": 0,
-                            "pageName": `Season ${season}`
-                        };
-                    }
-                    data.pageInfo[data.totalPages - 1].pageSize++;
-                    const title = animeDOM[i].innerText;
-                    const episodeNumTemp = title === null || title === void 0 ? void 0 : title.toLowerCase().split("episode");
-                    let epNum = 1;
-                    try {
-                        if (episodeNumTemp && episodeNumTemp.length >= 2) {
-                            epNum = parseFloat(episodeNumTemp[1]);
-                        }
-                    }
-                    catch (err) {
-                        console.warn(err);
-                    }
-                    animeEps.push({
-                        "link": animeDOM[i].href.replace(baseURL, "?watch=") + "&engine=0",
-                        "title": title,
-                        "altTitle": `Season ${season} Episode ${epNum}`,
-                        "altTruncatedTitle": `S${season} E${epNum}`
-                    });
-                }
-                // Very convoluted but it works
+    getAnimeInfo: async function (url) {
+        url = new URLSearchParams(`?watch=${url}`).get("watch");
+        const baseURL = this.baseURL;
+        const rawURL = baseURL + "/" + url;
+        const infoDOM = new DOMHandler();
+        try {
+            const infoHTML = await MakeFetchZoro(rawURL);
+            infoDOM.innerHTML = DOMPurify.sanitize(infoHTML);
+            let infoData = {
+                name: infoDOM.document.querySelectorAll(".video-title")[0].innerText,
+                image: infoDOM.document.querySelector("#sidebar_cat").querySelectorAll(".img5")[0].getAttribute("src"),
+                description: infoDOM.document.querySelector("#sidebar_cat").querySelectorAll("p")[0].innerText,
+                episodes: [],
+                mainName: "",
+                totalPages: 1,
+                pageInfo: [{
+                        pageName: "Season 1",
+                        pageSize: 0
+                    }]
+            };
+            if (infoData.image.indexOf("//") == 0) {
+                infoData.image = "https:" + infoData.image;
+            }
+            let lastSeason = "1";
+            let episodesDOM = infoDOM.document.querySelector("#sidebar_right3");
+            let animeEps = infoData.episodes;
+            let animeDOM = episodesDOM.querySelectorAll("a");
+            let animeName;
+            for (var i = animeDOM.length - 1; i >= 0; i--) {
+                let season = lastSeason;
                 try {
-                    let animeNameMain = animeEps[0].link.replace(baseURL, "?watch=").split("?watch=/")[1];
-                    animeName = animeNameMain.trim();
-                    animeName = animeName.split("episode")[0];
-                    if (animeNameMain.split("episode").length == 1) {
-                        animeName = animeName.split("?id=")[0];
-                        animeName = animeName.trim();
-                        animeName = animeName + "-";
-                        animeName = animeName.trim();
+                    let hasSeason = parseInt(animeDOM[i].innerText.toLowerCase().split("season")[1]);
+                    if (!isNaN(hasSeason)) {
+                        season = hasSeason.toString();
                     }
-                    try {
-                        if (animeName.indexOf("season") > -1) {
-                            animeName = animeName.split("season")[0];
-                        }
-                    }
-                    catch (err) {
+                    else {
+                        season = "1";
                     }
                 }
                 catch (err) {
+                }
+                if (season != lastSeason) {
+                    lastSeason = season;
+                    infoData.totalPages++;
+                    infoData.pageInfo[infoData.totalPages - 1] = {
+                        "pageSize": 0,
+                        "pageName": `Season ${season}`
+                    };
+                }
+                infoData.pageInfo[infoData.totalPages - 1].pageSize++;
+                const title = animeDOM[i].innerText;
+                const episodeNumTemp = title === null || title === void 0 ? void 0 : title.toLowerCase().split("episode");
+                let epNum = 1;
+                try {
+                    if (episodeNumTemp && episodeNumTemp.length >= 2) {
+                        epNum = parseFloat(episodeNumTemp[1]);
+                    }
+                }
+                catch (err) {
+                    console.warn(err);
+                }
+                animeEps.push({
+                    link: animeDOM[i].href.replace(baseURL, "?watch=") + "&engine=0",
+                    title: title,
+                    altTitle: `Season ${season} Episode ${epNum}`,
+                    altTruncatedTitle: `S${season} E${epNum}`
+                });
+            }
+            // Very convoluted but it works
+            try {
+                let animeNameMain = animeEps[0].link.replace(baseURL, "?watch=").split("?watch=/")[1];
+                animeName = animeNameMain.trim();
+                animeName = animeName.split("episode")[0];
+                if (animeNameMain.split("episode").length == 1) {
+                    animeName = animeName.split("?id=")[0];
+                    animeName = animeName.trim();
                     animeName = animeName + "-";
+                    animeName = animeName.trim();
                 }
-                data.episodes = animeEps;
                 try {
-                    data.mainName = (new URL(url)).pathname.replace("/anime/", "") + "-";
+                    if (animeName.indexOf("season") > -1) {
+                        animeName = animeName.split("season")[0];
+                    }
                 }
                 catch (err) {
-                    data.mainName = url.split("/anime/")[1] + "-";
                 }
-                resolve(data);
-            }).catch(function (err) {
-                err.url = rawURL;
-                reject(err);
-            }).finally(() => {
-                removeDOM(temp);
-            });
-        }));
+            }
+            catch (err) {
+                animeName = animeName + "-";
+            }
+            infoData.episodes = animeEps;
+            try {
+                infoData.mainName = (new URL(url)).pathname.replace("/anime/", "") + "-";
+            }
+            catch (err) {
+                infoData.mainName = url.split("/anime/")[1] + "-";
+            }
+            return infoData;
+        }
+        catch (err) {
+            err.url = rawURL;
+            throw err;
+        }
     },
     getLinkFromUrl: async function (url) {
         let baseURL = this.baseURL;
@@ -654,7 +653,7 @@ var wco = {
             next: null,
             prev: null,
         };
-        let dom = document.createElement("div");
+        let dom = new DOMHandler();
         try {
             let reqOption = {
                 'headers': {
@@ -666,14 +665,14 @@ var wco = {
             let sources = data.sources;
             dom.innerHTML = DOMPurify.sanitize(pageHTML);
             try {
-                let tmpName = dom.querySelector('[rel="category tag"]').getAttribute("href").replace(`${baseURL}/anime/`, "");
+                let tmpName = dom.document.querySelector('[rel="category tag"]').getAttribute("href").replace(`${baseURL}/anime/`, "");
                 if (tmpName != "") {
                     animeName = tmpName + "-";
                 }
             }
             catch (err) {
             }
-            let nextPrev = dom.getElementsByClassName("prev-next");
+            let nextPrev = dom.document.getElementsByClassName("prev-next");
             for (let npi = 0; npi < nextPrev.length; npi++) {
                 try {
                     let tempData = nextPrev[npi].children[0].getAttribute("rel").trim().toLowerCase();
@@ -789,17 +788,14 @@ var wco = {
             data.message = "Couldn't get the link";
             return data;
         }
-        finally {
-            removeDOM(dom);
-        }
     },
     discover: async function () {
         let baseURL = this.baseURL;
-        let temp = document.createElement("div");
+        let temp = new DOMHandler();
         try {
             temp.innerHTML = DOMPurify.sanitize(await MakeFetch(baseURL, {}));
             let data = [];
-            for (let elem of temp.querySelectorAll(".items")[1].querySelectorAll("li")) {
+            for (let elem of temp.document.querySelectorAll(".items")[1].querySelectorAll("li")) {
                 let image = "https:" + elem.querySelector("img").getAttribute("src");
                 let tempAnchor = elem.querySelectorAll("a")[1];
                 let name = tempAnchor.innerText;
@@ -819,23 +815,17 @@ var wco = {
         catch (err) {
             throw err;
         }
-        finally {
-            removeDOM(temp);
-        }
     },
     getDiscoverLink: async function (mainLink) {
         let baseURL = this.baseURL;
-        let temp = document.createElement("div");
+        let temp = new DOMHandler();
         try {
             temp.innerHTML = DOMPurify.sanitize(await MakeFetch(`${baseURL}${mainLink}`, {}));
-            mainLink = temp.querySelector('[rel="category tag"]').getAttribute("href").replace(baseURL, "");
+            mainLink = temp.document.querySelector('[rel="category tag"]').getAttribute("href").replace(baseURL, "");
             return mainLink;
         }
         catch (err) {
             throw err;
-        }
-        finally {
-            removeDOM(temp);
         }
     }
 };
@@ -885,13 +875,13 @@ var fmovies = {
     name: "FlixHQ",
     shortenedName: "Flix",
     searchApi: async function (query) {
-        let tempDOM = document.createElement("div");
+        let tempDOM = new DOMHandler();
         try {
             query = decodeURIComponent(query);
             let response = await MakeFetchZoro(`https://${fmoviesBaseURL}/search/${query.replace(" ", "-")}`, {});
             tempDOM.innerHTML = DOMPurify.sanitize(response);
             let data = [];
-            let section = tempDOM.querySelectorAll(".flw-item");
+            let section = tempDOM.document.querySelectorAll(".flw-item");
             for (var i = 0; i < section.length; i++) {
                 let current = section[i];
                 let dataCur = {
@@ -918,18 +908,15 @@ var fmovies = {
         catch (err) {
             throw err;
         }
-        finally {
-            removeDOM(tempDOM);
-        }
     },
     getSeason: async function getSeason(showID, showURL) {
-        let tempSeasonDIV = document.createElement("div");
-        let tempMetaDataDIV = document.createElement("div");
+        let tempSeasonDIV = new DOMHandler();
+        let tempMetaDataDIV = new DOMHandler();
         try {
             const isInk = fmoviesBaseURL.includes(".ink");
             let seasonHTML = await MakeFetch(`https://${fmoviesBaseURL}/ajax/v2/tv/seasons/${showID}`);
             tempSeasonDIV.innerHTML = DOMPurify.sanitize(seasonHTML);
-            let tempDOM = tempSeasonDIV.getElementsByClassName("dropdown-item ss-item");
+            let tempDOM = tempSeasonDIV.document.getElementsByClassName("dropdown-item ss-item");
             let seasonInfo = {};
             for (var i = 0; i < tempDOM.length; i++) {
                 seasonInfo[tempDOM[i].innerText] = tempDOM[i].getAttribute("data-id");
@@ -939,21 +926,21 @@ var fmovies = {
             let metaData;
             if (isInk) {
                 metaData = {
-                    "name": tempMetaDataDIV.querySelector(".detail_page-infor").querySelector(".heading-name").innerText,
-                    "image": tempMetaDataDIV.querySelector(".detail_page-infor").querySelector(".film-poster-img").src,
-                    "des": tempMetaDataDIV.querySelector(".detail_page-infor").querySelector(".description").innerText,
+                    "name": tempMetaDataDIV.document.querySelector(".detail_page-infor").querySelector(".heading-name").innerText,
+                    "image": tempMetaDataDIV.document.querySelector(".detail_page-infor").querySelector(".film-poster-img").src,
+                    "des": tempMetaDataDIV.document.querySelector(".detail_page-infor").querySelector(".description").innerText,
                 };
             }
             else {
                 metaData = {
-                    "name": tempMetaDataDIV.querySelector(".movie_information").querySelector(".heading-name").innerText,
-                    "image": tempMetaDataDIV.querySelector(".movie_information").querySelector(".film-poster-img").src,
-                    "des": tempMetaDataDIV.querySelector(".m_i-d-content").querySelector(".description").innerText,
+                    "name": tempMetaDataDIV.document.querySelector(".movie_information").querySelector(".heading-name").innerText,
+                    "image": tempMetaDataDIV.document.querySelector(".movie_information").querySelector(".film-poster-img").src,
+                    "des": tempMetaDataDIV.document.querySelector(".m_i-d-content").querySelector(".description").innerText,
                 };
             }
             try {
                 metaData.genres = [];
-                const metaCon = tempMetaDataDIV.querySelector(".elements");
+                const metaCon = tempMetaDataDIV.document.querySelector(".elements");
                 for (const genreAnchor of metaCon.querySelectorAll("a")) {
                     const href = genreAnchor.getAttribute("href");
                     if (href && href.includes("/genre/")) {
@@ -969,17 +956,13 @@ var fmovies = {
         catch (error) {
             return { "status": 400, "data": error.toString() };
         }
-        finally {
-            removeDOM(tempSeasonDIV);
-            removeDOM(tempMetaDataDIV);
-        }
     },
     getEpisode: async function getEpisode(seasonID) {
-        let temp = document.createElement("div");
+        let temp = new DOMHandler();
         try {
             let r = await MakeFetch(`https://${fmoviesBaseURL}/ajax/v2/season/episodes/${seasonID}`);
             temp.innerHTML = DOMPurify.sanitize(r);
-            let tempDOM = temp.getElementsByClassName("nav-link btn btn-sm btn-secondary eps-item");
+            let tempDOM = temp.document.getElementsByClassName("nav-link btn btn-sm btn-secondary eps-item");
             let data = [];
             for (var i = 0; i < tempDOM.length; i++) {
                 let episodeData = {
@@ -992,9 +975,6 @@ var fmovies = {
         }
         catch (error) {
             return { "status": 400, "data": error.toString() };
-        }
-        finally {
-            removeDOM(temp);
         }
     },
     getAnimeInfo: async function (url) {
@@ -1186,9 +1166,9 @@ var fmovies = {
         };
         let showIdSplit = url.split("-");
         let showId = showIdSplit[showIdSplit.length - 1].split(".")[0];
-        const infoDOM = document.createElement("div");
-        const tempGetDom = document.createElement("div");
-        const temp = document.createElement("div");
+        const infoDOM = new DOMHandler();
+        const tempGetDom = new DOMHandler();
+        const temp = new DOMHandler();
         try {
             const option = {
                 'headers': {
@@ -1213,7 +1193,7 @@ var fmovies = {
             if (isShow) {
                 let getLink2 = responseAPI;
                 infoDOM.innerHTML = DOMPurify.sanitize(getLink2);
-                let tempDOM = infoDOM.getElementsByClassName("nav-link btn btn-sm btn-secondary");
+                let tempDOM = infoDOM.document.getElementsByClassName("nav-link btn btn-sm btn-secondary");
                 for (var i = 0; i < tempDOM.length; i++) {
                     if (tempDOM[i].getAttribute("title").toLowerCase().indexOf("vidcloud") > -1) {
                         server = tempDOM[i].getAttribute("data-linkid");
@@ -1224,7 +1204,7 @@ var fmovies = {
             else {
                 let getLink2 = responseAPI;
                 infoDOM.innerHTML = DOMPurify.sanitize(getLink2);
-                let tempDOM = infoDOM.getElementsByClassName("nav-link btn btn-sm btn-secondary");
+                let tempDOM = infoDOM.document.getElementsByClassName("nav-link btn btn-sm btn-secondary");
                 for (var i = 0; i < tempDOM.length; i++) {
                     if (tempDOM[i].getAttribute("title").toLowerCase().indexOf("vidcloud") > -1) {
                         server = tempDOM[i].getAttribute("data-id");
@@ -1239,7 +1219,7 @@ var fmovies = {
             let seasonLinkData = await Promise.all(seasonLinkPromises);
             let getSeason = seasonLinkData[0];
             tempGetDom.innerHTML = DOMPurify.sanitize(getSeason);
-            let currentSeason = tempGetDom.querySelector(".detail_page-watch").getAttribute("data-season");
+            let currentSeason = tempGetDom.document.querySelector(".detail_page-watch").getAttribute("data-season");
             let getLink = seasonLinkData[1];
             let title = JSON.parse(getLink).title;
             let link = JSON.parse(getLink).link;
@@ -1253,7 +1233,7 @@ var fmovies = {
             if (seasonNotEmpty) {
                 let r = parallelReqs[1];
                 temp.innerHTML = DOMPurify.sanitize(r);
-                let tempDOM = temp.getElementsByClassName("nav-link btn btn-sm btn-secondary eps-item");
+                let tempDOM = temp.document.getElementsByClassName("nav-link btn btn-sm btn-secondary eps-item");
                 for (var i = 0; i < tempDOM.length; i++) {
                     if (ep == tempDOM[i].getAttribute("data-id")) {
                         if (i != 0) {
@@ -1317,18 +1297,13 @@ var fmovies = {
             console.error(err);
             throw (new Error("Couldn't get the link"));
         }
-        finally {
-            removeDOM(infoDOM);
-            removeDOM(tempGetDom);
-            removeDOM(temp);
-        }
     },
     discover: async function () {
-        let temp = document.createElement("div");
+        let temp = new DOMHandler();
         try {
             temp.innerHTML = DOMPurify.sanitize(await MakeFetch(`https://fmovies.ink/tv-show`, {}));
             let data = [];
-            for (const elem of temp.querySelectorAll(".flw-item")) {
+            for (const elem of temp.document.querySelectorAll(".flw-item")) {
                 let image = elem.querySelector("img").getAttribute("data-src");
                 let tempAnchor = elem.querySelector(".film-name");
                 let name = tempAnchor.innerText.trim();
@@ -1348,9 +1323,6 @@ var fmovies = {
         }
         catch (err) {
             throw err;
-        }
-        finally {
-            removeDOM(temp);
         }
     },
     fixTitle: function (title) {
@@ -1374,19 +1346,20 @@ var fmovies = {
     }
 };
 var zoro = {
-    baseURL: "https://zoro.to",
+    baseURL: "https://kaido.to",
     type: "anime",
     supportsMalsync: true,
     disableAutoDownload: false,
+    nonV2URLs: ["https://9animetv.to", "https://kaido.to"],
     disabled: false,
     name: "Zoro",
     shortenedName: "Zoro",
     searchApi: async function (query) {
-        let dom = document.createElement("div");
+        let dom = new DOMHandler();
         try {
-            let searchHTML = await MakeFetchZoro(`https://zoro.to/search?keyword=${query}`, {});
+            let searchHTML = await MakeFetchZoro(`${this.baseURL}/search?keyword=${query}`, {});
             dom.innerHTML = DOMPurify.sanitize(searchHTML);
-            let itemsDOM = dom.querySelectorAll('.flw-item');
+            let itemsDOM = dom.document.querySelectorAll('.flw-item');
             let data = [];
             for (var i = 0; i < itemsDOM.length; i++) {
                 let con = itemsDOM[i];
@@ -1401,9 +1374,6 @@ var zoro = {
         }
         catch (err) {
             throw err;
-        }
-        finally {
-            removeDOM(dom);
         }
     },
     getAnimeInfo: async function (url) {
@@ -1474,9 +1444,13 @@ var zoro = {
     },
     getAnimeInfoInter: async function (url) {
         url = url.split("&engine")[0];
-        const rawURL = `https://zoro.to/${url}`;
-        const animeDOM = document.createElement("div");
-        const dom = document.createElement("div");
+        const is9animeTv = this.baseURL === "https://9animetv.to";
+        const rawURL = `${this.baseURL}${is9animeTv ? "/watch/" : "/"}${url}`;
+        const animeDOM = new DOMHandler();
+        ;
+        const dom = new DOMHandler();
+        ;
+        const type = this.nonV2URLs.includes(this.baseURL);
         try {
             let idSplit = url.replace("?watch=/", "").split("-");
             let id = idSplit[idSplit.length - 1].split("?")[0];
@@ -1487,19 +1461,19 @@ var zoro = {
                 "episodes": [],
                 "mainName": ""
             };
-            let animeHTML = await MakeFetchZoro(`https://zoro.to/${url}`, {});
+            let animeHTML = await MakeFetchZoro(rawURL, {});
             animeDOM.innerHTML = DOMPurify.sanitize(animeHTML);
             let name = (new URLSearchParams(`?watch=${url}`)).get("watch");
             const nameSplit = name.split("-");
             nameSplit.pop();
             name = nameSplit.join("-");
             response.mainName = name;
-            response.name = animeDOM.querySelector(".film-name.dynamic-name").innerText;
-            response.image = animeDOM.querySelector(".layout-page.layout-page-detail").querySelector("img").src;
-            response.description = animeDOM.querySelector(".film-description.m-hide").innerText;
+            response.name = animeDOM.document.querySelector(".film-name.dynamic-name").innerText;
+            response.image = animeDOM.document.querySelector(is9animeTv ? ".anime-detail" : ".layout-page.layout-page-detail").querySelector("img").src;
+            response.description = animeDOM.document.querySelector(".film-description").innerText;
             try {
                 response.genres = [];
-                const metaCon = animeDOM.querySelector(".item.item-list");
+                const metaCon = animeDOM.document.querySelector(".item.item-list");
                 for (const genreAnchor of metaCon.querySelectorAll("a")) {
                     response.genres.push(genreAnchor.innerText);
                 }
@@ -1507,9 +1481,9 @@ var zoro = {
             catch (err) {
                 console.error(err);
             }
-            let episodeHTML = JSON.parse(await MakeFetchZoro(`https://zoro.to/ajax/v2/episode/list/${id}`, {})).html;
+            let episodeHTML = JSON.parse(await MakeFetchZoro(`${this.baseURL}/ajax/${type ? "" : "v2/"}episode/list/${id}`, {})).html;
             dom.innerHTML = DOMPurify.sanitize(episodeHTML);
-            let episodeListDOM = dom.querySelectorAll('.ep-item');
+            let episodeListDOM = dom.document.querySelectorAll('.ep-item');
             let data = [];
             for (var i = 0; i < episodeListDOM.length; i++) {
                 let tempEp = {
@@ -1529,19 +1503,16 @@ var zoro = {
             err.url = rawURL;
             throw err;
         }
-        finally {
-            removeDOM(animeDOM);
-            removeDOM(dom);
-        }
     },
     getEpisodeListFromAnimeId: async function getEpisodeListFromAnimeId(showID, episodeId) {
-        let dom = document.createElement("div");
+        let dom = new DOMHandler();
+        const type = this.nonV2URLs.includes(this.baseURL);
         try {
-            let res = JSON.parse((await MakeFetchZoro(`https://zoro.to/ajax/v2/episode/list/${showID}`, {})));
+            let res = JSON.parse((await MakeFetchZoro(`${this.baseURL}/ajax/${type ? "" : "v2/"}episode/list/${showID}`, {})));
             res = res.html;
             let ogDOM = dom;
             dom.innerHTML = DOMPurify.sanitize(res);
-            let epItemsDOM = dom.querySelectorAll('.ep-item');
+            let epItemsDOM = dom.document.querySelectorAll('.ep-item');
             let data = [];
             for (var i = 0; i < epItemsDOM.length; i++) {
                 let temp = {
@@ -1560,21 +1531,19 @@ var zoro = {
         catch (err) {
             throw err;
         }
-        finally {
-            removeDOM(dom);
-        }
     },
     addSource: async function addSource(type, id, subtitlesArray, sourceURLs) {
         let shouldThrow = false;
+        const baseType = this.nonV2URLs.includes(this.baseURL);
         try {
-            let sources = await MakeFetchZoro(`https://zoro.to/ajax/v2/episode/sources?id=${id}`, {});
+            let sources = await MakeFetchZoro(`${this.baseURL}/ajax/${baseType ? "" : "v2/"}episode/sources?id=${id}`, {});
             sources = JSON.parse(sources).link;
             let urlHost = (new URL(sources)).origin;
             let sourceIdArray = sources.split("/");
             let sourceId = sourceIdArray[sourceIdArray.length - 1];
             sourceId = sourceId.split("?")[0];
             let token = localStorage.getItem("rapidToken");
-            let sourceJSON = JSON.parse((await MakeFetchZoro(`${urlHost}/ajax/embed-6/getSources?id=${sourceId}&token=${token}`, {})));
+            let sourceJSON = JSON.parse((await MakeFetchZoro(`${urlHost}${baseType ? "/ajax/embed-6/getSources?id=" : "/embed-2/ajax/e-1/getSources?id="}${sourceId}&token=${token}`, {})));
             if (sourceJSON.status === false) {
                 shouldThrow = true;
             }
@@ -1593,12 +1562,12 @@ var zoro = {
                     let encryptedURL = sourceJSON.sources;
                     let decryptKey, tempFile;
                     try {
-                        decryptKey = await extractKey(6, null, true);
+                        decryptKey = await extractKey(baseType ? 0 : 6, null, true);
                         sourceJSON.sources = JSON.parse(CryptoJS.AES.decrypt(encryptedURL, decryptKey).toString(CryptoJS.enc.Utf8));
                     }
                     catch (err) {
                         if (err.message == "Malformed UTF-8 data") {
-                            decryptKey = await extractKey(6);
+                            decryptKey = await extractKey(baseType ? 0 : 6);
                             try {
                                 sourceJSON.sources = JSON.parse(CryptoJS.AES.decrypt(encryptedURL, decryptKey).toString(CryptoJS.enc.Utf8));
                             }
@@ -1660,23 +1629,24 @@ var zoro = {
             prev: null,
         };
         let episodeId, animeId;
-        const dom = document.createElement("div");
+        const dom = new DOMHandler();
+        const baseType = this.nonV2URLs.includes(this.baseURL);
         try {
             episodeId = parseFloat(url.split("&ep=")[1]).toString();
             animeId = url.replace("?watch=", "").split("-");
             animeId = animeId[animeId.length - 1].split("&")[0];
-            let a = await MakeFetchZoro(`https://zoro.to/ajax/v2/episode/servers?episodeId=${episodeId}`, {});
+            let a = await MakeFetchZoro(`${this.baseURL}/ajax/${baseType ? "" : "v2/"}episode/servers?episodeId=${episodeId}`, {});
             let domIn = JSON.parse(a).html;
             dom.innerHTML = DOMPurify.sanitize(domIn);
             let promises = [];
             promises.push(this.getEpisodeListFromAnimeId(animeId, episodeId));
-            let tempDom = dom.querySelectorAll('[data-server-id="4"]');
+            let tempDom = dom.document.querySelectorAll('[data-server-id="4"]');
             let hasSource = false;
             for (var i = 0; i < tempDom.length; i++) {
                 hasSource = true;
                 promises.push(this.addSource(tempDom[i].getAttribute("data-type"), tempDom[i].getAttribute('data-id'), subtitles, sourceURLs));
             }
-            tempDom = dom.querySelectorAll('[data-server-id="1"]');
+            tempDom = dom.document.querySelectorAll('[data-server-id="1"]');
             for (var i = 0; i < tempDom.length; i++) {
                 promises.push(this.addSource(tempDom[i].getAttribute("data-type"), tempDom[i].getAttribute('data-id'), subtitles, sourceURLs));
             }
@@ -1726,16 +1696,13 @@ var zoro = {
         catch (err) {
             throw err;
         }
-        finally {
-            removeDOM(dom);
-        }
     },
     discover: async function () {
-        let temp = document.createElement("div");
+        let temp = new DOMHandler();
         try {
-            temp.innerHTML = DOMPurify.sanitize(await MakeFetchZoro(`https://zoro.to/top-airing`, {}));
+            temp.innerHTML = DOMPurify.sanitize(await MakeFetchZoro(`${this.baseURL}/top-airing`, {}));
             let data = [];
-            for (let elem of temp.querySelectorAll(".flw-item")) {
+            for (let elem of temp.document.querySelectorAll(".flw-item")) {
                 let image = elem.querySelector("img").getAttribute("data-src");
                 let tempAnchor = elem.querySelector("a");
                 let name = tempAnchor.getAttribute("title");
@@ -1750,9 +1717,6 @@ var zoro = {
         }
         catch (err) {
             throw err;
-        }
-        finally {
-            removeDOM(temp);
         }
     },
     genToken: async function genToken() {
@@ -1783,6 +1747,15 @@ var zoro = {
         return `?watch=${url.pathname}&engine=3`;
     }
 };
+try {
+    (async function () {
+        const keys = JSON.parse(await MakeFetchZoro(`https://raw.githubusercontent.com/enimax-anime/gogo/main/zoro.json`));
+        zoro.baseURL = keys[0];
+    })();
+}
+catch (err) {
+    console.error(err);
+}
 var twitch = {
     baseURL: "https://twitch.tv",
     type: "others",
@@ -2030,6 +2003,166 @@ var twitch = {
         resp.title = title;
         return resp;
     },
+    getChat: async function (lastTime, lastCursor, videoID) {
+        const clientId = "kimne78kx3ncx6brgo4mv6wki5h1ko";
+        const response = JSON.parse(await MakeFetch("https://gql.twitch.tv/gql", {
+            "headers": {
+                'Client-id': clientId,
+                'Content-Type': 'application/json',
+            },
+            "method": "POST",
+            "body": JSON.stringify([{
+                    "operationName": "VideoCommentsByOffsetOrCursor",
+                    "variables": {
+                        "videoID": videoID,
+                        "contentOffsetSeconds": lastTime
+                    },
+                    "extensions": {
+                        "persistedQuery": {
+                            "version": 1,
+                            "sha256Hash": "b70a3591ff0f4e0313d126c6a1502d79a1c02baebb288227c582044aa76adf6a"
+                        }
+                    }
+                }])
+        }));
+        const edges = response[0].data.video.comments.edges;
+        const index = edges.findIndex((edge) => {
+            return edge.cursor == lastCursor;
+        });
+        if (index != -1) {
+            edges.splice(index);
+        }
+        console.log(edges);
+    }
+};
+var anna = {
+    baseURL: "https://annas-archive.org",
+    type: "manga",
+    disabled: false,
+    disableAutoDownload: true,
+    name: "Anna's Archive",
+    shortenedName: "Anna",
+    searchApi: async function (query) {
+        var _a, _b, _c;
+        const searchDOM = new DOMHandler();
+        try {
+            const searchHTML = await MakeFetch(`${this.baseURL}/search?q=${query}`);
+            searchDOM.innerHTML = DOMPurify.sanitize(searchHTML, {
+                ADD_TAGS: ["#comment"]
+            });
+            const itemsDOM = searchDOM.document.querySelectorAll(".h-\\[125\\]");
+            const data = [];
+            for (let i = 0; i < itemsDOM.length; i++) {
+                const con = itemsDOM[i];
+                if (con.classList.contains("js-scroll-hidden")) {
+                    con.innerHTML = con.innerHTML.replace('<' + '!--', '').replace('-' + '->', '');
+                }
+                data.push({
+                    "name": (_a = con.querySelector(".font-bold")) === null || _a === void 0 ? void 0 : _a.innerText,
+                    "image": (_b = con.querySelector("img")) === null || _b === void 0 ? void 0 : _b.getAttribute("src"),
+                    "link": ((_c = con.querySelector("a")) === null || _c === void 0 ? void 0 : _c.getAttribute("href")) + "&engine=12"
+                });
+            }
+            return ({ data, "status": 200 });
+        }
+        catch (err) {
+            throw err;
+        }
+    },
+    getAnimeInfo: async function (url) {
+        var _a, _b, _c, _d, _e, _f, _g;
+        const infoDOM = new DOMHandler();
+        try {
+            const response = {
+                "name": "",
+                "image": "",
+                "description": "",
+                "episodes": [],
+                "mainName": "",
+                "isManga": true,
+            };
+            const searchParam = new URLSearchParams(`?watch=${url}`);
+            const identifier = searchParam.get("watch");
+            const infoHTML = await MakeFetch(`${this.baseURL}/${identifier}`);
+            infoDOM.innerHTML = DOMPurify.sanitize(infoHTML);
+            response.mainName = identifier.replace("md5/", "anna-");
+            response.image = (_b = (_a = infoDOM.document.querySelector("main")) === null || _a === void 0 ? void 0 : _a.querySelector("img")) === null || _b === void 0 ? void 0 : _b.getAttribute("src");
+            response.name = (_d = (_c = infoDOM.document.querySelector("main")) === null || _c === void 0 ? void 0 : _c.querySelector(".font-bold")) === null || _d === void 0 ? void 0 : _d.innerText;
+            response.description = (_e = infoDOM.document.querySelector(".js-md5-top-box-description")) === null || _e === void 0 ? void 0 : _e.innerText;
+            response.mainName = `${response.mainName}-${(_f = window.btoa(response.name.replace(/[^\x00-\x7F]/g, ""))) === null || _f === void 0 ? void 0 : _f.trim()}`;
+            response.episodes = [
+                {
+                    link: `?watch=${identifier}&engine=12`,
+                    title: (_g = infoDOM.document.querySelector(".text-sm")) === null || _g === void 0 ? void 0 : _g.innerText
+                }
+            ];
+            return response;
+        }
+        catch (err) {
+            throw err;
+        }
+    },
+    getLinkFromUrl: async function (url) {
+        var _a, _b, _c, _d;
+        const linkDOM = new DOMHandler();
+        try {
+            const response = {
+                sources: [],
+                pages: [],
+                nextTitle: "",
+                prevTitle: "",
+                name: "",
+                chapter: 1,
+                next: null,
+                prev: null,
+                type: "manga",
+                readerType: "epub"
+            };
+            const searchParam = new URLSearchParams(`?watch=${url}`);
+            const identifier = searchParam.get("watch");
+            const linkHTML = await MakeFetch(`${this.baseURL}/${identifier}`);
+            linkDOM.innerHTML = DOMPurify.sanitize(linkHTML);
+            response.name = (_b = (_a = linkDOM.document.querySelector("main")) === null || _a === void 0 ? void 0 : _a.querySelector(".font-bold")) === null || _b === void 0 ? void 0 : _b.innerText;
+            response.sources = [];
+            let sourceCount = 0;
+            const downloadLinks = linkDOM.document.querySelectorAll(".js-download-link");
+            for (const elem of downloadLinks) {
+                if ((_c = elem.getAttribute("href")) === null || _c === void 0 ? void 0 : _c.endsWith(".epub")) {
+                    response.sources.push({
+                        name: `Epub${++sourceCount}`,
+                        url: elem.getAttribute("href"),
+                        type: "epub"
+                    });
+                }
+                else if ((_d = elem.getAttribute("href")) === null || _d === void 0 ? void 0 : _d.endsWith(".pdf")) {
+                    response.sources.push({
+                        name: `PDF${++sourceCount}`,
+                        url: elem.getAttribute("href"),
+                        type: "pdf"
+                    });
+                }
+            }
+            console.log(response);
+            return response;
+        }
+        catch (err) {
+            throw err;
+        }
+    },
+    fixTitle(title) {
+        const tempTitle = title.split("-");
+        tempTitle.shift();
+        tempTitle.shift();
+        try {
+            title = window.atob(tempTitle.join("-"));
+        }
+        catch (err) {
+            console.warn(err);
+        }
+        finally {
+            return title;
+        }
+    }
 };
 var anilist = {
     baseURL: "https://graphql.anilist.co",
@@ -2500,12 +2633,12 @@ var nineAnime = {
     name: "9anime",
     shortenedName: "9anime",
     searchApi: async function (query) {
-        const searchDOM = document.createElement("div");
+        const searchDOM = new DOMHandler();
         try {
             const vrf = await this.getVRF(query, "9anime-search");
             const searchHTML = await MakeFetchZoro(`https://9anime.to/filter?keyword=${encodeURIComponent(query)}&${vrf[1]}=${vrf[0]}`);
             searchDOM.innerHTML = DOMPurify.sanitize(searchHTML);
-            const searchElem = searchDOM.querySelector("#list-items");
+            const searchElem = searchDOM.document.querySelector("#list-items");
             const searchItems = searchElem.querySelectorAll(".item");
             const response = [];
             if (searchItems.length === 0) {
@@ -2524,9 +2657,6 @@ var nineAnime = {
         }
         catch (err) {
             throw err;
-        }
-        finally {
-            removeDOM(searchDOM);
         }
     },
     getAnimeInfo: async function (url) {
@@ -2606,20 +2736,20 @@ var nineAnime = {
         };
         let id = url.replace("?watch=/", "");
         const rawURL = `https://9anime.to/watch/${id}`;
-        const episodesDOM = document.createElement("div");
-        const infoDOM = document.createElement("div");
+        const episodesDOM = new DOMHandler();
+        const infoDOM = new DOMHandler();
         try {
             let infoHTML = await MakeFetchZoro(`https://9anime.to/watch/${id}`);
             infoDOM.innerHTML = DOMPurify.sanitize(infoHTML);
-            let nineAnimeID = infoDOM.querySelector("#watch-main").getAttribute("data-id");
-            let infoMainDOM = infoDOM.querySelector("#w-info").querySelector(".info");
+            let nineAnimeID = infoDOM.document.querySelector("#watch-main").getAttribute("data-id");
+            let infoMainDOM = infoDOM.document.querySelector("#w-info").querySelector(".info");
             response.mainName = id;
             response.name = infoMainDOM.querySelector(".title").innerText;
             response.description = infoMainDOM.querySelector(".content").innerText;
-            response.image = infoDOM.querySelector("#w-info").querySelector("img").getAttribute("src");
+            response.image = infoDOM.document.querySelector("#w-info").querySelector("img").getAttribute("src");
             try {
                 response.genres = [];
-                const metaCon = infoDOM.querySelector(".bmeta").querySelector(".meta");
+                const metaCon = infoDOM.document.querySelector(".bmeta").querySelector(".meta");
                 for (const genreAnchor of metaCon.querySelectorAll("a")) {
                     const href = genreAnchor.getAttribute("href");
                     if (href && href.includes("/genre/")) {
@@ -2646,7 +2776,7 @@ var nineAnime = {
                 throw new Error(`Error 9ANIME_INFO_JSON: The JSON could be be parsed. ${err.message}`);
             }
             episodesDOM.innerHTML = DOMPurify.sanitize(episodesHTML);
-            let episodeElem = episodesDOM.querySelectorAll("li");
+            let episodeElem = episodesDOM.document.querySelectorAll("li");
             for (let i = 0; i < episodeElem.length; i++) {
                 let curElem = episodeElem[i];
                 let title = "";
@@ -2672,10 +2802,6 @@ var nineAnime = {
             err.url = rawURL;
             throw err;
         }
-        finally {
-            removeDOM(episodesDOM);
-            removeDOM(infoDOM);
-        }
     },
     getLinkFromUrl: async function (url) {
         url = "watch=" + url;
@@ -2690,7 +2816,7 @@ var nineAnime = {
             next: null,
             prev: null
         };
-        const serverDOM = document.createElement("div");
+        const serverDOM = new DOMHandler();
         try {
             const searchParams = new URLSearchParams(url);
             const sourceEp = searchParams.get("ep");
@@ -2698,12 +2824,12 @@ var nineAnime = {
             const promises = [];
             const serverHTML = JSON.parse(await MakeFetchZoro(`https://9anime.to/ajax/server/list/${sourceEp}?${sourceEpVRF[1]}=${sourceEpVRF[0]}`)).result;
             serverDOM.innerHTML = DOMPurify.sanitize(serverHTML);
-            const allServers = serverDOM.querySelectorAll("li");
+            const allServers = serverDOM.document.querySelectorAll("li");
             try {
-                response.episode = serverDOM.querySelector("b").innerText.split("Episode")[1];
+                response.episode = serverDOM.document.querySelector("b").innerText.split("Episode")[1];
             }
             catch (err) {
-                response.episode = serverDOM.querySelector("b").innerText;
+                response.episode = serverDOM.document.querySelector("b").innerText;
             }
             response.name = searchParams.get("watch");
             response.nameWSeason = searchParams.get("watch");
@@ -2851,9 +2977,6 @@ var nineAnime = {
         catch (err) {
             throw err;
         }
-        finally {
-            removeDOM(serverDOM);
-        }
     },
     checkConfig: function () {
         if (!localStorage.getItem("9anime")) {
@@ -2864,9 +2987,9 @@ var nineAnime = {
         }
     },
     getVRF: async function (query, action) {
-        let fallbackAPI = true;
-        let nineAnimeURL = "api.consumet.org/anime/9anime/helper";
-        let apiKey = "";
+        let fallbackAPI = false;
+        let nineAnimeURL = "9anime.eltik.net";
+        let apiKey = "enimax";
         try {
             this.checkConfig();
             nineAnimeURL = localStorage.getItem("9anime").trim();
@@ -2895,9 +3018,9 @@ var nineAnime = {
         }
     },
     decryptSource: async function (query) {
-        let fallbackAPI = true;
-        let nineAnimeURL = "api.consumet.org/anime/9anime/helper";
-        let apiKey = "";
+        let fallbackAPI = false;
+        let nineAnimeURL = "9anime.eltik.net";
+        let apiKey = "enimax";
         try {
             this.checkConfig();
             nineAnimeURL = localStorage.getItem("9anime").trim();
@@ -2926,9 +3049,9 @@ var nineAnime = {
         }
     },
     getVidstreamLink: async function (query, isViz = true) {
-        let fallbackAPI = true;
-        let nineAnimeURL = "api.consumet.org/anime/9anime/helper";
-        let apiKey = "";
+        let fallbackAPI = false;
+        let nineAnimeURL = "9anime.eltik.net";
+        let apiKey = "enimax";
         try {
             this.checkConfig();
             nineAnimeURL = localStorage.getItem("9anime").trim();
@@ -2938,11 +3061,18 @@ var nineAnime = {
         catch (err) {
             console.warn("Defaulting to Consumet.");
         }
-        let reqURL = `https://${nineAnimeURL}/${isViz ? "vizcloud" : "mcloud"}?query=${encodeURIComponent(query)}&apikey=${apiKey}`;
+        let reqURL = `https://${nineAnimeURL}/raw${isViz ? "Vizcloud" : "Mcloud"}?query=${encodeURIComponent(query)}&apikey=${apiKey}`;
         if (fallbackAPI) {
             reqURL = `https://${nineAnimeURL}?query=${encodeURIComponent(query)}&action=${isViz ? "vizcloud" : "mcloud"}`;
         }
-        const source = await MakeFetch(reqURL);
+        const rawSource = JSON.parse(await MakeFetch(reqURL)).rawURL;
+        const fetchFunc = config.chrome ? MakeFetch : MakeCusReq;
+        const source = await fetchFunc(rawSource, {
+            headers: {
+                "referer": isViz ? "https://vidstream.pro/" : "https://mcloud.to/",
+                "x-requested-with": "XMLHttpRequest"
+            }
+        });
         try {
             const parsedJSON = JSON.parse(source);
             if (parsedJSON.data &&
@@ -2961,9 +3091,9 @@ var nineAnime = {
         }
     },
     getFilemoonLink: async function (filemoonHTML) {
-        let fallbackAPI = true;
-        let nineAnimeURL = "api.consumet.org/anime/9anime/helper";
-        let apiKey = "";
+        let fallbackAPI = false;
+        let nineAnimeURL = "9anime.eltik.net";
+        let apiKey = "enimax";
         try {
             this.checkConfig();
             nineAnimeURL = localStorage.getItem("9anime").trim();
@@ -3016,11 +3146,11 @@ var nineAnime = {
         }
     },
     discover: async function () {
-        let temp = document.createElement("div");
+        let temp = new DOMHandler();
         temp.innerHTML = DOMPurify.sanitize(await MakeFetchZoro(`https://9anime.to/home`, {}));
-        temp = temp.querySelector(".ani.items");
+        temp = temp.document.querySelector(".ani.items");
         let data = [];
-        for (const elem of temp.querySelectorAll(".item")) {
+        for (const elem of temp.document.querySelectorAll(".item")) {
             let image = elem.querySelector("img").getAttribute("src");
             let name = elem.querySelector(".name.d-title").innerText.trim();
             let link = elem.querySelector(".name.d-title").getAttribute("href");
@@ -3066,14 +3196,14 @@ var fmoviesto = {
     shortenedName: "Fmovies",
     searchApi: async function (query) {
         let rawURL = "";
-        let searchDOM = document.createElement("div");
+        let searchDOM = new DOMHandler();
         try {
             query = query.replace(" ", "+");
             const vrf = await this.getVRF(query, "fmovies-vrf");
             rawURL = `https://fmovies.to/filter?keyword=${encodeURIComponent(query)}&vrf=${vrf[0]}&sort=most_relevance`;
             const searchHTML = await MakeFetchZoro(`https://fmovies.to/filter?keyword=${encodeURIComponent(query)}&vrf=${vrf[0]}&sort=most_relevance`);
             searchDOM.innerHTML = DOMPurify.sanitize(searchHTML);
-            const searchElem = searchDOM.querySelector(".movies.items");
+            const searchElem = searchDOM.document.querySelector(".movies.items");
             if (!searchElem) {
                 throw new Error("No results found.");
             }
@@ -3098,9 +3228,6 @@ var fmoviesto = {
             err.rawURL = rawURL;
             throw err;
         }
-        finally {
-            removeDOM(searchDOM);
-        }
     },
     getAnimeInfo: async function (url, nextPrev = false) {
         url = url.split("&engine")[0];
@@ -3113,14 +3240,14 @@ var fmoviesto = {
         };
         let id = url.replace("?watch=/", "");
         const rawURL = `https://fmovies.to/${id}`;
-        let episodesDOM = document.createElement("div");
-        let infoDOM = document.createElement("div");
+        let episodesDOM = new DOMHandler();
+        let infoDOM = new DOMHandler();
         try {
             let infoHTML = await MakeFetchZoro(`https://fmovies.to/${id}`);
             infoDOM.innerHTML = DOMPurify.sanitize(infoHTML, {
                 "ADD_ATTR": ["itemprop"]
             });
-            const container = infoDOM.querySelector("#w-info");
+            const container = infoDOM.document.querySelector("#w-info");
             response.mainName = id.replace("series/", "").replace("movie/", "").replace("tv/", "");
             response.name = container.querySelector(`.name`).innerText;
             response.image = container.querySelector(`img`).getAttribute("src");
@@ -3128,7 +3255,7 @@ var fmoviesto = {
             const isMovie = id.split('/')[0] !== "series" && id.split('/')[0] !== "tv";
             try {
                 response.genres = [];
-                const metaCon = infoDOM.querySelector(".bmeta").querySelector(".meta");
+                const metaCon = infoDOM.document.querySelector(".bmeta").querySelector(".meta");
                 for (const genreAnchor of metaCon.querySelectorAll("a")) {
                     const href = genreAnchor.getAttribute("href");
                     if (href && href.includes("/genre/")) {
@@ -3140,7 +3267,7 @@ var fmoviesto = {
                 console.error(err);
             }
             let episodes = [];
-            const uid = infoDOM.querySelector(".watch").getAttribute("data-id");
+            const uid = infoDOM.document.querySelector(".watch").getAttribute("data-id");
             let IDVRF = await this.getVRF(uid, "fmovies-vrf");
             let episodesHTML = "";
             try {
@@ -3156,7 +3283,7 @@ var fmoviesto = {
                 throw new Error(`Error 9ANIME_INFO_JSON: The JSON could be be parsed. ${err.message}`);
             }
             episodesDOM.innerHTML = DOMPurify.sanitize(episodesHTML);
-            let episodeElem = episodesDOM.querySelectorAll(".episodes a");
+            let episodeElem = episodesDOM.document.querySelectorAll(".episodes a");
             console.log(episodesDOM, episodeElem);
             response.totalPages = 0;
             response.pageInfo = [];
@@ -3225,10 +3352,6 @@ var fmoviesto = {
             err.url = rawURL;
             throw err;
         }
-        finally {
-            removeDOM(episodesDOM);
-            removeDOM(infoDOM);
-        }
     },
     getLinkFromUrl: async function (url) {
         url = "watch=" + url;
@@ -3243,8 +3366,8 @@ var fmoviesto = {
             next: null,
             prev: null
         };
-        const infoDOM = document.createElement("div");
-        const serverDOM = document.createElement("div");
+        const infoDOM = new DOMHandler();
+        const serverDOM = new DOMHandler();
         try {
             const searchParams = new URLSearchParams(url);
             const sourceEp = searchParams.get("ep");
@@ -3252,7 +3375,7 @@ var fmoviesto = {
             const promises = [];
             const infoHTML = await MakeFetchZoro(`https://fmovies.to/${searchParams.get("watch")}`);
             infoDOM.innerHTML = DOMPurify.sanitize(infoHTML);
-            const uid = infoDOM.querySelector(".watch").getAttribute("data-id");
+            const uid = infoDOM.document.querySelector(".watch").getAttribute("data-id");
             const epsiodeServers = [];
             const servers = {};
             let epList = [];
@@ -3266,7 +3389,7 @@ var fmoviesto = {
             serverDOM.innerHTML = DOMPurify.sanitize(serverHTML, {
                 "ADD_ATTR": ["data-kname", "data-id"]
             });
-            const serverDIVs = serverDOM.querySelectorAll(".server");
+            const serverDIVs = serverDOM.document.querySelectorAll(".server");
             for (let i = 0; i < serverDIVs.length; i++) {
                 const curServer = serverDIVs[i];
                 const serverId = curServer.getAttribute("data-link-id");
@@ -3399,10 +3522,6 @@ var fmoviesto = {
         catch (err) {
             throw err;
         }
-        finally {
-            removeDOM(infoDOM);
-            removeDOM(serverDOM);
-        }
     },
     checkConfig: function () {
         if (!localStorage.getItem("9anime")) {
@@ -3413,9 +3532,9 @@ var fmoviesto = {
         }
     },
     getVRF: async function (query, action) {
-        let fallbackAPI = true;
-        let nineAnimeURL = "api.consumet.org/anime/9anime/helper";
-        let apiKey = "";
+        let fallbackAPI = false;
+        let nineAnimeURL = "9anime.eltik.net";
+        let apiKey = "enimax";
         try {
             this.checkConfig();
             nineAnimeURL = localStorage.getItem("9anime").trim();
@@ -3444,9 +3563,9 @@ var fmoviesto = {
         }
     },
     decryptSource: async function (query) {
-        let fallbackAPI = true;
-        let nineAnimeURL = "api.consumet.org/anime/9anime/helper";
-        let apiKey = "";
+        let fallbackAPI = false;
+        let nineAnimeURL = "9anime.eltik.net";
+        let apiKey = "enimax";
         try {
             this.checkConfig();
             nineAnimeURL = localStorage.getItem("9anime").trim();
@@ -3475,9 +3594,9 @@ var fmoviesto = {
         }
     },
     getVidstreamLink: async function (query, isViz = true) {
-        let fallbackAPI = true;
-        let nineAnimeURL = "api.consumet.org/anime/9anime/helper";
-        let apiKey = "";
+        let fallbackAPI = false;
+        let nineAnimeURL = "9anime.eltik.net";
+        let apiKey = "enimax";
         try {
             this.checkConfig();
             nineAnimeURL = localStorage.getItem("9anime").trim();
@@ -3487,11 +3606,18 @@ var fmoviesto = {
         catch (err) {
             console.warn("Defaulting to Consumet.");
         }
-        let reqURL = `https://${nineAnimeURL}/${isViz ? "vizcloud" : "mcloud"}?query=${encodeURIComponent(query)}&apikey=${apiKey}`;
+        let reqURL = `https://${nineAnimeURL}/raw${isViz ? "Vizcloud" : "Mcloud"}?query=${encodeURIComponent(query)}&apikey=${apiKey}`;
         if (fallbackAPI) {
             reqURL = `https://${nineAnimeURL}?query=${encodeURIComponent(query)}&action=${isViz ? "vizcloud" : "mcloud"}`;
         }
-        const source = await MakeFetch(reqURL);
+        const rawSource = JSON.parse(await MakeFetch(reqURL)).rawURL;
+        const fetchFunc = config.chrome ? MakeFetch : MakeCusReq;
+        const source = await fetchFunc(rawSource, {
+            headers: {
+                "referer": isViz ? "https://vidstream.pro/" : "https://mcloud.to/",
+                "x-requested-with": "XMLHttpRequest"
+            }
+        });
         try {
             const parsedJSON = JSON.parse(source);
             if (parsedJSON.data &&
@@ -3510,9 +3636,9 @@ var fmoviesto = {
         }
     },
     getFilemoonLink: async function (filemoonHTML) {
-        let fallbackAPI = true;
-        let nineAnimeURL = "api.consumet.org/anime/9anime/helper";
-        let apiKey = "";
+        let fallbackAPI = false;
+        let nineAnimeURL = "9anime.eltik.net";
+        let apiKey = "enimax";
         try {
             this.checkConfig();
             nineAnimeURL = localStorage.getItem("9anime").trim();
@@ -3594,11 +3720,11 @@ var gogo = {
     ],
     searchApi: async function (query) {
         var _a, _b;
-        let dom = document.createElement("div");
+        let dom = new DOMHandler();
         try {
             let searchHTML = await MakeFetchZoro(`${this.baseURL}/search.html?keyword=${encodeURIComponent(query)}`, {});
             dom.innerHTML = DOMPurify.sanitize(searchHTML);
-            let itemsDOM = dom.querySelectorAll("ul.items li");
+            let itemsDOM = dom.document.querySelectorAll("ul.items li");
             let data = [];
             for (var i = 0; i < itemsDOM.length; i++) {
                 let con = itemsDOM[i];
@@ -3612,9 +3738,6 @@ var gogo = {
         }
         catch (err) {
             throw err;
-        }
-        finally {
-            removeDOM(dom);
         }
     },
     getAnimeInfo: async function (url) {
@@ -3684,10 +3807,11 @@ var gogo = {
         }
     },
     getAnimeInfoInter: async function (url) {
+        var _a;
         url = url.split("&engine")[0];
         const rawURL = `${this.baseURL}/${url}`;
-        const animeDOM = document.createElement("div");
-        const episodeDOM = document.createElement("div");
+        const animeDOM = new DOMHandler();
+        const episodeDOM = new DOMHandler();
         try {
             const response = {
                 "name": "",
@@ -3700,18 +3824,18 @@ var gogo = {
             const id = url.replace("category/", "gogo-");
             animeDOM.innerHTML = DOMPurify.sanitize(animeHTML, { ADD_ATTR: ["ep_start", "ep_end"] });
             response.mainName = id;
-            response.image = animeDOM.querySelector(".anime_info_body_bg img").getAttribute("src");
-            response.name = animeDOM.querySelector(".anime_info_body_bg h1").innerText.trim();
-            response.description = animeDOM.querySelectorAll(".anime_info_body_bg p.type")[1].innerText.trim();
-            const episodeCon = animeDOM.querySelector("#episode_page").children;
+            response.image = animeDOM.document.querySelector(".anime_info_body_bg img").getAttribute("src");
+            response.name = animeDOM.document.querySelector(".anime_info_body_bg h1").innerText.trim();
+            response.description = animeDOM.document.querySelectorAll(".anime_info_body_bg p.type")[1].innerText.trim();
+            const episodeCon = animeDOM.document.querySelector("#episode_page").children;
             const epStart = episodeCon[0].querySelector("a").getAttribute("ep_start");
             const epEnd = episodeCon[episodeCon.length - 1].querySelector("a").getAttribute("ep_end");
-            const movieID = animeDOM.querySelector("#movie_id").getAttribute("value");
-            const alias = animeDOM.querySelector("#alias_anime").getAttribute("value");
+            const movieID = animeDOM.document.querySelector("#movie_id").getAttribute("value");
+            const alias = animeDOM.document.querySelector("#alias_anime").getAttribute("value");
             const epData = [];
             const episodeHTML = await MakeFetchZoro(`${this.ajaxURL}/load-list-episode?ep_start=${epStart}&ep_end=${epEnd}&id=${movieID}&default_ep=${0}&alias=${alias}`);
             episodeDOM.innerHTML = DOMPurify.sanitize(episodeHTML);
-            const episodesLI = episodeDOM.querySelectorAll("#episode_related li");
+            const episodesLI = episodeDOM.document.querySelectorAll("#episode_related li");
             for (let i = 0; i < episodesLI.length; i++) {
                 const el = episodesLI[i];
                 let epNum = parseFloat(el.querySelector(`div.name`).innerText.replace('EP ', ''));
@@ -3722,7 +3846,8 @@ var gogo = {
                     title: `Episode ${epNum}`,
                     link: `?watch=${id}&ep=${epNum}&engine=7`,
                     id: epNum.toString(),
-                    altTitle: `Episode ${epNum}`
+                    altTitle: `Episode ${epNum}`,
+                    sourceID: (_a = el.querySelector("a")) === null || _a === void 0 ? void 0 : _a.getAttribute("href")
                 });
             }
             response.episodes = epData;
@@ -3732,20 +3857,14 @@ var gogo = {
             err.url = rawURL;
             throw err;
         }
-        finally {
-            removeDOM(animeDOM);
-            removeDOM(episodeDOM);
-        }
     },
     getLinkFromUrl: async function (url) {
         var _a;
-        const watchDOM = document.createElement("div");
-        const embedDOM = document.createElement("div");
+        const watchDOM = new DOMHandler();
+        const embedDOM = new DOMHandler();
         try {
             const params = new URLSearchParams("?watch=" + url);
             const sourceURLs = [];
-            watchDOM.style.display = "none";
-            embedDOM.style.display = "none";
             const resp = {
                 sources: sourceURLs,
                 name: "",
@@ -3756,10 +3875,13 @@ var gogo = {
                 next: null,
                 prev: null,
             };
-            const watchHTML = await MakeFetchZoro(`${this.baseURL}/${params.get("watch").replace("gogo-", "")}-episode-${params.get("ep")}`);
+            const epNum = params.get("ep");
+            const epList = await this.getAnimeInfo(params.get("watch").replace("gogo-", "category/"));
+            const link = epList.episodes.find((ep) => ep.id === epNum).sourceID;
+            const watchHTML = await MakeFetchZoro(`${this.baseURL}/${link}`);
             watchDOM.innerHTML = DOMPurify.sanitize(watchHTML, { ADD_TAGS: ["iframe"] });
             try {
-                const prevTemp = watchDOM.querySelector(".anime_video_body_episodes_l a").getAttribute("href");
+                const prevTemp = watchDOM.document.querySelector(".anime_video_body_episodes_l a").getAttribute("href");
                 let ep = parseFloat(prevTemp.split("-episode-")[1]);
                 if (ep == 0) {
                     ep = 0.1;
@@ -3770,7 +3892,7 @@ var gogo = {
                 console.error(err);
             }
             try {
-                const nextTemp = watchDOM.querySelector(".anime_video_body_episodes_r a").getAttribute("href");
+                const nextTemp = watchDOM.document.querySelector(".anime_video_body_episodes_r a").getAttribute("href");
                 let ep = parseFloat(nextTemp.split("-episode-")[1]);
                 if (ep == 0) {
                     ep = 0.1;
@@ -3780,7 +3902,7 @@ var gogo = {
             catch (err) {
                 console.error(err);
             }
-            let videoURLTemp = watchDOM.querySelector("#load_anime iframe").getAttribute("src");
+            let videoURLTemp = watchDOM.document.querySelector("#load_anime iframe").getAttribute("src");
             if (videoURLTemp.substring(0, 2) === "//") {
                 videoURLTemp = "https:" + videoURLTemp;
             }
@@ -3813,10 +3935,6 @@ var gogo = {
         }
         catch (err) {
             throw err;
-        }
-        finally {
-            removeDOM(watchDOM);
-            removeDOM(embedDOM);
         }
     },
     fixTitle(title) {
@@ -4055,7 +4173,7 @@ var mangaFire = {
     shortenedName: "MFire",
     searchApi: async function (query) {
         var _a, _b;
-        const searchDOM = document.createElement("div");
+        const searchDOM = new DOMHandler();
         try {
             const searchHTML = await MakeFetchZoro(`${this.baseURL}/filter?keyword=${encodeURIComponent(query)}`);
             const results = {
@@ -4063,7 +4181,7 @@ var mangaFire = {
                 data: []
             };
             searchDOM.innerHTML = DOMPurify.sanitize(searchHTML);
-            for (const mangaCard of searchDOM.querySelectorAll(".item")) {
+            for (const mangaCard of searchDOM.document.querySelectorAll(".item")) {
                 const nameDOM = (_a = mangaCard.querySelector(".name")) === null || _a === void 0 ? void 0 : _a.querySelector("a");
                 results.data.push({
                     link: (nameDOM === null || nameDOM === void 0 ? void 0 : nameDOM.getAttribute("href").replace("manga/", "mangafire-")) + "&engine=9",
@@ -4076,14 +4194,12 @@ var mangaFire = {
         catch (err) {
             throw err;
         }
-        finally {
-            removeDOM(searchDOM);
-        }
     },
     getAnimeInfo: async function (url) {
         var _a, _b, _c, _d, _e;
         const id = (new URLSearchParams(`?watch=${url}`)).get("watch");
-        const infoDOM = document.createElement("div");
+        const infoDOM = new DOMHandler();
+        const rawURL = `${this.baseURL}/${id.replace("mangafire-", "manga/")}`;
         let response = {
             "name": "",
             "image": "",
@@ -4093,13 +4209,13 @@ var mangaFire = {
             "isManga": true,
         };
         try {
-            const infoHTML = await MakeFetch(`${this.baseURL}/${id.replace("mangafire-", "manga/")}`);
+            const infoHTML = await MakeFetch(rawURL);
             infoDOM.innerHTML = DOMPurify.sanitize(infoHTML);
-            response.name = ((_a = infoDOM === null || infoDOM === void 0 ? void 0 : infoDOM.querySelector(".info")) === null || _a === void 0 ? void 0 : _a.querySelector(".name")).innerText;
-            response.image = (_c = (_b = infoDOM.querySelector(".poster")) === null || _b === void 0 ? void 0 : _b.querySelector("img")) === null || _c === void 0 ? void 0 : _c.getAttribute("src");
-            response.description = (_d = infoDOM.querySelector(".summary")) === null || _d === void 0 ? void 0 : _d.innerText;
+            response.name = ((_a = infoDOM === null || infoDOM === void 0 ? void 0 : infoDOM.document.querySelector(".info")) === null || _a === void 0 ? void 0 : _a.querySelector(".name")).innerText;
+            response.image = (_c = (_b = infoDOM.document.querySelector(".poster")) === null || _b === void 0 ? void 0 : _b.querySelector("img")) === null || _c === void 0 ? void 0 : _c.getAttribute("src");
+            response.description = (_d = infoDOM.document.querySelector(".summary")) === null || _d === void 0 ? void 0 : _d.innerText;
             response.mainName = id;
-            const episodeListDOM = (_e = infoDOM.querySelector(".chapter-list[data-name=\"EN\"]")) === null || _e === void 0 ? void 0 : _e.querySelectorAll("li.item");
+            const episodeListDOM = (_e = infoDOM.document.querySelector(".chapter-list[data-name=\"EN\"]")) === null || _e === void 0 ? void 0 : _e.querySelectorAll("li.item");
             for (let i = episodeListDOM.length - 1; i >= 0; i--) {
                 const episodeLI = episodeListDOM[i];
                 const linkSplit = episodeLI.querySelector("a").getAttribute("href").split("/read/");
@@ -4113,10 +4229,8 @@ var mangaFire = {
             return response;
         }
         catch (err) {
+            err.url = rawURL;
             throw err;
-        }
-        finally {
-            removeDOM(infoDOM);
         }
     },
     descramble: function (imageURL, key) {
@@ -4165,7 +4279,7 @@ var mangaFire = {
         const chapterSplit = chapterId.split(".");
         const identifier = chapterSplit[1].split("/")[0];
         const name = fix_title(chapterSplit[0].replace("/read/", ""));
-        const chapterListDOM = document.createElement("div");
+        const chapterListDOM = new DOMHandler();
         try {
             const chapterListHTML = JSON.parse(await MakeFetch(`${this.baseURL}/ajax/read/${identifier}/list?viewby=chapter`)).result.html;
             const response = {
@@ -4180,7 +4294,7 @@ var mangaFire = {
                 type: "manga"
             };
             chapterListDOM.innerHTML = DOMPurify.sanitize(chapterListHTML);
-            const chapterList = (_a = chapterListDOM.querySelector(".numberlist[data-lang=\"en\"]")) === null || _a === void 0 ? void 0 : _a.querySelectorAll("a");
+            const chapterList = (_a = chapterListDOM.document.querySelector(".numberlist[data-lang=\"en\"]")) === null || _a === void 0 ? void 0 : _a.querySelectorAll("a");
             let currentIndex = -1;
             let chapterMainID = "";
             for (let i = 0; i < chapterList.length; i++) {
@@ -4223,9 +4337,6 @@ var mangaFire = {
         catch (err) {
             throw new Error(err.message);
         }
-        finally {
-            removeDOM(chapterListDOM);
-        }
     },
     fixTitle(title) {
         try {
@@ -4266,11 +4377,11 @@ var viewAsian = {
     ],
     searchApi: async function (query) {
         var _a, _b;
-        let dom = document.createElement("div");
+        let dom = new DOMHandler();
         try {
             let searchHTML = await MakeFetchZoro(`${this.baseURL}/movie/search/${query.replace(/[\W_]+/g, '-')}`, {});
             dom.innerHTML = DOMPurify.sanitize(searchHTML);
-            let itemsDOM = dom.querySelectorAll(".movies-list-full .ml-item");
+            let itemsDOM = dom.document.querySelectorAll(".movies-list-full .ml-item");
             let data = [];
             for (var i = 0; i < itemsDOM.length; i++) {
                 let con = itemsDOM[i];
@@ -4285,16 +4396,12 @@ var viewAsian = {
         catch (err) {
             throw err;
         }
-        finally {
-            removeDOM(dom);
-        }
     },
     getAnimeInfo: async function (url) {
         url = url.split("&engine")[0];
         const rawURL = `${this.baseURL}/${url}`;
-        console.log(this, this.baseURL, rawURL);
-        const animeDOM = document.createElement("div");
-        const episodeDOM = document.createElement("div");
+        const animeDOM = new DOMHandler();
+        const episodeDOM = new DOMHandler();
         try {
             const response = {
                 "name": "",
@@ -4308,15 +4415,15 @@ var viewAsian = {
             const id = url.replace(identifier, "viewasian-");
             animeDOM.innerHTML = DOMPurify.sanitize(animeHTML);
             response.mainName = id;
-            response.image = animeDOM.querySelector(".detail-mod img").getAttribute("src");
-            response.name = animeDOM.querySelector(".detail-mod h3").innerText.trim();
-            response.description = animeDOM.querySelector(".desc").innerText.trim();
+            response.image = animeDOM.document.querySelector(".detail-mod img").getAttribute("src");
+            response.name = animeDOM.document.querySelector(".detail-mod h3").innerText.trim();
+            response.description = animeDOM.document.querySelector(".desc").innerText.trim();
             const epData = [];
-            const episodeHTML = await MakeFetchZoro(`${this.baseURL}/${animeDOM.querySelector(".bwac-btn").getAttribute("href")}`);
+            const episodeHTML = await MakeFetchZoro(`${this.baseURL}/${animeDOM.document.querySelector(".bwac-btn").getAttribute("href")}`);
             episodeDOM.innerHTML = DOMPurify.sanitize(episodeHTML, {
                 ADD_ATTR: ["episode-data"]
             });
-            const episodeCon = episodeDOM.querySelectorAll("ul#episodes-sv-1 li");
+            const episodeCon = episodeDOM.document.querySelectorAll("ul#episodes-sv-1 li");
             for (let i = 0; i < episodeCon.length; i++) {
                 const el = episodeCon[i];
                 const anchorTag = el.querySelector("a");
@@ -4339,20 +4446,14 @@ var viewAsian = {
             err.url = rawURL;
             throw err;
         }
-        finally {
-            // removeDOM(animeDOM);
-            // removeDOM(episodeDOM);
-        }
     },
     getLinkFromUrl: async function (url) {
         var _a, _b;
-        const watchDOM = document.createElement("div");
-        const embedDOM = document.createElement("div");
+        const watchDOM = new DOMHandler();
+        const embedDOM = new DOMHandler();
         try {
             const params = new URLSearchParams("?watch=" + url);
             const sourceURLs = [];
-            watchDOM.style.display = "none";
-            embedDOM.style.display = "none";
             const resp = {
                 sources: sourceURLs,
                 name: "",
@@ -4365,7 +4466,7 @@ var viewAsian = {
             };
             const watchHTML = await MakeFetchZoro(`${this.baseURL}/watch/${params.get("watch").replace("viewasian-", "")}/watching.html?ep=${params.get("ep")}`);
             watchDOM.innerHTML = DOMPurify.sanitize(watchHTML, { ADD_TAGS: ["iframe"] });
-            const episodeCon = watchDOM.querySelectorAll("ul#episodes-sv-1 li");
+            const episodeCon = watchDOM.document.querySelectorAll("ul#episodes-sv-1 li");
             let foundCurrentEp = false;
             for (let i = episodeCon.length - 1; i >= 0; i--) {
                 const el = episodeCon[i];
@@ -4386,7 +4487,7 @@ var viewAsian = {
                 resp.prev = undefined;
             }
             let asianLoadURL = "";
-            const links = watchDOM.querySelectorAll('.anime_muti_link li');
+            const links = watchDOM.document.querySelectorAll('.anime_muti_link li');
             for (let i = 0; i < links.length; i++) {
                 const curElem = links[i];
                 const isAsianLoad = curElem.innerText.toLowerCase().includes("asianload");
@@ -4436,10 +4537,6 @@ var viewAsian = {
         catch (err) {
             throw err;
         }
-        finally {
-            // removeDOM(watchDOM);
-            // removeDOM(embedDOM);
-        }
     },
     fixTitle(title) {
         try {
@@ -4482,7 +4579,7 @@ catch (err) {
 }
 
 // @ts-ignore
-const extensionList = [wco, animixplay, fmovies, zoro, twitch, nineAnime, fmoviesto, gogo, mangaDex, mangaFire, viewAsian, anilist];
+const extensionList = [wco, animixplay, fmovies, zoro, twitch, nineAnime, fmoviesto, gogo, mangaDex, mangaFire, viewAsian, anilist, anna];
 // @ts-ignore   
 const extensionNames = [];
 // @ts-ignore

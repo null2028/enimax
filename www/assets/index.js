@@ -37,7 +37,10 @@ function createElement(config) {
     }
     if (config.children) {
         for (const child of config.children) {
-            temp.append(createElement(child));
+            const childDOM = createElement(child);
+            if (childDOM) {
+                temp.append(childDOM);
+            }
         }
     }
     return temp;

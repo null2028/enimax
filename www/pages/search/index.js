@@ -27,6 +27,15 @@ let currentCatIndex = 0;
 function sendNoti() {
     return document.createElement("div");
 }
+function openWebview(url) {
+    if (config.chrome) {
+        window.open(url, "_blank");
+    }
+    else {
+        // @ts-ignore
+        window.parent.getWebviewHTML(url, false, null, "console.log()");
+    }
+}
 function search() {
     const conID = `room_${catIDs[currentCatIndex]}`;
     document.getElementById(conID).innerHTML = "<div style='margin:auto;'>Loading...</div>";
@@ -82,12 +91,7 @@ function search() {
         let main_div = x.data;
         if (main_div.length == 0) {
             document.getElementById(conID).innerHTML = "";
-            constructErrorPage(document.getElementById(conID), "No results", {
-                hasLink: false,
-                hasReload: false,
-                isError: false,
-                customConClass: "absolute"
-            });
+            throw new Error("No results");
         }
         else {
             document.getElementById(conID).innerHTML = "";
@@ -127,7 +131,14 @@ function search() {
     }).catch(function (error) {
         document.getElementById(conID).innerHTML = "";
         constructErrorPage(document.getElementById(conID), error.toString(), {
-            hasLink: false,
+            hasLink: true,
+            clickEvent: () => {
+                let url = currentEngine.baseURL;
+                if (!url.startsWith("http")) {
+                    url = "https://" + url;
+                }
+                openWebview(url);
+            },
             hasReload: false,
             isError: false,
             customConClass: "absolute",
@@ -157,7 +168,7 @@ let catDataCon = createElement({
     class: "snappedCustomRooms"
 });
 const catDataCons = [];
-const cats = ["Anime", "Manga", "TV/Movies", "Others"];
+const cats = ["Anime", "Manga/Light novels", "TV/Movies", "Others"];
 const catIDs = ["anime", "manga", "tv", "others"];
 conElem.append(createElement({
     style: {
@@ -196,7 +207,7 @@ conElem.append(createElement({
                     ]
                 },
                 {
-                    class: "searchButton",
+                    class: "searchButton clickable",
                     listeners: {
                         click: function () {
                             window.parent.postMessage({ "action": 500, data: `pages/search/index.html?search=${searchInput.value}&engine=${engineID}` }, "*");
@@ -205,7 +216,7 @@ conElem.append(createElement({
                 },
                 {
                     id: "filterIcon",
-                    class: "hasBackground",
+                    class: "hasBackground clickable",
                     style: {
                         height: "40px",
                         width: "40px",
@@ -439,6 +450,7 @@ conElem.append(createElement({
     children: [
         {
             element: "select",
+            class: "clickable",
             style: {
                 display: "inline-block",
                 verticalAlign: "middle",

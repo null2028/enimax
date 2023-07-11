@@ -11,7 +11,19 @@ function fix_title(title: string) {
     }
 }
 
-function normalise(url: string): string {
+function normalise(url: string) {
+    let engine = 0;
+
+    try{
+        const params = new URLSearchParams(url);
+        engine = parseInt(params.get("engine"));
+        if(engine === 12){
+            url = url.split("&current=")[0];
+        }
+    }catch(err){
+        console.warn(err);
+    }
+
     url = url.replace("?watch=", "");
     url = url.split("&engine=")[0];
     url = url.split("&isManga=")[0];

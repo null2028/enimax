@@ -31,7 +31,7 @@ chrome2:
 	touch enimax-chrome-extension-v2/www/cordova.js
 	-rm enimax-chrome-extension-v2/www/assets/config.js
 	-cp enimax-chrome-extension-v2/manifest-v2.json enimax-chrome-extension-v2/manifest.json
-	echo 'var config = {"local": localStorage.getItem("local") === "true", "remote": localStorage.getItem("remote"),"remoteWOport": localStorage.getItem("remoteWOport"), "chrome": true, "manifest": "v2", "firefox": false, "beta": false, "sockets": false}; localStorage.setItem("version", "1.3.0");if (localStorage.getItem("lastUpdate") === null) { localStorage.setItem("lastUpdate", "0");}' > enimax-chrome-extension-v2/www/assets/js/config.js
+	echo 'var config = {"local": localStorage.getItem("local") === "true", "remote": localStorage.getItem("remote"),"remoteWOport": localStorage.getItem("remoteWOport"), "chrome": true, "manifest": "v2", "firefox": false, "beta": false, "sockets": false}; localStorage.setItem("version", "1.3.1");if (localStorage.getItem("lastUpdate") === null) { localStorage.setItem("lastUpdate", "0");}' > enimax-chrome-extension-v2/www/assets/js/config.js
 
 chrome3:
 	make ts
@@ -40,7 +40,7 @@ chrome3:
 	touch enimax-chrome-extension/www/cordova.js
 	-rm enimax-chrome-extension/www/assets/config.js
 	-cp enimax-chrome-extension/manifest-v3.json enimax-chrome-extension/manifest.json
-	echo 'var config = {"local": localStorage.getItem("local") === "true", "remote": localStorage.getItem("remote"),"remoteWOport": localStorage.getItem("remoteWOport"), "chrome": true, "manifest": "v3", "firefox": false, "beta": false, "sockets": false}; localStorage.setItem("version", "1.3.0");if (localStorage.getItem("lastUpdate") === null) {localStorage.setItem("lastUpdate", "0");}' > enimax-chrome-extension/www/assets/js/config.js
+	echo 'var config = {"local": localStorage.getItem("local") === "true", "remote": localStorage.getItem("remote"),"remoteWOport": localStorage.getItem("remoteWOport"), "chrome": true, "manifest": "v3", "firefox": false, "beta": false, "sockets": false}; localStorage.setItem("version", "1.3.1");if (localStorage.getItem("lastUpdate") === null) {localStorage.setItem("lastUpdate", "0");}' > enimax-chrome-extension/www/assets/js/config.js
 
 firefox:
 	make ts
@@ -48,7 +48,7 @@ firefox:
 	cp www enimax-firefox-extension -r
 	touch enimax-firefox-extension/www/cordova.js
 	-rm enimax-firefox-extension/www/assets/config.js
-	echo 'var config = {"local": localStorage.getItem("local") === "true", "remote": localStorage.getItem("remote"),"remoteWOport": localStorage.getItem("remoteWOport"), "chrome": true, "manifest": "v3", "firefox": true, "beta": false, "sockets": false}; localStorage.setItem("version", "1.3.0");if (localStorage.getItem("lastUpdate") === null) {localStorage.setItem("lastUpdate", "0");}' > enimax-firefox-extension/www/assets/js/config.js
+	echo 'var config = {"local": localStorage.getItem("local") === "true", "remote": localStorage.getItem("remote"),"remoteWOport": localStorage.getItem("remoteWOport"), "chrome": true, "manifest": "v3", "firefox": true, "beta": false, "sockets": false}; localStorage.setItem("version", "1.3.1");if (localStorage.getItem("lastUpdate") === null) {localStorage.setItem("lastUpdate", "0");}' > enimax-firefox-extension/www/assets/js/config.js
 	rm enimax-firefox-extension/www/tsconfig.json
 
 ts:
@@ -60,6 +60,7 @@ ts:
 	cd www/extensions/tv && printf "\n" >> index.js && cat fmovies.js >> ../index.js
 	cd www/extensions/anime && printf "\n" >> index.js && cat zoro.js >> ../index.js
 	cd www/extensions/others && printf "\n" >> index.js && cat twitch.js >> ../index.js
+	cd www/extensions/others && printf "\n" >> index.js && cat anna.js >> ../index.js
 	cd www/extensions/others && printf "\n" >> index.js && cat anilist.js >> ../index.js
 	cd www/extensions/anime && printf "\n" >> index.js && cat 9anime.js >> ../index.js
 	cd www/extensions/tv && printf "\n" >> index.js && cat fmoviesto.js >> ../index.js

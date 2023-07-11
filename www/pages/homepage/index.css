@@ -206,18 +206,18 @@ input[type="color"]::-webkit-color-swatch {
     justify-content: left !important;
 }
 
+
 #menuIcon {
     display: inline-flex;
     justify-content: center;
     flex-direction: column;
     align-items: center;
     height: 40px;
-    width: 55px;
-    background-color: var(--theme-color);
+    width: 40px;
+    background-color: white;
     /* box-shadow: 0px 0px 0px 3px #ffffff; */
     border-radius: 50px;
     vertical-align: middle;
-
 }
 
 #searchIcon {
@@ -227,7 +227,7 @@ input[type="color"]::-webkit-color-swatch {
     background-position: center;
     height: 40px;
     margin-left: 10px;
-    width: 55px;
+    width: 40px;
     background-color: var(--theme-color);
     /* box-shadow: 0px 0px 0px 3px #ffffff; */
     border-radius: 50px;
@@ -292,15 +292,15 @@ input[type="color"]::-webkit-color-swatch {
 .bar1,
 .bar2,
 .bar3 {
-    width: 25px;
+    width: 20px;
     height: 2px;
-    background-color: rgb(255, 255, 255);
-    margin: 3px 0;
+    background-color: rgb(0, 0, 0);
+    margin: 2px 0;
     transition: 0.4s;
 }
 
 .change .bar1 {
-    transform: translate(0, 9.5px) rotate(45deg);
+    transform: translate(0, 6.5px) rotate(45deg);
 }
 
 .change .bar2 {
@@ -308,7 +308,7 @@ input[type="color"]::-webkit-color-swatch {
 }
 
 .change .bar3 {
-    transform: translate(0, -7.5px) rotate(-45deg);
+    transform: translate(0, -6.5px) rotate(-45deg);
 }
 
 #home {
@@ -366,8 +366,9 @@ input[type="color"]::-webkit-color-swatch {
     pointer-events: auto !important;
     top: auto;
     left: auto;
-    bottom: 0;
-    right: 0;
+    bottom: 10px;
+    right: 10px;
+    transform: none;
 }
 
 

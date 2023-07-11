@@ -123,28 +123,32 @@ if (config && config.chrome) {
         // @ts-ignore
         chrome.webRequest.onBeforeSendHeaders.addListener(
             function (details) {
-                details.requestHeaders.push({
-                    "name": "Referer",
-                    "value": "https://mcloud.to"
-                });
+
+                if (details.url.includes("vidstream.") || details.url.includes("vizcloud.")) {
+                    details.requestHeaders.push({
+                        "name": "Referer",
+                        "value": "https://vidstream.pro/"
+                    });
+
+                    details.requestHeaders.push({
+                        "name": "x-requested-with",
+                        "value": "XMLHttpRequest"
+                    });
+                } else if (details.url.includes("mcloud.")) {
+                    details.requestHeaders.push({
+                        "name": "Referer",
+                        "value": "https://mcloud.to/"
+                    });
+
+                    details.requestHeaders.push({
+                        "name": "x-requested-with",
+                        "value": "XMLHttpRequest"
+                    });
+                }
+
                 return { requestHeaders: details.requestHeaders };
             },
-            { urls: ['https://*.mcloud.to/*'] },
-            ['blocking', 'requestHeaders', 'extraHeaders']
-        );
-
-
-        // @ts-ignore
-        chrome.webRequest.onBeforeSendHeaders.addListener(
-            function (details) {
-                details.requestHeaders.push({
-                    "name": "Referer",
-                    "value": "https://vizcloud.club"
-                });
-
-                return { requestHeaders: details.requestHeaders };
-            },
-            { urls: ['https://*.vizcloud.club/*'] },
+            { urls: ["<all_urls>"] },
             ['blocking', 'requestHeaders', 'extraHeaders']
         );
     }
@@ -171,25 +175,25 @@ function getWebviewHTML(url = "https://www.zoro.to", hidden = false, timeout: nu
         // @ts-ignore
         const inappRef = cordova.InAppBrowser.open(url, '_blank', hidden ? "hidden=true" : "");
 
-        if(isAnilist){
+        if (isAnilist) {
             inappRef.show();
         }
 
         inappRef.addEventListener('loadstop', (event) => {
-            if(isAnilist){
+            if (isAnilist) {
                 if (event.url.includes("enimax-anime.github.io/anilist")) {
                     const accessToken = new URLSearchParams((new URL(event.url)).hash.substring(1)).get("access_token");
-                    localStorage.setItem("anilist-token", accessToken);                    
+                    localStorage.setItem("anilist-token", accessToken);
                     inappRef.close();
                     const shouldUpdate = confirm("Logged in! Do you want to import your library? if you don't want to do that right now, you can do that later by going to the menu");
-                    if(shouldUpdate){
+                    if (shouldUpdate) {
                         getAllItems();
                     }
                     resolve("Done");
-                }else if((new URL(event.url)).hostname === "anilist.co"){
+                } else if ((new URL(event.url)).hostname === "anilist.co") {
                     inappRef.show();
                 }
-            }else{
+            } else {
                 inappRef.executeScript({
                     'code': code === false ? `let resultInApp={'status':200,'data':document.body.innerText};
                         webkit.messageHandlers.cordova_iab.postMessage(JSON.stringify(resultInApp));` : code

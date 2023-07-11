@@ -7,12 +7,12 @@ var nineAnime = {
     name: "9anime",
     shortenedName: "9anime",
     searchApi: async function (query) {
-        const searchDOM = document.createElement("div");
+        const searchDOM = new DOMHandler();
         try {
             const vrf = await this.getVRF(query, "9anime-search");
             const searchHTML = await MakeFetchZoro(`https://9anime.to/filter?keyword=${encodeURIComponent(query)}&${vrf[1]}=${vrf[0]}`);
             searchDOM.innerHTML = DOMPurify.sanitize(searchHTML);
-            const searchElem = searchDOM.querySelector("#list-items");
+            const searchElem = searchDOM.document.querySelector("#list-items");
             const searchItems = searchElem.querySelectorAll(".item");
             const response = [];
             if (searchItems.length === 0) {
@@ -31,9 +31,6 @@ var nineAnime = {
         }
         catch (err) {
             throw err;
-        }
-        finally {
-            removeDOM(searchDOM);
         }
     },
     getAnimeInfo: async function (url) {
@@ -113,20 +110,20 @@ var nineAnime = {
         };
         let id = url.replace("?watch=/", "");
         const rawURL = `https://9anime.to/watch/${id}`;
-        const episodesDOM = document.createElement("div");
-        const infoDOM = document.createElement("div");
+        const episodesDOM = new DOMHandler();
+        const infoDOM = new DOMHandler();
         try {
             let infoHTML = await MakeFetchZoro(`https://9anime.to/watch/${id}`);
             infoDOM.innerHTML = DOMPurify.sanitize(infoHTML);
-            let nineAnimeID = infoDOM.querySelector("#watch-main").getAttribute("data-id");
-            let infoMainDOM = infoDOM.querySelector("#w-info").querySelector(".info");
+            let nineAnimeID = infoDOM.document.querySelector("#watch-main").getAttribute("data-id");
+            let infoMainDOM = infoDOM.document.querySelector("#w-info").querySelector(".info");
             response.mainName = id;
             response.name = infoMainDOM.querySelector(".title").innerText;
             response.description = infoMainDOM.querySelector(".content").innerText;
-            response.image = infoDOM.querySelector("#w-info").querySelector("img").getAttribute("src");
+            response.image = infoDOM.document.querySelector("#w-info").querySelector("img").getAttribute("src");
             try {
                 response.genres = [];
-                const metaCon = infoDOM.querySelector(".bmeta").querySelector(".meta");
+                const metaCon = infoDOM.document.querySelector(".bmeta").querySelector(".meta");
                 for (const genreAnchor of metaCon.querySelectorAll("a")) {
                     const href = genreAnchor.getAttribute("href");
                     if (href && href.includes("/genre/")) {
@@ -153,7 +150,7 @@ var nineAnime = {
                 throw new Error(`Error 9ANIME_INFO_JSON: The JSON could be be parsed. ${err.message}`);
             }
             episodesDOM.innerHTML = DOMPurify.sanitize(episodesHTML);
-            let episodeElem = episodesDOM.querySelectorAll("li");
+            let episodeElem = episodesDOM.document.querySelectorAll("li");
             for (let i = 0; i < episodeElem.length; i++) {
                 let curElem = episodeElem[i];
                 let title = "";
@@ -179,10 +176,6 @@ var nineAnime = {
             err.url = rawURL;
             throw err;
         }
-        finally {
-            removeDOM(episodesDOM);
-            removeDOM(infoDOM);
-        }
     },
     getLinkFromUrl: async function (url) {
         url = "watch=" + url;
@@ -197,7 +190,7 @@ var nineAnime = {
             next: null,
             prev: null
         };
-        const serverDOM = document.createElement("div");
+        const serverDOM = new DOMHandler();
         try {
             const searchParams = new URLSearchParams(url);
             const sourceEp = searchParams.get("ep");
@@ -205,12 +198,12 @@ var nineAnime = {
             const promises = [];
             const serverHTML = JSON.parse(await MakeFetchZoro(`https://9anime.to/ajax/server/list/${sourceEp}?${sourceEpVRF[1]}=${sourceEpVRF[0]}`)).result;
             serverDOM.innerHTML = DOMPurify.sanitize(serverHTML);
-            const allServers = serverDOM.querySelectorAll("li");
+            const allServers = serverDOM.document.querySelectorAll("li");
             try {
-                response.episode = serverDOM.querySelector("b").innerText.split("Episode")[1];
+                response.episode = serverDOM.document.querySelector("b").innerText.split("Episode")[1];
             }
             catch (err) {
-                response.episode = serverDOM.querySelector("b").innerText;
+                response.episode = serverDOM.document.querySelector("b").innerText;
             }
             response.name = searchParams.get("watch");
             response.nameWSeason = searchParams.get("watch");
@@ -358,9 +351,6 @@ var nineAnime = {
         catch (err) {
             throw err;
         }
-        finally {
-            removeDOM(serverDOM);
-        }
     },
     checkConfig: function () {
         if (!localStorage.getItem("9anime")) {
@@ -371,9 +361,9 @@ var nineAnime = {
         }
     },
     getVRF: async function (query, action) {
-        let fallbackAPI = true;
-        let nineAnimeURL = "api.consumet.org/anime/9anime/helper";
-        let apiKey = "";
+        let fallbackAPI = false;
+        let nineAnimeURL = "9anime.eltik.net";
+        let apiKey = "enimax";
         try {
             this.checkConfig();
             nineAnimeURL = localStorage.getItem("9anime").trim();
@@ -402,9 +392,9 @@ var nineAnime = {
         }
     },
     decryptSource: async function (query) {
-        let fallbackAPI = true;
-        let nineAnimeURL = "api.consumet.org/anime/9anime/helper";
-        let apiKey = "";
+        let fallbackAPI = false;
+        let nineAnimeURL = "9anime.eltik.net";
+        let apiKey = "enimax";
         try {
             this.checkConfig();
             nineAnimeURL = localStorage.getItem("9anime").trim();
@@ -433,9 +423,9 @@ var nineAnime = {
         }
     },
     getVidstreamLink: async function (query, isViz = true) {
-        let fallbackAPI = true;
-        let nineAnimeURL = "api.consumet.org/anime/9anime/helper";
-        let apiKey = "";
+        let fallbackAPI = false;
+        let nineAnimeURL = "9anime.eltik.net";
+        let apiKey = "enimax";
         try {
             this.checkConfig();
             nineAnimeURL = localStorage.getItem("9anime").trim();
@@ -445,11 +435,18 @@ var nineAnime = {
         catch (err) {
             console.warn("Defaulting to Consumet.");
         }
-        let reqURL = `https://${nineAnimeURL}/${isViz ? "vizcloud" : "mcloud"}?query=${encodeURIComponent(query)}&apikey=${apiKey}`;
+        let reqURL = `https://${nineAnimeURL}/raw${isViz ? "Vizcloud" : "Mcloud"}?query=${encodeURIComponent(query)}&apikey=${apiKey}`;
         if (fallbackAPI) {
             reqURL = `https://${nineAnimeURL}?query=${encodeURIComponent(query)}&action=${isViz ? "vizcloud" : "mcloud"}`;
         }
-        const source = await MakeFetch(reqURL);
+        const rawSource = JSON.parse(await MakeFetch(reqURL)).rawURL;
+        const fetchFunc = config.chrome ? MakeFetch : MakeCusReq;
+        const source = await fetchFunc(rawSource, {
+            headers: {
+                "referer": isViz ? "https://vidstream.pro/" : "https://mcloud.to/",
+                "x-requested-with": "XMLHttpRequest"
+            }
+        });
         try {
             const parsedJSON = JSON.parse(source);
             if (parsedJSON.data &&
@@ -468,9 +465,9 @@ var nineAnime = {
         }
     },
     getFilemoonLink: async function (filemoonHTML) {
-        let fallbackAPI = true;
-        let nineAnimeURL = "api.consumet.org/anime/9anime/helper";
-        let apiKey = "";
+        let fallbackAPI = false;
+        let nineAnimeURL = "9anime.eltik.net";
+        let apiKey = "enimax";
         try {
             this.checkConfig();
             nineAnimeURL = localStorage.getItem("9anime").trim();
@@ -523,11 +520,11 @@ var nineAnime = {
         }
     },
     discover: async function () {
-        let temp = document.createElement("div");
+        let temp = new DOMHandler();
         temp.innerHTML = DOMPurify.sanitize(await MakeFetchZoro(`https://9anime.to/home`, {}));
-        temp = temp.querySelector(".ani.items");
+        temp = temp.document.querySelector(".ani.items");
         let data = [];
-        for (const elem of temp.querySelectorAll(".item")) {
+        for (const elem of temp.document.querySelectorAll(".item")) {
             let image = elem.querySelector("img").getAttribute("src");
             let name = elem.querySelector(".name.d-title").innerText.trim();
             let link = elem.querySelector(".name.d-title").getAttribute("href");

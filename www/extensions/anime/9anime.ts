@@ -7,14 +7,13 @@ var nineAnime: extension = {
     name: "9anime",
     shortenedName: "9anime",
     searchApi: async function (query) {
-
-        const searchDOM = document.createElement("div");
+        const searchDOM = new DOMHandler();
 
         try {
             const vrf = await this.getVRF(query, "9anime-search");
             const searchHTML = await MakeFetchZoro(`https://9anime.to/filter?keyword=${encodeURIComponent(query)}&${vrf[1]}=${vrf[0]}`);
             searchDOM.innerHTML = DOMPurify.sanitize(searchHTML);
-            const searchElem = searchDOM.querySelector("#list-items");
+            const searchElem = searchDOM.document.querySelector("#list-items");
             const searchItems = searchElem.querySelectorAll(".item");
             const response: Array<extensionSearchData> = [];
 
@@ -35,8 +34,6 @@ var nineAnime: extension = {
             return { "data": response, "status": 200 } as extensionSearch;
         } catch (err) {
             throw err;
-        } finally {
-            removeDOM(searchDOM);
         }
     },
     getAnimeInfo: async function (url): Promise<extensionInfo> {
@@ -124,22 +121,22 @@ var nineAnime: extension = {
 
         let id = url.replace("?watch=/", "");
         const rawURL = `https://9anime.to/watch/${id}`;
-        const episodesDOM = document.createElement("div");
-        const infoDOM = document.createElement("div");
+        const episodesDOM = new DOMHandler();
+        const infoDOM = new DOMHandler();
 
         try {
             let infoHTML = await MakeFetchZoro(`https://9anime.to/watch/${id}`);
             infoDOM.innerHTML = DOMPurify.sanitize(infoHTML);
-            let nineAnimeID = infoDOM.querySelector("#watch-main").getAttribute("data-id");
-            let infoMainDOM = infoDOM.querySelector("#w-info").querySelector(".info");
+            let nineAnimeID = infoDOM.document.querySelector("#watch-main").getAttribute("data-id");
+            let infoMainDOM = infoDOM.document.querySelector("#w-info").querySelector(".info");
             response.mainName = id;
             response.name = (infoMainDOM.querySelector(".title") as HTMLElement).innerText;
             response.description = (infoMainDOM.querySelector(".content") as HTMLElement).innerText;
-            response.image = infoDOM.querySelector("#w-info").querySelector("img").getAttribute("src");
+            response.image = infoDOM.document.querySelector("#w-info").querySelector("img").getAttribute("src");
 
             try {
                 response.genres = [];
-                const metaCon = infoDOM.querySelector(".bmeta").querySelector(".meta");
+                const metaCon = infoDOM.document.querySelector(".bmeta").querySelector(".meta");
                 for (const genreAnchor of metaCon.querySelectorAll("a")) {
                     const href = genreAnchor.getAttribute("href");
                     if (href && href.includes("/genre/")) {
@@ -171,7 +168,7 @@ var nineAnime: extension = {
 
             episodesDOM.innerHTML = DOMPurify.sanitize(episodesHTML);
 
-            let episodeElem = episodesDOM.querySelectorAll("li");
+            let episodeElem = episodesDOM.document.querySelectorAll("li");
             for (let i = 0; i < episodeElem.length; i++) {
                 let curElem = episodeElem[i];
                 let title = "";
@@ -180,7 +177,7 @@ var nineAnime: extension = {
                 } catch (err) {
                     console.warn("Could not find the title");
                 }
-                
+
                 episodes.push({
                     "isFiller": curElem.querySelector("a").getAttribute("class").includes("filler"),
                     "link": (nextPrev ? "" : "?watch=") + encodeURIComponent(id) + "&ep=" + curElem.querySelector("a").getAttribute("data-ids") + "&engine=5",
@@ -196,9 +193,6 @@ var nineAnime: extension = {
         } catch (err) {
             err.url = rawURL;
             throw err;
-        } finally {
-            removeDOM(episodesDOM);
-            removeDOM(infoDOM);
         }
     },
     getLinkFromUrl: async function (url: string) {
@@ -215,7 +209,7 @@ var nineAnime: extension = {
             prev: null
         };
 
-        const serverDOM = document.createElement("div");
+        const serverDOM = new DOMHandler();
 
         try {
 
@@ -227,11 +221,11 @@ var nineAnime: extension = {
             const serverHTML = JSON.parse(await MakeFetchZoro(`https://9anime.to/ajax/server/list/${sourceEp}?${sourceEpVRF[1]}=${sourceEpVRF[0]}`)).result;
             serverDOM.innerHTML = DOMPurify.sanitize(serverHTML);
 
-            const allServers = serverDOM.querySelectorAll("li");
+            const allServers = serverDOM.document.querySelectorAll("li");
             try {
-                response.episode = serverDOM.querySelector("b").innerText.split("Episode")[1];
+                response.episode = serverDOM.document.querySelector("b").innerText.split("Episode")[1];
             } catch (err) {
-                response.episode = serverDOM.querySelector("b").innerText;
+                response.episode = serverDOM.document.querySelector("b").innerText;
             }
 
             response.name = searchParams.get("watch");
@@ -385,16 +379,14 @@ var nineAnime: extension = {
                 throw new Error("No sources were found. Try again later or contact the developer.");
             }
 
-            if(parseFloat(response.episode) === 0){
+            if (parseFloat(response.episode) === 0) {
                 response.episode = "0.1";
             }
-            
+
             response.sources = sources;
             return response;
         } catch (err) {
             throw err;
-        } finally {
-            removeDOM(serverDOM);
         }
     },
     checkConfig: function () {
@@ -407,9 +399,9 @@ var nineAnime: extension = {
         }
     },
     getVRF: async function (query: string, action: string): Promise<[string, string]> {
-        let fallbackAPI = true;
-        let nineAnimeURL = "api.consumet.org/anime/9anime/helper";
-        let apiKey = "";
+        let fallbackAPI = false;
+        let nineAnimeURL = "9anime.eltik.net";
+        let apiKey = "enimax";
 
         try {
             this.checkConfig();
@@ -439,9 +431,9 @@ var nineAnime: extension = {
         }
     },
     decryptSource: async function (query: string): Promise<string> {
-        let fallbackAPI = true;
-        let nineAnimeURL = "api.consumet.org/anime/9anime/helper";
-        let apiKey = "";
+        let fallbackAPI = false;
+        let nineAnimeURL = "9anime.eltik.net";
+        let apiKey = "enimax";
 
         try {
             this.checkConfig();
@@ -472,9 +464,9 @@ var nineAnime: extension = {
         }
     },
     getVidstreamLink: async function (query: string, isViz = true): Promise<string> {
-        let fallbackAPI = true;
-        let nineAnimeURL = "api.consumet.org/anime/9anime/helper";
-        let apiKey = "";
+        let fallbackAPI = false;
+        let nineAnimeURL = "9anime.eltik.net";
+        let apiKey = "enimax";
 
         try {
             this.checkConfig();
@@ -485,13 +477,24 @@ var nineAnime: extension = {
             console.warn("Defaulting to Consumet.");
         }
 
-        let reqURL = `https://${nineAnimeURL}/${isViz ? "vizcloud" : "mcloud"}?query=${encodeURIComponent(query)}&apikey=${apiKey}`;
+        let reqURL = `https://${nineAnimeURL}/raw${isViz ? "Vizcloud" : "Mcloud"}?query=${encodeURIComponent(query)}&apikey=${apiKey}`;
 
         if (fallbackAPI) {
             reqURL = `https://${nineAnimeURL}?query=${encodeURIComponent(query)}&action=${isViz ? "vizcloud" : "mcloud"}`;
         }
 
-        const source = await MakeFetch(reqURL);
+        const rawSource = JSON.parse(await MakeFetch(reqURL)).rawURL;
+        const fetchFunc: any = config.chrome ? MakeFetch : MakeCusReq;
+
+        const source = await fetchFunc(
+            rawSource,
+            {
+                headers: {
+                    "referer": isViz ? "https://vidstream.pro/" : "https://mcloud.to/",
+                    "x-requested-with": "XMLHttpRequest"
+                }
+            }
+        );
 
         try {
             const parsedJSON = JSON.parse(source);
@@ -510,9 +513,10 @@ var nineAnime: extension = {
     },
     getFilemoonLink: async function (filemoonHTML: string) {
 
-        let fallbackAPI = true;
-        let nineAnimeURL = "api.consumet.org/anime/9anime/helper";
-        let apiKey = "";
+        let fallbackAPI = false;
+        let nineAnimeURL = "9anime.eltik.net";
+        let apiKey = "enimax";
+
         try {
             this.checkConfig();
             nineAnimeURL = localStorage.getItem("9anime").trim();
@@ -564,11 +568,11 @@ var nineAnime: extension = {
         }
     },
     discover: async function (): Promise<Array<extensionDiscoverData>> {
-        let temp = document.createElement("div");
+        let temp: any = new DOMHandler();
         temp.innerHTML = DOMPurify.sanitize(await MakeFetchZoro(`https://9anime.to/home`, {}));
-        temp = temp.querySelector(".ani.items");
+        temp = temp.document.querySelector(".ani.items");
         let data = [];
-        for (const elem of temp.querySelectorAll(".item")) {
+        for (const elem of temp.document.querySelectorAll(".item")) {
             let image = elem.querySelector("img").getAttribute("src");
             let name = (elem.querySelector(".name.d-title") as HTMLElement).innerText.trim();
             let link = elem.querySelector(".name.d-title").getAttribute("href");

@@ -245,4 +245,35 @@ var twitch = {
         resp.title = title;
         return resp;
     },
+    getChat: async function (lastTime, lastCursor, videoID) {
+        const clientId = "kimne78kx3ncx6brgo4mv6wki5h1ko";
+        const response = JSON.parse(await MakeFetch("https://gql.twitch.tv/gql", {
+            "headers": {
+                'Client-id': clientId,
+                'Content-Type': 'application/json',
+            },
+            "method": "POST",
+            "body": JSON.stringify([{
+                    "operationName": "VideoCommentsByOffsetOrCursor",
+                    "variables": {
+                        "videoID": videoID,
+                        "contentOffsetSeconds": lastTime
+                    },
+                    "extensions": {
+                        "persistedQuery": {
+                            "version": 1,
+                            "sha256Hash": "b70a3591ff0f4e0313d126c6a1502d79a1c02baebb288227c582044aa76adf6a"
+                        }
+                    }
+                }])
+        }));
+        const edges = response[0].data.video.comments.edges;
+        const index = edges.findIndex((edge) => {
+            return edge.cursor == lastCursor;
+        });
+        if (index != -1) {
+            edges.splice(index);
+        }
+        console.log(edges);
+    }
 };

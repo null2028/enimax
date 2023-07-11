@@ -1,3 +1,4 @@
+var _a, _b, _c, _d, _e, _f, _g;
 var CustomXMLHttpRequest = XMLHttpRequest;
 var shouldReplace = false;
 var engine;
@@ -13,6 +14,7 @@ let skipIntroInfo = {
     start: 0,
     end: 0
 };
+let selectedMain = null;
 let curTrack = undefined;
 let marginApplied = false;
 let updateCurrentTime, getEpCheck, lastUpdate, updateCheck, int_up;
@@ -29,11 +31,20 @@ let subtitleConfig = {
     fontSize: parseInt(localStorage.getItem("subtitle-fontSize")),
     color: localStorage.getItem("subtitle-color"),
     lineHeight: parseInt(localStorage.getItem("subtitle-lineHeight")),
+    shadowColor: localStorage.getItem("subtitle-shadowColor"),
+    shadowOffsetX: parseInt(localStorage.getItem("subtitle-shadowOffsetX")),
+    shadowOffsetY: parseInt(localStorage.getItem("subtitle-shadowOffsetY")),
+    shadowBlur: parseInt(localStorage.getItem("subtitle-shadowBlur")),
 };
 let lastFragError = -10;
 let lastFragDuration = 0;
 let fragErrorCount = 0;
 let hasLoadedEpList = false;
+let loadsLocally = false;
+let remoteInterval = null;
+let castingMode = false;
+let shouldUpdateSlider = true;
+let shadowOffsetXDOM, shadowOffsetYDOM, shadowBlurDOM;
 function applySubtitleConfig() {
     let subtitleStyle = document.getElementById("subtitleStyle");
     while (subtitleStyle.sheet.cssRules.length > 0) {
@@ -53,6 +64,30 @@ function applySubtitleConfig() {
     }
     else if (!isNaN(subtitleConfig.backgroundOpacity)) {
         subtitleStyleString += `background-color: #000000${opacityHex};`;
+    }
+    if (subtitleConfig.shadowColor ||
+        !isNaN(subtitleConfig.shadowOffsetX) ||
+        !isNaN(subtitleConfig.shadowOffsetY) ||
+        !isNaN(subtitleConfig.shadowBlur)) {
+        let offsetX = subtitleConfig.shadowOffsetX, offsetY = subtitleConfig.shadowOffsetY, blur = subtitleConfig.shadowBlur;
+        if (isNaN(offsetX))
+            offsetX = 0;
+        if (isNaN(offsetY))
+            offsetY = 0;
+        if (isNaN(blur))
+            blur = 0;
+        const iters = 5;
+        let shadowString = "";
+        for (let i = 0; i <= iters; i++) {
+            shadowString += `${offsetX}px ${offsetY}px ${blur}px ${subtitleConfig.shadowColor},`;
+        }
+        for (let i = 0; i <= iters; i++) {
+            shadowString += `${Math.sign(offsetX) * -1}px ${offsetY}px ${blur}px ${subtitleConfig.shadowColor}`;
+            if (i != iters) {
+                shadowString += ",";
+            }
+        }
+        subtitleStyleString += `text-shadow: ${shadowString};`;
     }
     if (!isNaN(subtitleConfig.fontSize)) {
         subtitleStyleString += `font-size: ${subtitleConfig.fontSize}px;`;
@@ -137,6 +172,84 @@ let DMenu = new dropDownMenu([
         "items": []
     },
     {
+        "id": "textShadow",
+        "selectableScene": true,
+        "heading": {
+            "text": "Text Shadow",
+        },
+        "items": [
+            {
+                "text": "Shadow Color",
+                "attributes": {
+                    style: "width: 100%"
+                },
+                "classes": ["inputItem"],
+                "color": true,
+                "value": (_a = localStorage.getItem("subtitle-shadowColor")) !== null && _a !== void 0 ? _a : "transparent",
+                "onInput": function (event) {
+                    let target = event.target;
+                    localStorage.setItem("subtitle-shadowColor", target.value);
+                    subtitleConfig.shadowColor = target.value;
+                    applySubtitleConfig();
+                }
+            },
+            {
+                "html": "Offset X <div id=\"shadowOffsetX\" ></div>",
+                "slider": true,
+                "sliderConfig": {
+                    "max": 10,
+                    "min": -10,
+                    "step": 1
+                },
+                "classes": ["inputItem", "sliderMenu"],
+                "value": (_b = localStorage.getItem("subtitle-shadowOffsetX")) !== null && _b !== void 0 ? _b : "0",
+                "onInput": function (event) {
+                    let target = event.target;
+                    localStorage.setItem("subtitle-shadowOffsetX", target.value);
+                    subtitleConfig.shadowOffsetX = parseInt(target.value);
+                    applySubtitleConfig();
+                    shadowOffsetXDOM ? shadowOffsetXDOM.innerText = `(${target.value})` : undefined;
+                }
+            },
+            {
+                "html": "Offset Y <div id=\"shadowOffsetY\" ></div>",
+                "slider": true,
+                "sliderConfig": {
+                    "max": 10,
+                    "min": -10,
+                    "step": 1
+                },
+                "classes": ["inputItem", "sliderMenu"],
+                "value": (_c = localStorage.getItem("subtitle-shadowOffsetY")) !== null && _c !== void 0 ? _c : "0",
+                "onInput": function (event) {
+                    let target = event.target;
+                    localStorage.setItem("subtitle-shadowOffsetY", target.value);
+                    subtitleConfig.shadowOffsetY = parseInt(target.value);
+                    applySubtitleConfig();
+                    shadowOffsetYDOM ? shadowOffsetYDOM.innerText = `(${target.value})` : undefined;
+                }
+            },
+            {
+                "html": "Blur <div id=\"shadowBlur\" ></div>",
+                "slider": true,
+                "sliderConfig": {
+                    "max": 10,
+                    "min": 0,
+                    "step": 1
+                },
+                "classes": ["inputItem", "sliderMenu"],
+                "value": (_d = localStorage.getItem("subtitle-shadowBlur")) !== null && _d !== void 0 ? _d : "0",
+                "onInput": function (event) {
+                    let target = event.target;
+                    localStorage.setItem("subtitle-shadowBlur", target.value);
+                    subtitleConfig.shadowBlur = parseInt(target.value);
+                    applySubtitleConfig();
+                    shadowBlurDOM ? shadowBlurDOM.innerText = `(${target.value})` : undefined;
+                }
+            },
+        ]
+    },
+    {
         "id": "subtitlesOptions",
         "selectableScene": true,
         "heading": {
@@ -157,6 +270,11 @@ let DMenu = new dropDownMenu([
                     subtitleConfig.backgroundColor = target.value;
                     applySubtitleConfig();
                 }
+            },
+            {
+                "text": "Text Shadow",
+                "iconID": "shadowIcon",
+                "open": "textShadow"
             },
             {
                 "text": "Background Transparency",
@@ -304,6 +422,17 @@ let DMenu = new dropDownMenu([
                     playerDOM.innerText = `(${rate})`;
                     vidInstance.vid.playbackRate = isNaN(parseFloat(rate)) ? 1 : parseFloat(rate);
                     localStorage.setItem("playback-speed", rate);
+                }
+            },
+            {
+                "text": "Automatically skip filler",
+                "toggle": true,
+                "on": localStorage.getItem("skipFiller") === "true",
+                "toggleOn": function () {
+                    localStorage.setItem("skipFiller", "true");
+                },
+                "toggleOff": function () {
+                    localStorage.setItem("skipFiller", "false");
                 }
             },
             {
@@ -464,6 +593,17 @@ window.addEventListener("videoStartInterval", () => {
     }, 1000);
 });
 function normalise(url) {
+    let engine = 0;
+    try {
+        const params = new URLSearchParams(url);
+        engine = parseInt(params.get("engine"));
+        if (engine === 12) {
+            url = url.split("&current=")[0];
+        }
+    }
+    catch (err) {
+        console.warn(err);
+    }
     url = url.replace("?watch=", "");
     url = url.split("&engine=")[0];
     url = url.split("&isManga=")[0];
@@ -516,14 +656,20 @@ function backToNormal() {
     document.getElementById('pop').style.display = "block";
     document.getElementById('popOut').style.display = "none";
     document.getElementById('bar_con').style.display = "block";
+    vidInstance.metaData.style.display = "block";
+    vidInstance.popControls.style.display = "block";
+    vidInstance.back.style.display = "block";
 }
-function getEpIni() {
+async function getEpIni() {
     vidInstance.setObjectSettings(1, false);
+    loadsLocally = false;
+    selectedMain = null;
     let param = decodeURIComponent(location.search.replace("?watch=", ""));
     if (downloaded) {
         let rootDir = decodeURIComponent(location.search.replace("?watch=", "").split("&")[0]);
-        // Getting the meta data
-        window.parent.makeLocalRequest("GET", `${rootDir}/viddata.json`).then(function (vidString) {
+        try {
+            // Getting the meta data
+            const vidString = await window.parent.makeLocalRequest("GET", `${rootDir}/viddata.json`);
             let viddata = JSON.parse(vidString).data;
             currentVidData = viddata;
             if ("next" in currentVidData && currentVidData.next) {
@@ -532,10 +678,9 @@ function getEpIni() {
                 let temp = tempData.join("&");
                 delete currentVidData["next"];
                 try {
-                    window.parent.makeLocalRequest("GET", `/${rootDir.split("/")[1]}/${btoa(temp)}/.downloaded`).then((x) => {
-                        currentVidData.next = encodeURIComponent(`/${rootDir.split("/")[1]}/${btoa(temp)}`);
-                        document.getElementById("next_ep").style.display = "table-cell";
-                    }).catch((x) => console.error(x));
+                    await window.parent.makeLocalRequest("GET", `/${rootDir.split("/")[1]}/${btoa(temp)}/.downloaded`);
+                    currentVidData.next = encodeURIComponent(`/${rootDir.split("/")[1]}/${btoa(temp)}`);
+                    document.getElementById("next_ep").style.display = "table-cell";
                 }
                 catch (err) {
                 }
@@ -546,10 +691,9 @@ function getEpIni() {
                 let temp = tempData.join("&");
                 delete currentVidData["prev"];
                 try {
-                    window.parent.makeLocalRequest("GET", `/${rootDir.split("/")[1]}/${btoa(temp)}/.downloaded`).then((x) => {
-                        currentVidData.prev = encodeURIComponent(`/${rootDir.split("/")[1]}/${btoa(temp)}`);
-                        document.getElementById("prev_ep").style.display = "table-cell";
-                    }).catch((error) => console.error(error));
+                    await window.parent.makeLocalRequest("GET", `/${rootDir.split("/")[1]}/${btoa(temp)}/.downloaded`);
+                    currentVidData.prev = encodeURIComponent(`/${rootDir.split("/")[1]}/${btoa(temp)}`);
+                    document.getElementById("prev_ep").style.display = "table-cell";
                 }
                 catch (err) {
                 }
@@ -561,16 +705,18 @@ function getEpIni() {
             currentVidData.sources = [{
                     "name": viddata.sources[0].name,
                     "type": viddata.sources[0].type,
-                    "url": viddata.sources[0].type == 'hls' ? `${rootDir}/master.m3u8` : `${window.parent.cordova.file.externalDataDirectory}/${rootDir}/master.m3u8`,
+                    "url": viddata.sources[0].type == 'hls' ? `${rootDir}/master.m3u8` : `${window.parent.cordova.file.externalDataDirectory}${rootDir}/master.m3u8`,
+                    "castURL": `${rootDir}/master.mp4`
                 }];
             if (skipIntro) {
                 currentVidData.sources[0].skipIntro = skipIntro;
             }
             engine = currentVidData.engine;
             getEp();
-        }).catch(function (err) {
+        }
+        catch (err) {
             alert(err);
-        });
+        }
     }
     else {
         window.parent.postMessage({ "action": 5, "data": `${param}` }, "*");
@@ -600,8 +746,10 @@ function changeEp(nextOrPrev, msg = null) {
         clearInterval(updateCurrentTime);
         document.getElementById("ep_dis").innerHTML = "loading...";
         document.getElementById("total").innerHTML = "";
-        updateEpListSelected();
-        ini_main();
+        const shouldFetch = updateEpListSelected();
+        if (shouldFetch !== false) {
+            ini_main();
+        }
     }
 }
 function ini_main() {
@@ -628,10 +776,25 @@ function ini_main() {
         }
     }
 }
-async function update(shouldCheck) {
-    let currentTime = vidInstance.vid.currentTime;
-    let currentDuration = Math.floor(vidInstance.vid.duration);
-    if (updateCheck == 1 && (vidInstance.vid.currentTime - lastUpdate) > 60 && shouldCheck != 19) {
+async function update(shouldCheck, altCurrentTime, altDuration) {
+    let currentTime;
+    let currentDuration;
+    if (!isNaN(parseFloat(altCurrentTime))) {
+        currentTime = parseFloat(altCurrentTime);
+    }
+    else {
+        currentTime = vidInstance.vid.currentTime;
+    }
+    if (!isNaN(parseInt(altDuration))) {
+        currentDuration = parseInt(altDuration);
+    }
+    else {
+        currentDuration = Math.floor(vidInstance.vid.duration);
+    }
+    if (isNaN(currentDuration) || isNaN(currentTime) || currentTime <= 1) {
+        return;
+    }
+    if (updateCheck == 1 && (currentTime - lastUpdate) > 60 && shouldCheck != 19) {
         alert("Could not sync time with the server.");
     }
     if ((updateCheck == 1 || getEpCheck == 1 || lastUpdate == currentTime) && shouldCheck != 19) {
@@ -644,7 +807,7 @@ async function update(shouldCheck) {
             const identifier = `${aniID}-${currentVidData.episode}`;
             if (aniID &&
                 vidInstance.vid.duration > 0 &&
-                (vidInstance.vid.currentTime + 120) > vidInstance.vid.duration &&
+                (currentTime + 120) > vidInstance.vid.duration &&
                 localStorage.getItem("anilist-last") != identifier) {
                 await window.parent.updateEpWatched(aniID, currentVidData.episode);
                 localStorage.setItem("anilist-last", identifier);
@@ -680,7 +843,7 @@ async function update(shouldCheck) {
             alert("Time could not be synced with the server.");
         }
         else if (errorCount == 5) {
-            lastUpdate = vidInstance.vid.currentTime;
+            lastUpdate = currentTime;
         }
     });
 }
@@ -790,13 +953,14 @@ function chooseQual(config) {
         }
     }
     else {
-        skipTo = config.skipTo;
-        defURL = currentVidData.sources[0].url;
         let sName = localStorage.getItem(`${engine}-sourceName`);
         let qCon = DMenu.getScene("source").element.querySelectorAll(".menuItem");
-        selectedSourceName = sName;
+        skipTo = config.skipTo;
+        defURL = currentVidData.sources[0].url;
+        selectedSourceName = currentVidData.sources[0].name;
         for (let i = 0; i < qCon.length; i++) {
             if (sName == qCon[i].getAttribute("data-name")) {
+                selectedSourceName = sName;
                 defURL = currentVidData.sources[i].url;
                 if (qCon[i].getAttribute("data-intro") === "true") {
                     skipIntroInfo.start = parseInt(qCon[i].getAttribute("data-start"));
@@ -872,9 +1036,11 @@ function chooseQual(config) {
             }
             if (!config.clicked) {
                 hls.loadSource(defURL);
+                selectedMain = [config.type, defURL];
             }
             else {
                 hls.loadSource(config.url);
+                selectedMain = [config.type, config.url];
             }
             hls.attachMedia(vidInstance.vid);
             //@ts-ignore
@@ -962,6 +1128,10 @@ function loadHLSsource() {
 }
 async function getEp(x = 0) {
     if (getEpCheck == 1) {
+        return;
+    }
+    if (castingMode) {
+        startCasting(true);
         return;
     }
     getEpCheck = 1;
@@ -1080,6 +1250,14 @@ function closeSettings() {
         });
     });
 }
+function updateCasting(casting) {
+    if (window.parent.isCasting() || casting === true) {
+        document.getElementById("cast").className = "casting";
+    }
+    else {
+        document.getElementById("cast").className = "notCasting";
+    }
+}
 function isLocked() {
     return vidInstance.locked;
 }
@@ -1120,8 +1298,226 @@ document.querySelector("#episodeList").addEventListener("click", function () {
     DMenu.open("episodes");
 });
 function updateEpListSelected() {
+    var _a, _b;
+    let nextElem = (_a = DMenu === null || DMenu === void 0 ? void 0 : DMenu.selections[location.search]) === null || _a === void 0 ? void 0 : _a.element;
+    if (localStorage.getItem("skipFiller") !== "true" || (nextElem === null || nextElem === void 0 ? void 0 : nextElem.getAttribute("data-filler")) !== "true") {
+        (_b = DMenu === null || DMenu === void 0 ? void 0 : DMenu.selections[location.search]) === null || _b === void 0 ? void 0 : _b.select();
+        return true;
+    }
+    else {
+        while (nextElem) {
+            if (nextElem.getAttribute("data-filler") !== "true") {
+                break;
+            }
+            nextElem = nextElem.previousElementSibling;
+        }
+        if (nextElem && nextElem.classList.contains("menuItem")) {
+            nextElem.click();
+        }
+        else {
+            alert("Could not find a non-filler episode");
+        }
+        return false;
+    }
+}
+function enableRemote(time) {
+    const currentTime = time;
+    const duration = 86400;
+    const remoteDOM = document.querySelector("#remote");
+    const hasPrev = !!currentVidData.prev;
+    const hasNext = !!currentVidData.next;
+    vidInstance.setObjectSettings(1, false);
+    if (hls) {
+        hls.destroy();
+    }
+    console.log(JSON.parse(JSON.stringify(currentVidData)), hasNext, hasPrev);
+    vidInstance.vid.src = "";
+    clearInterval(updateCurrentTime);
+    clearInterval(remoteInterval);
+    remoteDOM.innerHTML = "";
+    remoteDOM.style.display = "flex";
+    remoteDOM.appendChild(createElement({
+        style: {
+            width: "100%",
+        },
+        children: [
+            {
+                id: "remoteTitle",
+                innerText: window.parent.fixTitle(localStorage.getItem("mainName"), extensionList[engine])
+            },
+            {
+                id: "remoteEpisode",
+                innerText: `Epsiode ${currentVidData.episode}`
+            },
+            {
+                style: {
+                    textAlign: "center",
+                    margin: "30px 0"
+                },
+                children: [
+                    {
+                        element: "div",
+                        class: "remoteIcon remotePrev",
+                        style: {
+                            opacity: hasPrev ? "1" : "0",
+                            pointerEvents: hasPrev ? "auto" : "none"
+                        },
+                        listeners: {
+                            click: function () {
+                                destroyRemote();
+                                changeEp(-1);
+                            }
+                        }
+                    },
+                    {
+                        element: "div",
+                        id: "remotePlay",
+                        class: "remoteIcon remotePlay",
+                        listeners: {
+                            click: function () {
+                                window.parent.toggleCastState();
+                            }
+                        }
+                    },
+                    {
+                        element: "div",
+                        class: "remoteIcon remoteNext",
+                        style: {
+                            opacity: hasNext ? "1" : "0",
+                            pointerEvents: hasNext ? "auto" : "none"
+                        },
+                        listeners: {
+                            click: function () {
+                                destroyRemote();
+                                changeEp(1);
+                            }
+                        }
+                    },
+                ]
+            },
+            {
+                element: "range-slider",
+                id: "remoteSlider",
+                attributes: {
+                    tyle: "range",
+                    max: duration.toString(),
+                    min: "0",
+                    value: currentTime.toString(),
+                },
+                listeners: {
+                    change: function () {
+                        window.parent.updateCastTime(this.getAttribute("value"));
+                    }
+                }
+            }
+        ]
+    }));
+    // sendNoti([5, "red", "red", currentTime]);
+    shouldUpdateSlider = true;
+    window.parent.updateCastTime(currentTime);
+    updateRemoteState({ paused: true, currentTime, duration, hasFinished: false });
+}
+function destroyRemote() {
+    clearInterval(remoteInterval);
+    shouldUpdateSlider = false;
+    remoteInterval = null;
+    const remoteDOM = document.querySelector("#remote");
+    remoteDOM.style.display = "none";
+    remoteDOM.innerHTML = "";
+}
+function updateRemoteState(castState) {
+    if (shouldUpdateSlider === false) {
+        return;
+    }
+    if (castState.hasFinished === true && localStorage.getItem("autoplay") === "true") {
+        changeEp(1);
+        return;
+    }
+    const slider = document.getElementById("remoteSlider");
+    slider.value = castState.currentTime.toString();
+    slider.setAttribute("max", castState.duration.toString());
+    if (parseInt(slider.getAttribute("value")) >= 1 && castState.paused === false) {
+        update(19, slider.getAttribute("value"), slider.getAttribute("max"));
+    }
+    if (castState.paused) {
+        document.getElementById("remotePlay").className = "remoteIcon remotePlay";
+    }
+    else {
+        document.getElementById("remotePlay").className = "remoteIcon remotePause";
+    }
+    if (remoteInterval === null && castState.paused === false) {
+        remoteInterval = setInterval(function () {
+            try {
+                const state = window.parent.getEstimatedState();
+                if (state) {
+                    updateRemoteState(state);
+                }
+            }
+            catch (err) {
+                console.error(err);
+            }
+        }, 1000);
+    }
+}
+async function startCasting(shouldDestroy = false) {
     var _a;
-    (_a = DMenu === null || DMenu === void 0 ? void 0 : DMenu.selections[location.search]) === null || _a === void 0 ? void 0 : _a.select();
+    shouldUpdateSlider = false;
+    let classname;
+    let requiresWebServer = false;
+    if (window.parent.isCasting() && shouldDestroy === false) {
+        const changed = (await window.parent.destroySession());
+        console.log("DESTROY", changed);
+        if (changed === true) {
+            classname = "notCasting";
+        }
+    }
+    else {
+        let type, url;
+        if (selectedMain) {
+            url = selectedMain[1];
+            type = selectedMain[0];
+        }
+        else {
+            url = currentVidData.sources[0].url;
+            type = currentVidData.sources[0].type;
+        }
+        if (type == "hls") {
+            type = "application/x-mpegURL";
+        }
+        else {
+            type = "video/mp4";
+            url = currentVidData.sources[0].castURL;
+        }
+        if (downloaded || loadsLocally) {
+            requiresWebServer = true;
+            const localIP = (_a = (await window.parent.getLocalIP())) === null || _a === void 0 ? void 0 : _a.ip;
+            if (!localIP) {
+                alert("Could not get the LAN address");
+            }
+            url = `http://${localIP}:56565${url}`;
+        }
+        let response = await window.parent.apiCall("POST", {
+            "username": username,
+            "action": 2,
+            "name": currentVidData.nameWSeason,
+            "nameUm": currentVidData.name,
+            "ep": currentVidData.episode,
+            "cur": location.search
+        }, () => { });
+        const changed = await window.parent.castVid({
+            url,
+            type,
+            currentTime: response.data.time
+        }, requiresWebServer);
+        if (changed === true) {
+            classname = "casting";
+            castingMode = true;
+            enableRemote(response.data.time);
+        }
+    }
+    if (classname) {
+        document.getElementById("cast").className = classname;
+    }
 }
 window.onmessage = async function (message) {
     if (message.data.action == 1) {
@@ -1148,8 +1544,13 @@ window.onmessage = async function (message) {
                     if (ep.altTruncatedTitle) {
                         truncatedTitle = ep.altTruncatedTitle;
                     }
+                    const attributes = {};
+                    if (ep.isFiller) {
+                        attributes["data-filler"] = "true";
+                    }
                     DMenu.getScene("episodes").addItem({
                         highlightable: true,
+                        attributes,
                         html: (ep.isFiller ? `<div class="filler">Filler</div>` : "") + ep.title + (ep.date ? `<div class="menuDate">${ep.date.toLocaleString()}</div>` : ""),
                         altText: truncatedTitle,
                         selected: location.search === ep.link,
@@ -1199,12 +1600,14 @@ window.onmessage = async function (message) {
                     res = confirm("Want to open the downloaded version?");
                 }
                 if (res) {
+                    loadsLocally = true;
                     let vidString = (await window.parent.makeLocalRequest("GET", `${rootDir}/viddata.json`));
                     let viddata = JSON.parse(vidString).data;
                     currentVidData.sources = [{
                             "name": viddata.sources[0].name,
                             "type": viddata.sources[0].type,
-                            "url": viddata.sources[0].type == 'hls' ? `${rootDir}/master.m3u8` : `${window.parent.cordova.file.externalDataDirectory}/${rootDir}/master.m3u8`,
+                            "url": viddata.sources[0].type == 'hls' ? `${rootDir}/master.m3u8` : `${window.parent.cordova.file.externalDataDirectory}${rootDir}/master.m3u8`,
+                            "castURL": `${rootDir}/master.mp4`
                         }];
                     CustomXMLHttpRequest = window.parent.XMLHttpRequest;
                 }
@@ -1262,6 +1665,9 @@ window.onmessage = async function (message) {
                 vidInstance.lockVid2();
             }
         }
+    }
+    else if (message.data.action == "castStateUpdated") {
+        updateRemoteState(message.data.data);
     }
 };
 window.parent.postMessage({ "action": 401, data: "landscape" }, "*");
@@ -1385,6 +1791,10 @@ DMenu.open("initial");
 DMenu.closeMenu();
 if (config.chrome) {
     document.getElementById("fullscreenToggle").style.display = "block";
+    const chromeDOM = document.getElementsByClassName("notChrome");
+    for (let i = 0; i < chromeDOM.length; i++) {
+        chromeDOM[i].style.display = "none";
+    }
 }
 if (config.local || downloaded) {
     ini_main();
@@ -1405,3 +1815,13 @@ let settingsPullInstanceTT = new settingsPull(document.querySelector(".menuCon")
 const playerDOM = document.querySelector("#playbackDOM");
 applyTheme();
 applySubtitleConfig();
+document.getElementById("cast").onclick = function () {
+    startCasting();
+};
+shadowOffsetXDOM = document.getElementById("shadowOffsetX");
+shadowOffsetYDOM = document.getElementById("shadowOffsetY");
+shadowBlurDOM = document.getElementById("shadowBlur");
+shadowOffsetXDOM.innerText = `(${(_e = localStorage.getItem("subtitle-shadowOffsetX")) !== null && _e !== void 0 ? _e : "0"})`;
+shadowOffsetYDOM.innerText = `(${(_f = localStorage.getItem("subtitle-shadowOffsetY")) !== null && _f !== void 0 ? _f : "0"})`;
+shadowBlurDOM.innerText = `(${(_g = localStorage.getItem("subtitle-shadowBlurDOM")) !== null && _g !== void 0 ? _g : "0"})`;
+updateCasting(false);

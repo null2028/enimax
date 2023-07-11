@@ -1,5 +1,5 @@
 // @ts-ignore
-const extensionList = [wco, animixplay, fmovies, zoro, twitch, nineAnime, fmoviesto, gogo, mangaDex, mangaFire, viewAsian, anilist];
+const extensionList = [wco, animixplay, fmovies, zoro, twitch, nineAnime, fmoviesto, gogo, mangaDex, mangaFire, viewAsian, anilist, anna];
 // @ts-ignore   
 const extensionNames = [];
 // @ts-ignore

@@ -101,6 +101,18 @@ function checkIfExists(localURL: string): Promise<string> {
 }
 
 function normalise(url: string) {
+    let engine = 0;
+
+    try{
+        const params = new URLSearchParams(url);
+        engine = parseInt(params.get("engine"));
+        if(engine === 12){
+            url = url.split("&current=")[0];
+        }
+    }catch(err){
+        console.warn(err);
+    }
+
     url = url.replace("?watch=", "");
     url = url.split("&engine=")[0];
     url = url.split("&isManga=")[0];
@@ -137,11 +149,13 @@ async function populateDownloadedArray() {
 async function testIt(idx = -1): Promise<void> {
     let searchQuery = "odd";
     let errored = false;
-    const searchQueries = ["odd taxi", "", "friends", "odd taxi", "petezahhutt", "odd taxi", "friends", "odd taxi"];
+
+    // const extensions = [wco, animixplay, fmovies, zoro, twitch, nineAnime, fmoviesto, gogo, mangaDex, mangaFire, viewAsian, anilist, anna];
+    const searchQueries = ["odd taxi", "", "friends", "odd taxi", "petezahhutt", "odd taxi", "friends", "odd taxi", "86", "86", "red", "", "86"];
 
     for (let i = 0; i < extensionList.length; i++) {
 
-        if (extensionDisabled[i]) {
+        if (extensionDisabled[i] || extensionList[i].name === "Anilist") {
             continue;
         }
 
@@ -176,7 +190,7 @@ async function testIt(idx = -1): Promise<void> {
         }
 
         try {
-            alert(`${extensionNames[i]} - Here's the link: ${playerResult.sources[0].url}`);
+            alert(`${extensionNames[i]} - Here's the link: ${extensionList[i].type === "manga" ? (playerResult as extensionMangaSource).pages[0].img : playerResult.sources[0].url}`);
         } catch (err) {
             alert(extensionNames[i] + " Failed");
         }
@@ -565,8 +579,9 @@ offlineDOM.onchange = function () {
         }
         localStorage.setItem("offline", "true");
         window.parent.postMessage({ "action": 500, data: "pages/homepage/index.html" }, "*");
-
     }
+
+    (window.parent as cordovaWindow).handleUpperBar();
 };
 
 
@@ -710,6 +725,11 @@ document.getElementById("alwaysDown").onchange = function () {
     localStorage.setItem("alwaysDown", (this as HTMLInputElement).checked.toString());
 }
 
+document.getElementById("anonModeToggle").onchange = function (){
+    localStorage.setItem("anon-anilist", (this as HTMLInputElement).checked.toString());
+    (window.parent as cordovaWindow).handleUpperBar();
+};
+
 document.getElementById("9animeHelper").oninput = function () {
     localStorage.setItem("9anime", (this as HTMLInputElement).value);
 }
@@ -741,6 +761,12 @@ document.getElementById("rangeCon").addEventListener("touchmove", function (even
 });
 
 document.getElementById("anilistLogin").addEventListener("click", function (event) {
+    if(hasAnilistToken){
+        localStorage.removeItem("anilist-token");
+        window.location.reload();
+        return;
+    }
+
     if (config.chrome) {
         try {
             alert("A new tab will open asking you to log in, and then you will be redirected to a new page. Copy the URL of the new page and paste it when prompted");
@@ -793,6 +819,7 @@ document.getElementById("anilistImport").addEventListener("click", function (eve
 (document.getElementById("hideNotification") as HTMLInputElement).checked = localStorage.getItem("hideNotification") === "true";
 (document.getElementById("alwaysDown") as HTMLInputElement).checked = localStorage.getItem("alwaysDown") === "true";
 (document.getElementById("useImageBack") as HTMLInputElement).checked = localStorage.getItem("useImageBack") === "true";
+(document.getElementById("anonModeToggle") as HTMLInputElement).checked = localStorage.getItem("anon-anilist") === "true";
 (document.getElementById("offline") as HTMLInputElement).checked = (localStorage.getItem("offline") === 'true');
 
 
@@ -1251,7 +1278,7 @@ function makeDiscoverCard(data: DiscoverData) {
 function humanDate(date: { day: number, month: number, year: number }) {
     const thisDate = new Date();
     thisDate.setDate(date.day);
-    thisDate.setMonth(date.month);
+    thisDate.setMonth(date.month - 1);
     thisDate.setFullYear(date.year);
 
     return `${thisDate.getDate()} ${thisDate.toLocaleString('en-us', { month: "short" })} ${thisDate.getFullYear()}`;
@@ -1721,15 +1748,49 @@ if (true) {
 
 
     }
+
+    // async function batchPromises(showURLs, batchSize){
+    async function batchPromises(showURLs: {showURL: string, engine: extension}[], batchSize: number){
+        const allSettled = "allSettled" in Promise;
+        const result = [];
+        const promises = [];
+
+        for(let i = 0; i < showURLs.length; i++){
+            promises.push(showURLs[i].engine.getAnimeInfo(showURLs[i].showURL));
+            
+            if(promises.length >= batchSize || i == showURLs.length - 1){
+
+                if (allSettled) {
+                    const res = await Promise.allSettled(promises);
+
+                    for (const promise of res) {
+                        if (promise.status === "fulfilled") {
+                            result.push(promise.value);
+                        } else {
+                            result.push(null);
+                        }
+                    }
+                } else {
+                    try{
+                        result.push(...await Promise.all(promises));
+                    }catch(err){
+                        console.warn(err);
+                    }
+                }
+
+                promises.splice(0);
+            }
+        }
+
+        return result;
+    }
+
     async function updateNewEp() {
         let updateLibNoti = sendNoti([0, null, "Message", "Updating Libary"]);
-        let updatedShow = [];
         let downloadQueue = (<cordovaWindow>window.parent).returnDownloadQueue();
         let extensionList: extension[] = (<cordovaWindow>window.parent).returnExtensionList();
-        let promises: Promise<extensionInfo>[] = [];
+        let showURLs: {showURL: string, engine: extension}[] = [];
         let promiseShowData = [];
-        let allSettled = "allSettled" in Promise;
-        // let allSettled = false;
 
         for (let show of flaggedShow) {
             let showURL = show.showURL;
@@ -1746,7 +1807,11 @@ if (true) {
                 currentEngine = extensionList[currentEngine];
             }
 
-            promises.push(currentEngine.getAnimeInfo(showURL));
+            showURLs.push({
+                showURL,
+                engine: currentEngine as extension
+            });
+
             promiseShowData.push({
                 "ep": currentEp,
                 "dom": show.dom,
@@ -1757,21 +1822,8 @@ if (true) {
             });
         }
 
-        let promiseResult = [];
         try {
-            if (allSettled) {
-                let res = await Promise.allSettled(promises);
-                for (let promise of res) {
-                    if (promise.status === "fulfilled") {
-                        promiseResult.push(promise.value);
-                    } else {
-                        promiseResult.push(null);
-                    }
-                }
-            } else {
-                promiseResult = await Promise.all(promises);
-            }
-
+            const promiseResult = await batchPromises(showURLs, 5);
 
             await showLastEpDB.lastestEp.clear();
 
@@ -2557,4 +2609,12 @@ for (const div of document.querySelectorAll("div")) {
 
 for (const input of document.querySelectorAll("input")) {
     input.setAttribute("tabindex", "0");
+}
+
+if(hasAnilistToken){
+    const anilistMenuItem = document.querySelector("#anilistLogin .menuTitle");
+
+    if(anilistMenuItem){
+        anilistMenuItem.textContent = "Anilist Log out";
+    }
 }

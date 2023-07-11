@@ -1,6 +1,6 @@
 function createElement(config: createElementConfig): HTMLElement {
-    
-    if(config.shouldAdd === false){
+
+    if (config.shouldAdd === false) {
         return;
     }
 
@@ -50,7 +50,10 @@ function createElement(config: createElementConfig): HTMLElement {
 
     if (config.children) {
         for (const child of config.children) {
-            temp.append(createElement(child));
+            const childDOM = createElement(child);
+            if (childDOM) {
+                temp.append(childDOM);
+            }
         }
     }
 
