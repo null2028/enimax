@@ -3,6 +3,7 @@ New features:
 2. Added casting! Not all sources will work because of some technicalities. However, you can cast any video if you have already downloaded it.
 3. Anilist anonymous mode. Can be enabled by going to the settings. When enabled, it won't sync up progress with your anilist account.
 4. Sped up Anilist importing.
+5. An option to automatically skip filler episodes.
 
 Minor changes:
 1. Added a button to log out from Anilist.
