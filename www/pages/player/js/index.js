@@ -634,9 +634,10 @@ function sendNoti(notiConfig) {
     });
 }
 function nextTrack() {
+    var _a;
     let curTime = vidInstance.vid.currentTime;
     let check = false;
-    for (let i = 0; i < curTrack.cues.length; i++) {
+    for (let i = 0; i < ((_a = curTrack === null || curTrack === void 0 ? void 0 : curTrack.cues) === null || _a === void 0 ? void 0 : _a.length); i++) {
         if (curTrack.cues[i].startTime > curTime) {
             nextTrackTime = curTrack.cues[i].startTime;
             check = true;
@@ -955,7 +956,6 @@ async function destroyDash() {
     }
 }
 async function chooseQual(config) {
-    console.log("DASH3");
     let skipTo = 0;
     let defURL = "";
     let selectedSourceName;
@@ -1009,8 +1009,6 @@ async function chooseQual(config) {
     if (dashInstance) {
         await dashInstance.destroy();
     }
-    console.log("DASH2");
-    console.log(config);
     if (config.type == "hls") {
         //@ts-ignore
         if (Hls.isSupported()) {
@@ -1095,6 +1093,7 @@ async function chooseQual(config) {
                 });
                 await dashInstance.load(url);
                 vidInstance.vid.play();
+                loadSubs(selectedSourceName);
                 dashInstance.configure("abr.enabled", false);
                 loadDashSource();
             }
@@ -1180,7 +1179,6 @@ function loadDashSource() {
             "text": "Quality",
         }, true);
         const levels = dashInstance.getVariantTracks();
-        console.log(levels);
         let hlsqualnum = parseInt(localStorage.getItem("hlsqualnum"));
         let hslLevel = -1;
         if (isNaN(hlsqualnum)) {
@@ -1205,7 +1203,7 @@ function loadDashSource() {
             dashInstance.selectVariantTrack(levels[hslLevel]);
         }
         else {
-            dashInstance.getSettings().streaming.abr.autoSwitchBitrate.video = true;
+            dashInstance.configure("abr.enabled", true);
         }
         for (var i = -1; i < levels.length; i++) {
             let selected = false;
@@ -1437,7 +1435,6 @@ async function enableRemote(time) {
     if (dashInstance) {
         await dashInstance.destroy();
     }
-    console.log(JSON.parse(JSON.stringify(currentVidData)), hasNext, hasPrev);
     vidInstance.vid.src = "";
     clearInterval(updateCurrentTime);
     clearInterval(remoteInterval);
@@ -1573,7 +1570,6 @@ async function startCasting(shouldDestroy = false) {
     let requiresWebServer = false;
     if (window.parent.isCasting() && shouldDestroy === false) {
         const changed = (await window.parent.destroySession());
-        console.log("DESTROY", changed);
         if (changed === true) {
             classname = "notCasting";
         }

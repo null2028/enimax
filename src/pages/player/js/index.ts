@@ -703,7 +703,7 @@ function sendNoti(notiConfig: any) {
 function nextTrack() {
 	let curTime = vidInstance.vid.currentTime;
 	let check = false;
-	for (let i = 0; i < curTrack.cues.length; i++) {
+	for (let i = 0; i < curTrack?.cues?.length; i++) {
 		if (curTrack.cues[i].startTime > curTime) {
 			nextTrackTime = curTrack.cues[i].startTime;
 			check = true;
@@ -1098,8 +1098,6 @@ async function destroyDash() {
 }
 
 async function chooseQual(config: sourceConfig) {
-	console.log("DASH3");
-
 	let skipTo = 0;
 	let defURL: string = "";
 	let selectedSourceName: string;
@@ -1159,10 +1157,6 @@ async function chooseQual(config: sourceConfig) {
 	if(dashInstance){
 		await dashInstance.destroy();
 	}
-
-	console.log("DASH2");
-	console.log(config);
-
 
 	if (config.type == "hls") {
 		//@ts-ignore
@@ -1260,6 +1254,7 @@ async function chooseQual(config: sourceConfig) {
 				await dashInstance.load(url);
 
 				vidInstance.vid.play();
+				loadSubs(selectedSourceName);
 				dashInstance.configure("abr.enabled", false);
 				loadDashSource();
 			} catch (error) {
@@ -1361,7 +1356,6 @@ function loadDashSource() {
 		}, true);
 
 		const levels = dashInstance.getVariantTracks();
-		console.log(levels);
 		let hlsqualnum = parseInt(localStorage.getItem("hlsqualnum"));
 		let hslLevel = -1;
 		if (isNaN(hlsqualnum)) {
@@ -1390,7 +1384,7 @@ function loadDashSource() {
 		if(hslLevel != -1){
 			dashInstance.selectVariantTrack(levels[hslLevel]);
 		}else{
-			dashInstance.getSettings().streaming.abr.autoSwitchBitrate.video = true;
+			dashInstance.configure("abr.enabled", true);
 		}
 
 		for (var i = -1; i < levels.length; i++) {
@@ -1673,8 +1667,6 @@ async function enableRemote(time: number) {
 		await dashInstance.destroy();
 	}
 
-	console.log(JSON.parse(JSON.stringify(currentVidData)), hasNext, hasPrev);
-
 	vidInstance.vid.src = "";
 	clearInterval(updateCurrentTime);
 	clearInterval(remoteInterval);
@@ -1825,7 +1817,6 @@ async function startCasting(shouldDestroy = false) {
 
 	if ((window.parent as cordovaWindow).isCasting() && shouldDestroy === false) {
 		const changed = (await (window.parent as cordovaWindow).destroySession());
-		console.log("DESTROY", changed);
 
 		if (changed === true) {
 			classname = "notCasting";

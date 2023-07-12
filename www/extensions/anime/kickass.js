@@ -57,7 +57,6 @@ var kaa = {
             for (const result of results) {
                 try {
                     const resultJSON = JSON.parse(result);
-                    console.log(resultJSON);
                     episodeJSONs[key].result.push(...resultJSON.result);
                 }
                 catch (err) {
@@ -225,7 +224,6 @@ var kaa = {
                     });
                 });
             }
-            console.log(finalResult);
         }
         catch (err) {
             console.warn(err);
