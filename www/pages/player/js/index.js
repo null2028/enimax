@@ -855,10 +855,11 @@ function chooseQualHls(x, type, elem) {
 }
 function chooseQualDash(x, type, elem) {
     if (parseInt(x) === -1) {
-        dashInstance.getSettings().streaming.abr.autoSwitchBitrate.video = true;
+        dashInstance.configure("abr.enabled", true);
     }
     else {
-        dashInstance.setQualityFor("video", parseInt(x));
+        const tracks = dashInstance.getVariantTracks();
+        dashInstance.selectVariantTrack(tracks[parseInt(x)]);
     }
     localStorage.setItem("hlsqual", x);
     localStorage.setItem("hlsqualnum", parseInt(elem.innerText).toString());
@@ -945,7 +946,15 @@ function loadSubs(sourceName) {
         }
     }
 }
-function chooseQual(config) {
+async function destroyDash() {
+    try {
+        await dashInstance.destroy();
+    }
+    catch (error) {
+        console.error('Error code', error.code, 'object', error);
+    }
+}
+async function chooseQual(config) {
     console.log("DASH3");
     let skipTo = 0;
     let defURL = "";
@@ -998,7 +1007,7 @@ function chooseQual(config) {
         hls.destroy();
     }
     if (dashInstance) {
-        dashInstance.destroy();
+        await dashInstance.destroy();
     }
     console.log("DASH2");
     console.log(config);
@@ -1077,22 +1086,37 @@ function chooseQual(config) {
     }
     else if (config.type === "dash") {
         // @ts-ignore
-        dashInstance = dashjs.MediaPlayer().create();
+        dashInstance = new shaka.Player(vidInstance.vid);
         const url = !config.clicked ? defURL : config.url;
-        dashInstance.initialize(vidInstance.vid, url, true);
-        dashInstance.play();
-        dashInstance.seek(skipTo);
-        // @ts-ignore
-        const canPlayEvent = dashjs.MediaPlayer.events.STREAM_INITIALIZED;
-        console.log("DASH1");
-        const skipFunc = function () {
-            console.log("SKIPPING TO " + skipTo);
-            dashInstance.seek(skipTo);
-            dashInstance.off(canPlayEvent, skipFunc);
-            dashInstance.getSettings().streaming.abr.autoSwitchBitrate.video = false;
-            loadDashSource();
-        };
-        dashInstance.on(canPlayEvent, skipFunc);
+        async function init() {
+            try {
+                dashInstance.addEventListener('loaded', () => {
+                    vidInstance.vid.currentTime = skipTo;
+                });
+                await dashInstance.load(url);
+                vidInstance.vid.play();
+                dashInstance.configure("abr.enabled", false);
+                loadDashSource();
+            }
+            catch (error) {
+                console.error('Error code', error.code, 'object', error);
+            }
+        }
+        init();
+        // dashInstance.initialize(vidInstance.vid, url, true);
+        // dashInstance.play();
+        // dashInstance.seek(skipTo);
+        // // @ts-ignore
+        // const canPlayEvent = dashjs.MediaPlayer.events.STREAM_INITIALIZED;
+        // console.log("DASH1");
+        // const skipFunc = function(){
+        // 	console.log("SKIPPING TO " + skipTo)
+        // 	dashInstance.seek(skipTo);
+        // 	dashInstance.off(canPlayEvent, skipFunc);
+        // 	dashInstance.getSettings().streaming.abr.autoSwitchBitrate.video = false;
+        // 	loadDashSource();
+        // };
+        // dashInstance.on(canPlayEvent, skipFunc);
     }
     else {
         try {
@@ -1169,6 +1193,8 @@ function loadDashSource() {
         DMenu.getScene("quality").addItem({
             "text": "Quality",
         }, true);
+        const levels = dashInstance.getVariantTracks();
+        console.log(levels);
         let hlsqualnum = parseInt(localStorage.getItem("hlsqualnum"));
         let hslLevel = -1;
         if (isNaN(hlsqualnum)) {
@@ -1176,7 +1202,6 @@ function loadDashSource() {
         }
         else {
             let differences = [];
-            const levels = dashInstance.getBitrateInfoListFor("video");
             for (let i = 0; i < levels.length; i++) {
                 differences.push(Math.abs(hlsqualnum - levels[i].height));
             }
@@ -1191,12 +1216,11 @@ function loadDashSource() {
             hslLevel = minIndex;
         }
         if (hslLevel != -1) {
-            dashInstance.setQualityFor("video", hslLevel);
+            dashInstance.selectVariantTrack(levels[hslLevel]);
         }
         else {
             dashInstance.getSettings().streaming.abr.autoSwitchBitrate.video = true;
         }
-        const levels = dashInstance.getBitrateInfoListFor("video");
         for (var i = -1; i < levels.length; i++) {
             let selected = false;
             if (i == hslLevel) {

@@ -1,17 +1,11 @@
 var kaa = {
     baseURL: "https://kickassanime.am",
-    ajaxURL: "https://kickassanime.am/api/",
     type: "anime",
-    supportsMalsync: true,
+    supportsMalsync: false,
     disableAutoDownload: false,
     disabled: false,
     name: "Kickass",
     shortenedName: "KAA",
-    keys: [
-        CryptoJS.enc.Utf8.parse("37911490979715163134003223491201"),
-        CryptoJS.enc.Utf8.parse("54674138327930866480207815084989"),
-        CryptoJS.enc.Utf8.parse("3134003223491201")
-    ],
     getImageURL: function (posterData) {
         var _a;
         try {
