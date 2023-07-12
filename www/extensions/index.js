@@ -3345,7 +3345,7 @@ var kaa = {
             throw err;
         }
     },
-    addSource: async function (server, sourceURLs, type) {
+    addSource: async function (server, sourceURLs, type, response) {
         var _a, _b, _c, _d, _e, _f, _g, _h;
         try {
             const url = new URL(server.src);
@@ -3379,11 +3379,13 @@ var kaa = {
                 iv: CryptoJS.enc.Hex.parse(result.split(":")[1]),
                 keySize: 256
             }).toString(CryptoJS.enc.Utf8));
+            let hlsURL = "", dashURL = "";
             if (finalResult.hls) {
+                hlsURL = finalResult.hls.startsWith("//") ? `https:${finalResult.hls}` : finalResult.hls;
                 sourceURLs.push({
                     type: "hls",
                     name: `${server.name}#${type}`,
-                    url: finalResult.hls.startsWith("//") ? `https:${finalResult.hls}` : finalResult.hls,
+                    url: hlsURL,
                     skipIntro: {
                         start: (_b = (_a = finalResult.skip) === null || _a === void 0 ? void 0 : _a.intro) === null || _b === void 0 ? void 0 : _b.start,
                         end: (_d = (_c = finalResult.skip) === null || _c === void 0 ? void 0 : _c.intro) === null || _d === void 0 ? void 0 : _d.end
@@ -3391,16 +3393,28 @@ var kaa = {
                 });
             }
             if (finalResult.dash) {
+                dashURL = finalResult.dash.startsWith("//") ? `https:${finalResult.dash}` : finalResult.dash;
                 sourceURLs.push({
                     type: "dash",
                     name: `${server.name}-DASH#${type}`,
-                    url: finalResult.dash.startsWith("//") ? `https:${finalResult.dash}` : finalResult.dash,
+                    url: dashURL,
                     skipIntro: {
                         start: (_f = (_e = finalResult.skip) === null || _e === void 0 ? void 0 : _e.intro) === null || _f === void 0 ? void 0 : _f.start,
                         end: (_h = (_g = finalResult.skip) === null || _g === void 0 ? void 0 : _g.intro) === null || _h === void 0 ? void 0 : _h.end
                     }
                 });
             }
+            if (finalResult.subtitles) {
+                response.subtitles = [];
+                const url = dashURL === "" ? hlsURL : dashURL;
+                finalResult.subtitles.map((sub) => {
+                    response.subtitles.push({
+                        label: sub.name,
+                        file: new URL(sub.src, url).href
+                    });
+                });
+            }
+            console.log(finalResult);
         }
         catch (err) {
             console.warn(err);
@@ -3436,7 +3450,7 @@ var kaa = {
                 const videoJSON = JSON.parse(await MakeFetchZoro(`${this.baseURL}/api/show/${id}/episode/${slug}`));
                 const servers = videoJSON.servers.filter((server) => server.shortName === "Duck" || server.shortName === "Bird");
                 for (const server of servers) {
-                    promises.push(this.addSource(server, sourceURLs, type));
+                    promises.push(this.addSource(server, sourceURLs, type, resp));
                 }
             }
             await Promise.all(promises);

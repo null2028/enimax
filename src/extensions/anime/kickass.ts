@@ -54,7 +54,7 @@ var kaa: extension = {
                 if(i == 0){
                     continue;
                 }
-                
+
                 promises.push(MakeFetchZoro(`${url}&page=${episodeJSONs[key].pages[i].number}`));
             }
 
@@ -183,7 +183,7 @@ var kaa: extension = {
             throw err;
         }
     },
-    addSource: async function (server, sourceURLs: videoSource[], type: string) {
+    addSource: async function (server, sourceURLs: videoSource[], type: string, response: extensionVidSource) {
         try {
             const url = new URL(server.src);
             const shortName = server.shortName.toLowerCase();
@@ -221,11 +221,15 @@ var kaa: extension = {
                 keySize: 256
             }).toString(CryptoJS.enc.Utf8));
 
+            let hlsURL = "", dashURL = "";
+
             if (finalResult.hls) {
+                hlsURL = finalResult.hls.startsWith("//") ? `https:${finalResult.hls}` : finalResult.hls;
+
                 sourceURLs.push({
                     type: "hls",
                     name: `${server.name}#${type}`,
-                    url: finalResult.hls.startsWith("//") ? `https:${finalResult.hls}` : finalResult.hls,
+                    url: hlsURL,
                     skipIntro: {
                         start: finalResult.skip?.intro?.start,
                         end: finalResult.skip?.intro?.end
@@ -234,10 +238,12 @@ var kaa: extension = {
             }
 
             if (finalResult.dash) {
+                dashURL = finalResult.dash.startsWith("//") ? `https:${finalResult.dash}` : finalResult.dash;
+
                 sourceURLs.push({
                     type: "dash",
                     name: `${server.name}-DASH#${type}`,
-                    url: finalResult.dash.startsWith("//") ? `https:${finalResult.dash}` : finalResult.dash,
+                    url: dashURL,
                     skipIntro: {
                         start: finalResult.skip?.intro?.start,
                         end: finalResult.skip?.intro?.end
@@ -245,6 +251,22 @@ var kaa: extension = {
                 });
             }
 
+            
+
+            if(finalResult.subtitles){
+                response.subtitles = [];
+
+                const url = dashURL === "" ? hlsURL : dashURL;
+
+                finalResult.subtitles.map((sub) => {
+                    response.subtitles.push({
+                        label: sub.name,
+                        file: new URL(sub.src, url).href
+                    })
+                })
+            }
+
+            console.log(finalResult);
         } catch (err) {
             console.warn(err);
         }
@@ -283,7 +305,7 @@ var kaa: extension = {
                 const servers = videoJSON.servers.filter((server) => server.shortName === "Duck" || server.shortName === "Bird");
 
                 for (const server of servers) {
-                    promises.push(this.addSource(server, sourceURLs, type));
+                    promises.push(this.addSource(server, sourceURLs, type, resp));
                 }
             }
 
