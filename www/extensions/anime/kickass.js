@@ -151,7 +151,6 @@ var kaa = {
                 episodeJSONs.dub = undefined;
             }
             const episodeJSON = (_f = episodeJSONs.sub) !== null && _f !== void 0 ? _f : episodeJSONs.dub;
-            console.log(episodeJSON, episodeJSONs);
             const dubData = {};
             if (episodeJSONs.sub && episodeJSONs.dub) {
                 for (let i = 0; i < ((_h = (_g = episodeJSONs.dub) === null || _g === void 0 ? void 0 : _g.result) === null || _h === void 0 ? void 0 : _h.length); i++) {
@@ -187,7 +186,6 @@ var kaa = {
                     altTitle: `Episode ${epNum}`,
                 });
             }
-            console.log(epData);
             response.episodes = epData;
             return response;
         }
@@ -219,20 +217,17 @@ var kaa = {
             for (const item of order) {
                 sigArray.push(signatureItems[item]);
             }
-            console.log(sigArray);
             const sig = CryptoJS.SHA1(sigArray.join("")).toString(CryptoJS.enc.Hex);
             const result = JSON.parse(await MakeFetch(`${url.origin}${signatureItems.ROUTE}?${isBirb ? "id" : "mid"}=${signatureItems.MID}${isBirb ? "" : "&e=" + signatureItems.TIMESTAMP}&s=${sig}`, {
                 headers: {
                     "referer": `${url.origin}${signatureItems.ROUTE.replace("source.php", "player.php")}?${isBirb ? "id" : "mid"}=${signatureItems.MID}`
                 }
             })).data;
-            console.log(result);
             const finalResult = JSON.parse(CryptoJS.AES.decrypt(result.split(":")[0], CryptoJS.enc.Utf8.parse(signatureItems.KEY), {
                 mode: CryptoJS.mode.CBC,
                 iv: CryptoJS.enc.Hex.parse(result.split(":")[1]),
                 keySize: 256
             }).toString(CryptoJS.enc.Utf8));
-            console.log(finalResult);
             if (finalResult.hls) {
                 sourceURLs.push({
                     type: "hls",
@@ -261,6 +256,7 @@ var kaa = {
         }
     },
     getLinkFromUrl: async function (url) {
+        var _a, _b, _c, _d;
         try {
             const params = new URLSearchParams("?watch=" + url);
             const id = params.get("watch");
@@ -277,8 +273,12 @@ var kaa = {
             };
             const epNum = params.get("ep");
             const epList = await this.getAnimeInfo(id);
-            const links = JSON.parse(epList.episodes.find((ep) => ep.number === parseFloat(epNum)).sourceID);
+            const currentEp = epList.episodes.find((ep) => ep.number === parseFloat(epNum));
+            const currentIndex = epList.episodes.indexOf(currentEp);
+            const links = JSON.parse(currentEp.sourceID);
             const promises = [];
+            resp.next = (_b = (_a = epList.episodes[currentIndex + 1]) === null || _a === void 0 ? void 0 : _a.link.replace("?watch=", "")) !== null && _b !== void 0 ? _b : null;
+            resp.prev = (_d = (_c = epList.episodes[currentIndex - 1]) === null || _c === void 0 ? void 0 : _c.link.replace("?watch=", "")) !== null && _d !== void 0 ? _d : null;
             for (const type in links) {
                 // https://kickassanime.am/api/show/odd-taxi-8b25/episode/ep-2-a601c5
                 const slug = links[type];
@@ -311,27 +311,4 @@ var kaa = {
             return title;
         }
     },
-    generateEncryptedAjaxParams: function (scriptValue, id, keys) {
-        const encryptedKey = CryptoJS.AES.encrypt(id, keys[0], {
-            iv: keys[2],
-        });
-        const decryptedToken = CryptoJS.AES.decrypt(scriptValue, keys[0], {
-            iv: keys[2],
-        }).toString(CryptoJS.enc.Utf8);
-        return `id=${encryptedKey}&alias=${id}&${decryptedToken}`;
-    },
-    decryptAjaxData: function (encryptedData, keys) {
-        const decryptedData = CryptoJS.enc.Utf8.stringify(CryptoJS.AES.decrypt(encryptedData, keys[1], {
-            iv: keys[2],
-        }));
-        return JSON.parse(decryptedData);
-    },
-    getMetaData: async function (search) {
-        const id = search.get("watch").replace("/category/", "");
-        return await getAnilistInfo("Gogoanime", id);
-    },
-    rawURLtoInfo: function (url) {
-        // https://gogoanime.bid/category/kimetsu-no-yaiba-movie-mugen-ressha-hen-dub
-        return `?watch=${url.pathname}&engine=7`;
-    }
 };

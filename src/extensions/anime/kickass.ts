@@ -171,8 +171,6 @@ var kaa: extension = {
             }
 
             const episodeJSON = episodeJSONs.sub ?? episodeJSONs.dub;
-            console.log(episodeJSON, episodeJSONs);
-
             const dubData = {};
 
             if (episodeJSONs.sub && episodeJSONs.dub) {
@@ -225,8 +223,6 @@ var kaa: extension = {
                 );
             }
 
-            console.log(epData);
-
             response.episodes = epData;
             return response;
         } catch (err) {
@@ -258,8 +254,6 @@ var kaa: extension = {
                 sigArray.push(signatureItems[item]);
             }
 
-            console.log(sigArray);
-
             const sig = CryptoJS.SHA1(sigArray.join("")).toString(CryptoJS.enc.Hex);
 
             const result = JSON.parse(await MakeFetch(`${url.origin}${signatureItems.ROUTE}?${isBirb ? "id" : "mid"}=${signatureItems.MID}${isBirb ? "" : "&e=" + signatureItems.TIMESTAMP}&s=${sig}`, {
@@ -268,15 +262,11 @@ var kaa: extension = {
                 }
             })).data;
 
-            console.log(result);
-
             const finalResult = JSON.parse(CryptoJS.AES.decrypt(result.split(":")[0], CryptoJS.enc.Utf8.parse(signatureItems.KEY), {
                 mode: CryptoJS.mode.CBC,
                 iv: CryptoJS.enc.Hex.parse(result.split(":")[1]),
                 keySize: 256
             }).toString(CryptoJS.enc.Utf8));
-
-            console.log(finalResult);
 
             if (finalResult.hls) {
                 sourceURLs.push({
@@ -325,8 +315,13 @@ var kaa: extension = {
 
             const epNum = params.get("ep");
             const epList: extensionInfo = await this.getAnimeInfo(id);
-            const links = JSON.parse(epList.episodes.find((ep) => ep.number === parseFloat(epNum)).sourceID);
+            const currentEp = epList.episodes.find((ep) => ep.number === parseFloat(epNum));
+            const currentIndex = epList.episodes.indexOf(currentEp);
+            const links = JSON.parse(currentEp.sourceID);
             const promises = [];
+
+            resp.next = epList.episodes[currentIndex + 1]?.link.replace("?watch=", "") ?? null;
+            resp.prev = epList.episodes[currentIndex - 1]?.link.replace("?watch=", "") ?? null;
 
             for (const type in links) {
                 // https://kickassanime.am/api/show/odd-taxi-8b25/episode/ep-2-a601c5
@@ -362,31 +357,4 @@ var kaa: extension = {
             return title;
         }
     },
-    generateEncryptedAjaxParams: function (scriptValue: string, id: string, keys: Array<string>) {
-        const encryptedKey = CryptoJS.AES.encrypt(id, keys[0], {
-            iv: keys[2] as any,
-        });
-
-        const decryptedToken = CryptoJS.AES.decrypt(scriptValue, keys[0], {
-            iv: keys[2] as any,
-        }).toString(CryptoJS.enc.Utf8);
-
-        return `id=${encryptedKey}&alias=${id}&${decryptedToken}`;
-    },
-    decryptAjaxData: function (encryptedData: string, keys: Array<string>) {
-        const decryptedData = CryptoJS.enc.Utf8.stringify(
-            CryptoJS.AES.decrypt(encryptedData, keys[1], {
-                iv: keys[2] as any,
-            })
-        );
-        return JSON.parse(decryptedData);
-    },
-    getMetaData: async function (search: URLSearchParams) {
-        const id = search.get("watch").replace("/category/", "");
-        return await getAnilistInfo("Gogoanime", id);
-    },
-    rawURLtoInfo: function (url: URL) {
-        // https://gogoanime.bid/category/kimetsu-no-yaiba-movie-mugen-ressha-hen-dub
-        return `?watch=${url.pathname}&engine=7`;
-    }
 };
