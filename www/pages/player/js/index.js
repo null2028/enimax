@@ -7,6 +7,7 @@ var username = "hi";
 // @ts-ignore
 const extensionList = window.parent.returnExtensionList();
 let hls;
+let dashInstance;
 let doubleTapTime = isNaN(parseInt(localStorage.getItem("doubleTapTime"))) ? 5 : parseInt(localStorage.getItem("doubleTapTime"));
 let skipButTime = isNaN(parseInt(localStorage.getItem("skipButTime"))) ? 30 : parseInt(localStorage.getItem("skipButTime"));
 let currentVidData;
@@ -852,6 +853,16 @@ function chooseQualHls(x, type, elem) {
     localStorage.setItem("hlsqual", x);
     localStorage.setItem("hlsqualnum", parseInt(elem.innerText).toString());
 }
+function chooseQualDash(x, type, elem) {
+    if (parseInt(x) === -1) {
+        dashInstance.getSettings().streaming.abr.autoSwitchBitrate.video = true;
+    }
+    else {
+        dashInstance.setQualityFor("video", parseInt(x));
+    }
+    localStorage.setItem("hlsqual", x);
+    localStorage.setItem("hlsqualnum", parseInt(elem.innerText).toString());
+}
 function loadSubs(sourceName) {
     let vidDom = document.getElementById("v").children;
     while (vidDom.length > 0) {
@@ -935,6 +946,7 @@ function loadSubs(sourceName) {
     }
 }
 function chooseQual(config) {
+    console.log("DASH3");
     let skipTo = 0;
     let defURL = "";
     let selectedSourceName;
@@ -962,6 +974,7 @@ function chooseQual(config) {
             if (sName == qCon[i].getAttribute("data-name")) {
                 selectedSourceName = sName;
                 defURL = currentVidData.sources[i].url;
+                config.type = currentVidData.sources[i].type;
                 if (qCon[i].getAttribute("data-intro") === "true") {
                     skipIntroInfo.start = parseInt(qCon[i].getAttribute("data-start"));
                     skipIntroInfo.end = parseInt(qCon[i].getAttribute("data-end"));
@@ -984,6 +997,11 @@ function chooseQual(config) {
     if (hls) {
         hls.destroy();
     }
+    if (dashInstance) {
+        dashInstance.destroy();
+    }
+    console.log("DASH2");
+    console.log(config);
     if (config.type == "hls") {
         //@ts-ignore
         if (Hls.isSupported()) {
@@ -1057,6 +1075,25 @@ function chooseQual(config) {
             });
         }
     }
+    else if (config.type === "dash") {
+        // @ts-ignore
+        dashInstance = dashjs.MediaPlayer().create();
+        const url = !config.clicked ? defURL : config.url;
+        dashInstance.initialize(vidInstance.vid, url, true);
+        dashInstance.play();
+        dashInstance.seek(skipTo);
+        // @ts-ignore
+        const canPlayEvent = dashjs.MediaPlayer.events.STREAM_INITIALIZED;
+        console.log("DASH1");
+        const skipFunc = function () {
+            console.log("SKIPPING TO " + skipTo);
+            dashInstance.seek(skipTo);
+            dashInstance.off(canPlayEvent, skipFunc);
+            dashInstance.getSettings().streaming.abr.autoSwitchBitrate.video = false;
+            loadDashSource();
+        };
+        dashInstance.on(canPlayEvent, skipFunc);
+    }
     else {
         try {
             if (!config.clicked) {
@@ -1116,6 +1153,63 @@ function loadHLSsource() {
                 },
                 "callback": function () {
                     chooseQualHls(this.getAttribute("data-url"), this.getAttribute("data-type"), this);
+                },
+                "highlightable": true,
+                "selected": selected,
+            }, false);
+        }
+    }
+    catch (err) {
+        console.error(err);
+    }
+}
+function loadDashSource() {
+    try {
+        DMenu.getScene("quality").deleteItems();
+        DMenu.getScene("quality").addItem({
+            "text": "Quality",
+        }, true);
+        let hlsqualnum = parseInt(localStorage.getItem("hlsqualnum"));
+        let hslLevel = -1;
+        if (isNaN(hlsqualnum)) {
+            hslLevel = -1;
+        }
+        else {
+            let differences = [];
+            const levels = dashInstance.getBitrateInfoListFor("video");
+            for (let i = 0; i < levels.length; i++) {
+                differences.push(Math.abs(hlsqualnum - levels[i].height));
+            }
+            let min = differences[0];
+            let minIndex = 0;
+            for (let i = 0; i < differences.length; i++) {
+                if (min > differences[i]) {
+                    minIndex = i;
+                    min = differences[i];
+                }
+            }
+            hslLevel = minIndex;
+        }
+        if (hslLevel != -1) {
+            dashInstance.setQualityFor("video", hslLevel);
+        }
+        else {
+            dashInstance.getSettings().streaming.abr.autoSwitchBitrate.video = true;
+        }
+        const levels = dashInstance.getBitrateInfoListFor("video");
+        for (var i = -1; i < levels.length; i++) {
+            let selected = false;
+            if (i == hslLevel) {
+                selected = true;
+            }
+            DMenu.getScene("quality").addItem({
+                "text": (i == -1) ? "Auto" : levels[i].height + "p",
+                "attributes": {
+                    "data-url": i.toString(),
+                    "data-type": "hls",
+                },
+                "callback": function () {
+                    chooseQualDash(this.getAttribute("data-url"), this.getAttribute("data-type"), this);
                 },
                 "highlightable": true,
                 "selected": selected,

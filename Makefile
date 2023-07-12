@@ -63,6 +63,7 @@ ts:
 	cd www/extensions/others && printf "\n" >> index.js && cat anna.js >> ../index.js
 	cd www/extensions/others && printf "\n" >> index.js && cat anilist.js >> ../index.js
 	cd www/extensions/anime && printf "\n" >> index.js && cat 9anime.js >> ../index.js
+	cd www/extensions/anime && printf "\n" >> index.js && cat kickass.js >> ../index.js
 	cd www/extensions/tv && printf "\n" >> index.js && cat fmoviesto.js >> ../index.js
 	cd www/extensions/anime && printf "\n" >> index.js && cat gogo.js >> ../index.js
 	cd www/extensions/manga && printf "\n" >> index.js && cat mangadex.js >> ../index.js
