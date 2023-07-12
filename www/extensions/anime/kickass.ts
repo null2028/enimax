@@ -45,78 +45,34 @@ var kaa: extension = {
             throw err;
         }
     },
-    // getAnimeInfo: async function (url): Promise<extensionInfo> {
-    //     const settled = "allSettled" in Promise;
-    //     const id = (new URLSearchParams(`?watch=${url}`)).get("watch").replace("category/", "");
-    //     let response: extensionInfo = {
-    //         "name": "",
-    //         "image": "",
-    //         "description": "",
-    //         "episodes": [],
-    //         "mainName": ""
-    //     };
 
-    //     try {
-    //         if (settled) {
-    //             let anilistID: number;
+    loadAllEps: async function (episodeJSONs, key: string, url: string) {
+        try {
+            const promises = [];
 
-    //             try {
-    //                 anilistID = JSON.parse(await MakeFetch(`https://raw.githubusercontent.com/MALSync/MAL-Sync-Backup/master/data/pages/Gogoanime/${id}.json`)).aniId;
-    //             } catch (err) {
-    //                 // anilistID will be undefined
-    //             }
+            for (let i = 0; i < episodeJSONs[key].pages.length; i++) {
+                if(i == 0){
+                    continue;
+                }
+                
+                promises.push(MakeFetchZoro(`${url}&page=${episodeJSONs[key].pages[i].number}`));
+            }
 
-    //             if (anilistID) {
-    //                 const promises = [
-    //                     this.getAnimeInfoInter(url),
-    //                     MakeFetchTimeout(`https://api.enime.moe/mapping/anilist/${anilistID}`, {}, 2000)
-    //                 ];
+            const results = await Promise.all(promises);
 
-    //                 const promiseResponses = await Promise.allSettled(promises);
-    //                 if (promiseResponses[0].status === "fulfilled") {
-
-    //                     response = promiseResponses[0].value;
-
-    //                     if (promiseResponses[1].status === "fulfilled") {
-    //                         try {
-    //                             const metaData = JSON.parse(promiseResponses[1].value).episodes;
-    //                             const metaDataMap = {};
-    //                             for (let i = 0; i < metaData.length; i++) {
-    //                                 metaDataMap[metaData[i].number] = metaData[i];
-    //                             }
-
-    //                             for (let i = 0; i < response.episodes.length; i++) {
-    //                                 const currentEp = metaDataMap[response.episodes[i].id];
-    //                                 const currentResponseEp = response.episodes[i];
-
-    //                                 currentResponseEp.description = currentEp?.description;
-    //                                 currentResponseEp.thumbnail = currentEp?.image;
-    //                                 currentResponseEp.date = new Date(currentEp?.airedAt);
-    //                                 currentResponseEp.title += ` - ${currentEp?.title}`;
-    //                             }
-    //                         } catch (err) {
-    //                             console.error(err);
-    //                         }
-    //                     }
-
-    //                     return response;
-
-    //                 } else {
-    //                     throw promiseResponses[0].reason;
-    //                 }
-    //             } else {
-    //                 return await this.getAnimeInfoInter(url);
-    //             }
-
-    //         } else {
-    //             return await this.getAnimeInfoInter(url);
-    //         }
-    //     } catch (err) {
-    //         console.error(err);
-    //         throw err;
-    //     }
-
-    // },
+            for (const result of results) {
+                try {
+                    const resultJSON = JSON.parse(result);
+                    console.log(resultJSON);
+                    episodeJSONs[key].result.push(...resultJSON.result);
+                } catch (err) {
+                    console.warn(err);
+                }
+            }
+        } catch (err) {
+            console.warn(err);
+        }
+    },
     getAnimeInfo: async function (url: string): Promise<extensionInfo> {
         const id = (new URLSearchParams(`?watch=${url}`)).get("watch");
         const rawURL = `${this.baseURL}/${id}`;
@@ -144,13 +100,16 @@ var kaa: extension = {
 
             try {
                 episodeJSONs.sub = JSON.parse(await MakeFetchZoro(`${this.baseURL}/api/show/${id}/episodes?lang=ja-JP`));
+                await this.loadAllEps(episodeJSONs, "sub", `${this.baseURL}/api/show/${id}/episodes?lang=ja-JP`);
             } catch (err) {
                 episodeJSONs.dub = JSON.parse(await MakeFetchZoro(`${this.baseURL}/api/show/${id}/episodes?lang=en-US`));
+                await this.loadAllEps(episodeJSONs, "dub", `${this.baseURL}/api/show/${id}/episodes?lang=en-US`);
             }
 
             if (!episodeJSONs.dub) {
                 try {
                     episodeJSONs.dub = JSON.parse(await MakeFetchZoro(`${this.baseURL}/api/show/${id}/episodes?lang=en-US`));
+                    await this.loadAllEps(episodeJSONs, "dub", `${this.baseURL}/api/show/${id}/episodes?lang=en-US`);
                 } catch (err) {
 
                 }

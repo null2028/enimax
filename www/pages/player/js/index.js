@@ -1103,20 +1103,6 @@ async function chooseQual(config) {
             }
         }
         init();
-        // dashInstance.initialize(vidInstance.vid, url, true);
-        // dashInstance.play();
-        // dashInstance.seek(skipTo);
-        // // @ts-ignore
-        // const canPlayEvent = dashjs.MediaPlayer.events.STREAM_INITIALIZED;
-        // console.log("DASH1");
-        // const skipFunc = function(){
-        // 	console.log("SKIPPING TO " + skipTo)
-        // 	dashInstance.seek(skipTo);
-        // 	dashInstance.off(canPlayEvent, skipFunc);
-        // 	dashInstance.getSettings().streaming.abr.autoSwitchBitrate.video = false;
-        // 	loadDashSource();
-        // };
-        // dashInstance.on(canPlayEvent, skipFunc);
     }
     else {
         try {
@@ -1438,7 +1424,7 @@ function updateEpListSelected() {
         return false;
     }
 }
-function enableRemote(time) {
+async function enableRemote(time) {
     const currentTime = time;
     const duration = 86400;
     const remoteDOM = document.querySelector("#remote");
@@ -1447,6 +1433,9 @@ function enableRemote(time) {
     vidInstance.setObjectSettings(1, false);
     if (hls) {
         hls.destroy();
+    }
+    if (dashInstance) {
+        await dashInstance.destroy();
     }
     console.log(JSON.parse(JSON.stringify(currentVidData)), hasNext, hasPrev);
     vidInstance.vid.src = "";
