@@ -62,6 +62,7 @@ const extensionList = (<cordovaWindow>window.parent).returnExtensionList();
 // @ts-ignore
 const extensionTypes = (<cordovaWindow>window.parent).returnExtensionTypes();
 
+const setAniID = document.querySelector("#setAniID") as HTMLElement;
 let didScroll = false;
 let lastScrollPos: number;
 let scrollDownTopDOM = document.getElementById("scrollDownTop");
@@ -75,6 +76,7 @@ let webviewLink = "";
 let averageColor = "";
 let downloadedIsManga = false;
 let addedCover = false;
+let infoCurrentEngine;
 
 try {
     const search = new URLSearchParams(location.search);
@@ -175,13 +177,13 @@ function fix_title(title: string) {
 function normalise(url: string) {
     let engine = 0;
 
-    try{
+    try {
         const params = new URLSearchParams(url);
         engine = parseInt(params.get("engine"));
-        if(engine === 12){
+        if (engine === 12) {
             url = url.split("&current=")[0];
         }
-    }catch(err){
+    } catch (err) {
         console.warn(err);
     }
 
@@ -206,8 +208,11 @@ async function updateShow(params: { [key: string]: any }, currentEngine: extensi
             const metaData = await currentEngine.getMetaData(new URLSearchParams(location.search));
             if (metaData.id) {
                 window.history.replaceState({}, "", `${location.search}&aniID=${metaData.id}`);
+                setAniID.style.display = "none";
                 params.url = location.search;
             }
+        } else {
+            setAniID.style.display = "none";
         }
     } catch (err) {
         console.error(err);
@@ -355,7 +360,7 @@ function ini() {
 
             imageDOM.src = data.image;
             imageDOM.onload = function () {
-                if(addedCover || imageDOM.style.display === "none"){
+                if (addedCover || imageDOM.style.display === "none") {
                     return;
                 }
 
@@ -1113,6 +1118,8 @@ function ini() {
 
 
         if (localStorage.getItem("offline") === 'true') {
+            setAniID.style.display = "none";
+
             (<cordovaWindow>window.parent).makeLocalRequest("GET", `/${downloadedIsManga ? "manga/" : ""}${normalise(main_url.split("&downloaded")[0])}/info.json`).then(function (data) {
                 let temp = JSON.parse(data);
                 temp.data.episodes = temp.episodes;
@@ -1124,6 +1131,13 @@ function ini() {
             });
 
         } else {
+            if ((new URLSearchParams(location.search)).has("aniID") ||
+                currentEngine.type !== "anime") {
+                setAniID.style.display = "none";
+            }
+
+            infoCurrentEngine = currentEngine;
+
             currentEngine.getAnimeInfo(main_url).then(function (data) {
                 if (data.isManga === true) {
                     downloadedIsManga = true;
@@ -1330,6 +1344,42 @@ document.getElementById("relations").onclick = function () {
 
 document.getElementById("recommendations").onclick = function () {
     openCon(recomCon);
+};
+
+setAniID.onclick = async function () {
+    const search = new URLSearchParams(location.search);
+    
+    if(search.has("aniID")){
+        return;
+    }
+
+    const aniIDPrompt = prompt("Enter the anilist ID or the URL of the anime's anilist page");
+    let aniId = null;
+
+    if (!isNaN(parseInt(aniIDPrompt))) {
+        aniId = parseInt(aniIDPrompt);
+    } else {
+        try {
+            aniId = parseInt((new URL(aniIDPrompt)).pathname.split("/")[2]);
+
+            if (isNaN(aniId)) {
+                aniId = null;
+            }
+        } catch (err) {
+            alert("Invalid URL or something else went wrong");
+        }
+    }
+
+    if(aniId && !isNaN(aniId)){
+        window.history.replaceState({}, "", `${location.search}&aniID=${aniId}`);
+        
+        (<cordovaWindow>window.parent).apiCall("POST", { "username": "", "action": 14, "name": showMainName, "url": location.search }, (x) => {
+            sendNoti([2, "", "Alert", "Done!"]);
+        });
+
+    }else{
+        alert("Got an invalid anilist id");
+    }
 };
 
 document.getElementById("back").onclick = goBack;
