@@ -1,4 +1,4 @@
-function createElement(config) {
+function createElement(config, obj, key) {
     if (config.shouldAdd === false) {
         return;
     }
@@ -42,6 +42,9 @@ function createElement(config) {
                 temp.append(childDOM);
             }
         }
+    }
+    if (obj) {
+        obj[key] = temp;
     }
     return temp;
 }

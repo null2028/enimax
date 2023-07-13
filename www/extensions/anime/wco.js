@@ -316,7 +316,6 @@ var wco = {
         }
         catch (err) {
             console.error(err);
-            alert("Couldn't get the link");
             data.message = "Couldn't get the link";
             return data;
         }

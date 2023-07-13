@@ -1700,7 +1700,7 @@ window.onmessage = async function (message) {
                     res = true;
                 }
                 else {
-                    res = confirm("Want to open the downloaded version?");
+                    res = await window.parent.Dialogs.confirm("Want to open the downloaded version?");
                 }
                 if (res) {
                     loadsLocally = true;

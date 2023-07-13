@@ -1,7 +1,7 @@
 const playerIFrame = document.getElementById("player");
 const mainIFrame = document.getElementById("frame");
 const anonDOM = document.getElementById("anonMode");
-let thisWindow = window;
+var thisWindow = window;
 var socket;
 let frameHistory = [];
 var token;
@@ -198,8 +198,8 @@ function castVid(data, requiresWebServer) {
                 thisWindow.chrome.cast.requestSession((session) => {
                     onSessionRequestSuccess(session, data);
                     resolve(true);
-                }, () => {
-                    alert("Could not cast the video. Try again.");
+                }, async () => {
+                    await thisWindow.Dialogs.alert("Could not cast the video. Try again.");
                     resolve(false);
                 });
             }
@@ -313,35 +313,36 @@ function saveAsImport(arrayInt) {
             thisWindow.resolveLocalFileSystemURL(`${thisWindow.cordova.file.applicationStorageDirectory}${"databases"}`, function (fileSystem) {
                 fileSystem.getFile("data4.db", { create: true, exclusive: false }, function (file) {
                     file.createWriter(function (fileWriter) {
-                        fileWriter.onwriteend = function (e) {
-                            alert("Done!");
+                        fileWriter.onwriteend = async function (e) {
+                            await thisWindow.Dialogs.alert("Done!");
                             window.location.reload();
                         };
-                        fileWriter.onerror = function (e) {
-                            alert("Couldn't write to the file - 2.");
+                        fileWriter.onerror = async function (e) {
+                            await thisWindow.Dialogs.alert("Couldn't write to the file - 2.");
                             window.location.reload();
                         };
                         fileWriter.write(blob);
-                    }, (err) => {
-                        alert("Couldn't write to the file.");
+                    }, async (err) => {
+                        await thisWindow.Dialogs.alert("Couldn't write to the file.");
                         window.location.reload();
                     });
-                }, function (error) {
-                    alert("Error opening the database file.");
+                }, async function (error) {
+                    await thisWindow.Dialogs.alert("Error opening the database file.");
                     window.location.reload();
                 });
-            }, function (error) {
-                alert("Error opening the database folder.");
+            }, async function (error) {
+                await thisWindow.Dialogs.alert("Error opening the database folder.");
                 window.location.reload();
             });
-        }, function (error) {
-            alert("Error closing the database.");
+        }, async function (error) {
+            await thisWindow.Dialogs.alert("Error closing the database.");
             window.location.reload();
         });
     }
     catch (err) {
-        alert("Error getting the database variable.");
-        window.location.reload();
+        thisWindow.Dialogs.alert("Error getting the database variable.").then(() => {
+            window.location.reload();
+        });
     }
 }
 function saveImage(arrayInt) {
@@ -349,22 +350,22 @@ function saveImage(arrayInt) {
     thisWindow.resolveLocalFileSystemURL(`${thisWindow.cordova.file.externalDataDirectory}`, function (fileSystem) {
         fileSystem.getFile("background.png", { create: true, exclusive: false }, function (file) {
             file.createWriter(function (fileWriter) {
-                fileWriter.onwriteend = function (e) {
+                fileWriter.onwriteend = async function (e) {
                     thisWindow.updateImage();
-                    alert("Done!");
+                    thisWindow.Dialogs.alert("Done!");
                 };
-                fileWriter.onerror = function (e) {
-                    alert("Couldn't write to the file - 2.");
+                fileWriter.onerror = async function (e) {
+                    thisWindow.Dialogs.alert("Couldn't write to the file - 2.");
                 };
                 fileWriter.write(blob);
-            }, (err) => {
-                alert("Couldn't write to the file.");
+            }, async (err) => {
+                thisWindow.Dialogs.alert("Couldn't write to the file.");
             });
-        }, function (x) {
-            alert("Error opening the database file.");
+        }, async function (x) {
+            thisWindow.Dialogs.alert("Error opening the database file.");
         });
-    }, function (error) {
-        alert("Error opening the database folder.");
+    }, async function (error) {
+        thisWindow.Dialogs.alert("Error opening the database folder.");
     });
 }
 function listDir(path) {
@@ -815,11 +816,11 @@ function onSessionRequestSuccess(session, data) {
         }
         catch (err) {
             console.error(err);
-            alert("Could not seek");
+            thisWindow.Dialogs.alert("Could not seek");
         }
     }, (err) => {
         console.error(err);
-        alert("Could not load the video");
+        thisWindow.Dialogs.alert("Could not load the video");
     });
 }
 async function onDeviceReady() {

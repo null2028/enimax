@@ -146,6 +146,10 @@ interface cordovaServerRequest {
 }
 interface cordovaWindow extends Window {
     fixTitle(title: string, extension?: extension): string,
+    Dialogs: {
+        confirm: (message?: string) => Promise<boolean>
+        alert: (message?: string) => Promise<boolean>
+    },
     getEstimatedState: Function,
     handleUpperBar: Function,
     toggleCastState: Function,

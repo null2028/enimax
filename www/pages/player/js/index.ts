@@ -1972,7 +1972,7 @@ window.onmessage = async function (message: MessageEvent) {
 				if (localStorage.getItem("alwaysDown") === "true") {
 					res = true;
 				} else {
-					res = confirm("Want to open the downloaded version?");
+					res = await (window.parent as cordovaWindow).Dialogs.confirm("Want to open the downloaded version?");
 				}
 				if (res) {
 					loadsLocally = true;

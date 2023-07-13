@@ -39,6 +39,8 @@ function rgbToHex(r, g, b) {
     return "#" + componentToHex(r) + componentToHex(g) + componentToHex(b);
 }
 // @ts-ignore
+const thisWindow = window.parent;
+// @ts-ignore
 const extensionList = window.parent.returnExtensionList();
 // @ts-ignore
 const extensionTypes = window.parent.returnExtensionTypes();
@@ -641,8 +643,8 @@ function ini() {
                                         window.parent.postMessage({ "action": 403, "data": tempDiv4.getAttribute("data-url"), "anime": data, "mainUrl": main_url, "title": tempDiv4.getAttribute("data-title") }, "*");
                                     };
                                 }
-                            }).catch(function (err) {
-                                alert("Error deleting the files.");
+                            }).catch(async function (err) {
+                                await thisWindow.Dialogs.alert("Error deleting the files.");
                             });
                         };
                         check = true;
@@ -822,8 +824,8 @@ function ini() {
                     tempDiv4.onclick = function () {
                         window.parent.removeDirectory(`/${downloadedIsManga ? "manga/" : ""}${data.mainName}/${thisLink}`).then(function () {
                             tempDiv.remove();
-                        }).catch(function () {
-                            alert("Error deleting the files");
+                        }).catch(async function () {
+                            thisWindow.Dialogs.alert("Error deleting the files");
                         });
                     };
                     let tempDiv3 = document.createElement("div");
@@ -853,10 +855,10 @@ function ini() {
             }
             if (scrollToDOM && !config.chrome) {
                 document.getElementById("downloadNext").style.display = "inline-block";
-                document.getElementById("downloadNext").onclick = function () {
+                document.getElementById("downloadNext").onclick = async function () {
                     let howmany = parseInt(prompt("How many episodes do you want to download?", "5"));
                     if (isNaN(howmany)) {
-                        alert("Not a valid number");
+                        await thisWindow.Dialogs.alert("Not a valid number");
                     }
                     else {
                         let cur = scrollToDOM;
@@ -950,9 +952,9 @@ function ini() {
                 let temp = JSON.parse(data);
                 temp.data.episodes = temp.episodes;
                 processEpisodeData(temp.data, true, main_url);
-            }).catch(function (err) {
+            }).catch(async function (err) {
                 console.error(err);
-                alert("Could not find info.json");
+                await thisWindow.Dialogs.alert("Could not find info.json");
             });
         }
         else {
@@ -995,7 +997,7 @@ playIcon.onclick = function () {
         document.querySelector(".episodesCon").querySelector(".episodesPlaySmall").click();
     }
 };
-addToLibrary.onclick = function () {
+addToLibrary.onclick = async function () {
     if (localStorage.getItem("offline") === 'true') {
         return;
     }
@@ -1028,14 +1030,14 @@ addToLibrary.onclick = function () {
                     if (!!localStorage.getItem("anilist-token") && searchQuery.has("aniID")) {
                         const aniID = parseInt(searchQuery.get("aniID"));
                         if (!isNaN(aniID)) {
-                            const shouldAdd = confirm("Do you want to add this show to your anilist library?");
+                            const shouldAdd = await window.parent.Dialogs.confirm("Do you want to add this show to your anilist library?");
                             if (shouldAdd) {
                                 await window.parent.updateEpWatched(aniID, 1);
                                 await window.parent.updateAnilistStatus(aniID);
                             }
                         }
                     }
-                    window.parent.apiCall("POST", { "username": "", "action": 4 }, (response) => {
+                    window.parent.apiCall("POST", { "username": "", "action": 4 }, async (response) => {
                         const rooms = response.data[1];
                         rooms.unshift("Recently Watched", 0, "Ongoing", -1);
                         if (rooms.length === 0) {
@@ -1048,7 +1050,7 @@ addToLibrary.onclick = function () {
                         const whatStatus = prompt(promptString, "0");
                         let roomID = parseInt(whatStatus);
                         if (isNaN(roomID)) {
-                            alert("Not a valid number. Aborting.");
+                            thisWindow.Dialogs.alert("Not a valid number. Aborting.");
                         }
                         else {
                             roomID = rooms[roomID * 2 + 1];
@@ -1067,12 +1069,12 @@ addToLibrary.onclick = function () {
             const searchQuery = new URLSearchParams(location.search);
             if (!!localStorage.getItem("anilist-token") && searchQuery.has("aniID") && searchQuery.get("aniID")) {
                 const aniID = parseInt(searchQuery.get("aniID"));
-                const shouldDelete = confirm("Do you want to delete this show from your anilist account?");
+                const shouldDelete = await window.parent.Dialogs.confirm("Do you want to delete this show from your anilist account?");
                 if (shouldDelete) {
                     window.parent.deleteAnilistShow(aniID);
                 }
             }
-            const shouldDelete = confirm("Are you sure that you want to remove this show from your library?");
+            const shouldDelete = await window.parent.Dialogs.confirm("Are you sure that you want to remove this show from your library?");
             if (shouldDelete) {
                 window.parent.apiCall("POST", { "username": "", "action": 6, "name": showMainName }, () => {
                     addToLibrary.classList.remove("isWaiting");
@@ -1086,7 +1088,7 @@ addToLibrary.onclick = function () {
         }
     }
     else {
-        alert("Try again after the page has loaded.");
+        await thisWindow.Dialogs.alert("Try again after the page has loaded.");
     }
 };
 window.parent.apiCall("POST", { "username": "", "action": 4 }, async (response) => {
@@ -1150,7 +1152,7 @@ setAniID.onclick = async function () {
             }
         }
         catch (err) {
-            alert("Invalid URL or something else went wrong");
+            await thisWindow.Dialogs.alert("Invalid URL or something else went wrong");
         }
     }
     if (aniId && !isNaN(aniId)) {
@@ -1160,7 +1162,7 @@ setAniID.onclick = async function () {
         });
     }
     else {
-        alert("Got an invalid anilist id");
+        await thisWindow.Dialogs.alert("Got an invalid anilist id");
     }
 };
 document.getElementById("back").onclick = goBack;

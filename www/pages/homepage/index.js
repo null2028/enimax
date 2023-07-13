@@ -22,6 +22,8 @@ let firstLoad = true;
 let states = "";
 const hasAnilistToken = !!localStorage.getItem("anilist-token");
 // @ts-ignore
+const thisWindow = window.parent;
+// @ts-ignore
 const backdrop = document.getElementsByClassName("backdrop")[0];
 // @ts-ignore
 const sourceChoiceDOM = document.getElementById("sourceChoice");
@@ -190,7 +192,7 @@ if (localStorage.getItem("devmode") === "true") {
 if (isSnapSupported) {
     document.getElementById("custom_rooms").className = "snappedCustomRooms";
 }
-function resetOfflineQual() {
+async function resetOfflineQual() {
     let qual = [360, 480, 720, 1080];
     while (true) {
         let choice = parseInt(prompt(`What quality do you want the downloaded videos to be of? \n1. 360 \n2. 480\n3. 720 \n4. 1080`));
@@ -199,7 +201,7 @@ function resetOfflineQual() {
             break;
         }
         else {
-            alert("Enter a number between 1 and 4");
+            await thisWindow.Dialogs.alert("Enter a number between 1 and 4");
         }
     }
 }
@@ -219,8 +221,8 @@ function exportDataSQL() {
     var options = {
         files: [window.parent.cordova.file.applicationStorageDirectory + "databases/data4.db"],
     };
-    window.parent.plugins.socialsharing.shareWithOptions(options, () => { }, () => {
-        alert("Something went wrong");
+    window.parent.plugins.socialsharing.shareWithOptions(options, () => { }, async () => {
+        thisWindow.Dialogs.alert("Something went wrong");
     });
 }
 document.getElementById("resetQuality").onclick = function () {
@@ -235,11 +237,11 @@ document.getElementById("importFile").onchange = async function (event) {
             window.parent.saveAsImport(result);
         }
         else {
-            alert("Aborting");
+            await thisWindow.Dialogs.alert("Aborting");
         }
     }
     catch (err) {
-        alert("Error reading the file.");
+        await thisWindow.Dialogs.alert("Error reading the file.");
     }
 };
 document.getElementById("getImage").onchange = async function (event) {
@@ -249,7 +251,7 @@ document.getElementById("getImage").onchange = async function (event) {
         window.parent.saveImage(result);
     }
     catch (err) {
-        alert("Error reading the file.");
+        await thisWindow.Dialogs.alert("Error reading the file.");
     }
 };
 document.getElementById("exportData").onclick = function () {
@@ -454,7 +456,7 @@ document.getElementById("resetSource").onclick = function () {
     }
 };
 let offlineDOM = document.getElementById("offline");
-offlineDOM.onchange = function () {
+offlineDOM.onchange = async function () {
     let val = offlineDOM.checked.toString();
     if (val == "false") {
         localStorage.setItem("offline", "false");
@@ -462,7 +464,7 @@ offlineDOM.onchange = function () {
     }
     else {
         if (isNaN(parseInt(localStorage.getItem("offlineQual")))) {
-            resetOfflineQual();
+            await resetOfflineQual();
         }
         localStorage.setItem("offline", "true");
         window.parent.postMessage({ "action": 500, data: "pages/homepage/index.html" }, "*");
@@ -595,7 +597,7 @@ document.getElementById("useImageBack").onchange = function () {
 document.getElementById("rangeCon").addEventListener("touchmove", function (event) {
     event.stopPropagation();
 });
-document.getElementById("anilistLogin").addEventListener("click", function (event) {
+document.getElementById("anilistLogin").addEventListener("click", async function (event) {
     if (hasAnilistToken) {
         localStorage.removeItem("anilist-token");
         window.location.reload();
@@ -603,7 +605,7 @@ document.getElementById("anilistLogin").addEventListener("click", function (even
     }
     if (config.chrome) {
         try {
-            alert("A new tab will open asking you to log in, and then you will be redirected to a new page. Copy the URL of the new page and paste it when prompted");
+            await thisWindow.Dialogs.alert("A new tab will open asking you to log in, and then you will be redirected to a new page. Copy the URL of the new page and paste it when prompted");
             window.open("https://anilist.co/api/v2/oauth/authorize?client_id=13095&response_type=token", '_blank', 'location=yes,height=570,width=520,scrollbars=yes,status=yes');
             let url = undefined;
             while (!url) {
@@ -612,22 +614,22 @@ document.getElementById("anilistLogin").addEventListener("click", function (even
                     const accessToken = new URLSearchParams((new URL(url)).hash.substring(1)).get("access_token");
                     localStorage.setItem("anilist-token", accessToken);
                     if (accessToken) {
-                        const shouldUpdate = confirm("Logged in! Do you want to import your library? if you don't want to do that right now, you can do that later by going to the menu.");
+                        const shouldUpdate = await window.parent.Dialogs.confirm("Logged in! Do you want to import your library? if you don't want to do that right now, you can do that later by going to the menu.");
                         if (shouldUpdate) {
                             window.parent.getAllItems();
                         }
                     }
                     else {
-                        alert("Seems like something went wrong.");
+                        await thisWindow.Dialogs.alert("Seems like something went wrong.");
                     }
                 }
                 catch (err) {
-                    alert(err + "\n" + "Try again.");
+                    await thisWindow.Dialogs.alert(err + "\n" + "Try again.");
                 }
             }
         }
         catch (err) {
-            alert(err);
+            await thisWindow.Dialogs.alert(err);
         }
     }
     else {
@@ -1257,9 +1259,9 @@ if (true) {
     function hide_dom(x) {
         x.parentElement.style.display = "none";
     }
-    function hide_dom2(x) {
+    async function hide_dom2(x) {
         if (last_order != getCurrentOrder()) {
-            if (confirm("Are you sure you want to close without saving?")) {
+            if (await window.parent.Dialogs.confirm("Are you sure you want to close without saving?")) {
                 x.parentElement.style.display = "none";
             }
         }
@@ -1291,8 +1293,8 @@ if (true) {
             document.getElementById("room_con").style.display = 'none';
             window.parent.apiCall("POST", { "action": 10, "username": username, "room": data_in }, getUserInfo);
         },
-        delete_room: (domelem) => {
-            if (confirm("Are you sure you want to delete this card?")) {
+        delete_room: async (domelem) => {
+            if (await window.parent.Dialogs.confirm("Are you sure you want to delete this category?")) {
                 let room_id = domelem.getAttribute("data-roomid");
                 window.parent.apiCall("POST", { "username": username, "action": 12, "id": room_id }, getUserInfo);
             }
@@ -1317,8 +1319,8 @@ if (true) {
                 window.parent.apiCall("POST", { "username": username, "action": 14, "name": name, "url": main_url_prompt }, change_url_callback, [domelem]);
             }
         },
-        delete_card: (x, domelem, isManga = false) => {
-            if (confirm("Are you sure you want to delete this show from your watched list?")) {
+        delete_card: async (x, domelem, isManga = false) => {
+            if (await window.parent.Dialogs.confirm("Are you sure you want to delete this show from your watched list?")) {
                 window.parent.apiCall("POST", { "username": username, "action": 6, "name": x, isManga }, delete_card_callback, [domelem]);
             }
         },
@@ -1504,13 +1506,13 @@ if (true) {
             }
         }
         catch (err) {
-            alert("Couldn't update the library");
+            await thisWindow.Dialogs.alert("Couldn't update the library");
             console.error(err);
             console.error("Error 342");
         }
     }
     function helpUpdateLib() {
-        alert("Outlines the shows that have new unwatched episodes. This is automatically updated twice a day, but you can manually do it by clicking on \"Update Library\". This may take tens of seconds.");
+        thisWindow.Dialogs.alert("Outlines the shows that have new unwatched episodes. This is automatically updated twice a day, but you can manually do it by clicking on \"Update Library\". This may take tens of seconds.");
     }
     async function updateNextEp(flaggedShow) {
         var _a, _b;
@@ -1542,7 +1544,7 @@ if (true) {
                     class: "next_ep_new",
                     listeners: {
                         click: function () {
-                            alert("When the next episode will air.");
+                            thisWindow.Dialogs.alert("When the next episode will air.");
                         }
                     }
                 }));
@@ -1760,13 +1762,13 @@ if (true) {
                                             "data-showname": data[i][0],
                                             "data-href": data[i][5]
                                         }, "listeners": {
-                                            "click": function (event) {
+                                            "click": async function (event) {
                                                 event.stopPropagation();
                                                 let isManga = false;
                                                 try {
                                                     isManga = new URLSearchParams(this.getAttribute("data-href")).get("isManga") === "true";
                                                     if (!isNaN(aniID) && hasAnilistToken) {
-                                                        const shouldDelete = confirm("Do you want to delete this show from your anilist account?");
+                                                        const shouldDelete = await window.parent.Dialogs.confirm("Do you want to delete this show from your anilist account?");
                                                         if (shouldDelete) {
                                                             window.parent.deleteAnilistShow(aniID);
                                                         }
@@ -1847,7 +1849,7 @@ if (true) {
                                         listeners: {
                                             click: function (event) {
                                                 event.stopPropagation();
-                                                alert("The episode number.");
+                                                thisWindow.Dialogs.alert("The episode number.");
                                             },
                                             "pointerdown": function (event) {
                                                 event.preventDefault();
@@ -1943,13 +1945,13 @@ if (true) {
                                     "listeners": {
                                         "click": async function () {
                                             try {
-                                                if (confirm("Are you sure you want to delete this show?")) {
+                                                if (await window.parent.Dialogs.confirm("Are you sure you want to delete this show?")) {
                                                     await window.parent.removeDirectory(`${isManga ? "manga/" : ""}${showname}`);
                                                     cardImage.remove();
                                                 }
                                             }
                                             catch (err) {
-                                                alert("Could not delete the files. You have to manually delete it by going to the show's page.");
+                                                await thisWindow.Dialogs.alert("Could not delete the files. You have to manually delete it by going to the show's page.");
                                             }
                                         }
                                     }

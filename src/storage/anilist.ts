@@ -30,11 +30,11 @@ async function makeAnilistReq(query: string, variables: any, accessToken: string
             const variablesString = JSON.stringify(variables);
 
             if (variablesString !== localStorage.getItem("anilist-last-error")) {
-                alert(err);
+                thisWindow.Dialogs.alert(err);
                 localStorage.setItem("anilist-last-error", variablesString);
             }
         } else {
-            alert(err);
+            thisWindow.Dialogs.alert(err);
         }
         throw Error("Could not update");
     }
@@ -208,17 +208,18 @@ async function updateAnilistStatus(aniID: any) {
         if (statuses.includes(whatStatus.toUpperCase() as anilistStatus)) {
             status = whatStatus.toUpperCase() as anilistStatus;
         } else {
-            alert("Unexpected reply. Aborting.");
+            await thisWindow.Dialogs.alert("Unexpected reply. Aborting.");
+            return;
         }
     } else {
         const index = parseInt(whatStatus);
         if (index >= 0 && index < statuses.length) {
             status = statuses[index];
         } else {
-            alert("Unexpected reply. Aborting.");
+            await thisWindow.Dialogs.alert("Unexpected reply. Aborting.");
+            return;
         }
     }
-
 
     let permNoti: notification;
 
@@ -410,7 +411,7 @@ async function getAllItems() {
                 }
             }
 
-            const makeRooms = confirm("Do you want to put the shows in their respective categories?");
+            const makeRooms = await (window.parent as cordovaWindow).Dialogs.confirm("Do you want to put the shows in their respective categories?");
 
             if (makeRooms) {
                 try {

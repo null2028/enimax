@@ -2,6 +2,7 @@ const anilistStatus = ["CURRENT", "PLANNING", "COMPLETED", "DROPPED", "PAUSED", 
 function returnAnilistStatus() {
     return anilistStatus;
 }
+thisWindow.Dialogs.alert("e");
 async function makeAnilistReq(query, variables, accessToken) {
     try {
         const response = await fetch("https://graphql.anilist.co", {
@@ -26,12 +27,12 @@ async function makeAnilistReq(query, variables, accessToken) {
         if ("mediaId" in variables && "progress" in variables) {
             const variablesString = JSON.stringify(variables);
             if (variablesString !== localStorage.getItem("anilist-last-error")) {
-                alert(err);
+                thisWindow.Dialogs.alert(err);
                 localStorage.setItem("anilist-last-error", variablesString);
             }
         }
         else {
-            alert(err);
+            thisWindow.Dialogs.alert(err);
         }
         throw Error("Could not update");
     }
@@ -174,7 +175,8 @@ async function updateAnilistStatus(aniID) {
             status = whatStatus.toUpperCase();
         }
         else {
-            alert("Unexpected reply. Aborting.");
+            await thisWindow.Dialogs.alert("Unexpected reply. Aborting.");
+            return;
         }
     }
     else {
@@ -183,7 +185,8 @@ async function updateAnilistStatus(aniID) {
             status = statuses[index];
         }
         else {
-            alert("Unexpected reply. Aborting.");
+            await thisWindow.Dialogs.alert("Unexpected reply. Aborting.");
+            return;
         }
     }
     let permNoti;
@@ -343,7 +346,7 @@ async function getAllItems() {
                     anilistAllCats.push(lists[i].name);
                 }
             }
-            const makeRooms = confirm("Do you want to put the shows in their respective categories?");
+            const makeRooms = await window.parent.Dialogs.confirm("Do you want to put the shows in their respective categories?");
             if (makeRooms) {
                 try {
                     const userData = await getUserData();

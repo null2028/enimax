@@ -43,7 +43,7 @@ async function batchInsert(command) {
 let actionDexie: any;
 let actionSQLite: any;
 async function dexieToSQLite() {
-    alert("This may take a while. DO NOT EXIT this page until you receive a message that says that you can.");
+    await thisWindow.Dialogs.alert("This may take a while. DO NOT EXIT this page until you receive a message that says that you can.");
     try {
         let currentDB = await downloadedDB.vid.toArray();
         let command: any = [
@@ -104,11 +104,11 @@ async function dexieToSQLite() {
 
 
         await batchInsert(command);
-        alert("Done! You can now safely reload the page.");
+        await thisWindow.Dialogs.alert("Done! You can now safely reload the page.");
         window.location.reload();
     } catch (err) {
         console.error(err);
-        alert("Some unexpected error has occurred. Contact the developer.");
+        await thisWindow.Dialogs.alert("Some unexpected error has occurred. Contact the developer.");
     }
 }
 
@@ -575,7 +575,7 @@ async function apiCall(method, form, callback, args = [], timeout = false, shoul
                         // @ts-ignore
                         await window.parent.removeDirectory(`${req.body.isManga === true ? "manga/" : ""}${name}`);
                     } catch (err) {
-                        alert("Could not delete the files. You have to manually delete it by going to the show's page.");
+                        await thisWindow.Dialogs.alert("Could not delete the files. You have to manually delete it by going to the show's page.");
                     }
                 }
                 await mysql_query("DELETE FROM video where ep=0 and name=?", [name], currentDB);
@@ -1029,7 +1029,7 @@ async function apiCall(method, form, callback, args = [], timeout = false, shoul
                         // @ts-ignore
                         await window.parent.removeDirectory(`${name}`);
                     } catch (err) {
-                        alert("Could not delete the files. You have to manually delete it by going to the show's page.");
+                        await thisWindow.Dialogs.alert("Could not delete the files. You have to manually delete it by going to the show's page.");
                     }
                 }
 

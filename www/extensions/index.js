@@ -147,13 +147,13 @@ function getWebviewHTML(url = "https://www.zoro.to", hidden = false, timeout = 1
         if (isAnilist) {
             inappRef.show();
         }
-        inappRef.addEventListener('loadstop', (event) => {
+        inappRef.addEventListener('loadstop', async (event) => {
             if (isAnilist) {
                 if (event.url.includes("enimax-anime.github.io/anilist")) {
                     const accessToken = new URLSearchParams((new URL(event.url)).hash.substring(1)).get("access_token");
                     localStorage.setItem("anilist-token", accessToken);
                     inappRef.close();
-                    const shouldUpdate = confirm("Logged in! Do you want to import your library? if you don't want to do that right now, you can do that later by going to the menu");
+                    const shouldUpdate = await window.parent.Dialogs.confirm("Logged in! Do you want to import your library? if you don't want to do that right now, you can do that later by going to the menu");
                     if (shouldUpdate) {
                         getAllItems();
                     }
@@ -784,7 +784,6 @@ var wco = {
         }
         catch (err) {
             console.error(err);
-            alert("Couldn't get the link");
             data.message = "Couldn't get the link";
             return data;
         }
@@ -834,16 +833,16 @@ var animixplay = {
     baseURL: "https://animixplay.to",
     type: "anime",
     disableAutoDownload: false,
-    disabled: true,
+    disabled: false,
     name: "Animixplay",
     shortenedName: "Animix",
     searchApi: async function (query) {
         const response = [];
-        alert("Animixplay has been shut down.");
+        thisWindow.Dialogs.alert("Animixplay has been shut down.");
         return { status: 400, data: response };
     },
     getAnimeInfo: async function (url) {
-        alert("Animixplay has been shut down.");
+        thisWindow.Dialogs.alert("Animixplay has been shut down.");
         return {
             "name": "",
             "image": "",
@@ -853,7 +852,7 @@ var animixplay = {
         };
     },
     getLinkFromUrl: async function (url) {
-        alert("Animixplay has been shut down.");
+        thisWindow.Dialogs.alert("Animixplay has been shut down.");
         return {
             sources: [],
             name: "",
@@ -1723,7 +1722,7 @@ var zoro = {
         await getWebviewHTML("https://rapid-cloud.co/", false, 15000, `let resultInApp={'status':200,'data':localStorage.setItem("v1.1_getSourcesCount", "40")};webkit.messageHandlers.cordova_iab.postMessage(JSON.stringify(resultInApp));`);
         await new Promise(r => setTimeout(r, 500));
         try {
-            alert("Close the inAppBrowser when the video has started playing.");
+            await thisWindow.Dialogs.alert("Close the inAppBrowser when the video has started playing.");
             await getWebviewHTML("https://zoro.to/watch/eighty-six-2nd-season-17760?ep=84960", false, 120000, '');
         }
         catch (err) {
@@ -1732,10 +1731,10 @@ var zoro = {
         try {
             const token = await getWebviewHTML("https://rapid-cloud.co/", false, 15000, `let resultInApp={'status':200,'data':localStorage.getItem("v1.1_token")};webkit.messageHandlers.cordova_iab.postMessage(JSON.stringify(resultInApp));`);
             localStorage.setItem("rapidToken", token.data.data);
-            alert("Token extracted. You can now refresh the page.");
+            await thisWindow.Dialogs.alert("Token extracted. You can now refresh the page.");
         }
         catch (err) {
-            alert("Could not extract the token. Try again or Contact the developer.");
+            await thisWindow.Dialogs.alert("Could not extract the token. Try again or Contact the developer.");
         }
     },
     getMetaData: async function (search) {

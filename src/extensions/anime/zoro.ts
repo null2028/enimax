@@ -425,7 +425,7 @@ var zoro: extension = {
         await new Promise(r => setTimeout(r, 500));
 
         try {
-            alert("Close the inAppBrowser when the video has started playing.")
+            await thisWindow.Dialogs.alert("Close the inAppBrowser when the video has started playing.")
             await getWebviewHTML("https://zoro.to/watch/eighty-six-2nd-season-17760?ep=84960", false, 120000, '');
         } catch (err) {
 
@@ -438,9 +438,9 @@ var zoro: extension = {
 
             localStorage.setItem("rapidToken", token.data.data);
 
-            alert("Token extracted. You can now refresh the page.")
+            await thisWindow.Dialogs.alert("Token extracted. You can now refresh the page.")
         } catch (err) {
-            alert("Could not extract the token. Try again or Contact the developer.");
+            await thisWindow.Dialogs.alert("Could not extract the token. Try again or Contact the developer.");
         }
 
     },

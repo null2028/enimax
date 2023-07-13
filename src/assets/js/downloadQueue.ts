@@ -135,11 +135,11 @@ class downloadQueue {
             (window.parent as cordovaWindow).removeDirectory(`/${curElem.anime.mainName}/${btoa(temp3[0])}/`).then(function () {
 
             }).catch(function () {
-                alert("Could not delete the file. You have to delete it manually. Error 1000");
+                thisWindow.Dialogs.alert("Could not delete the file. You have to delete it manually. Error 1000");
 
             });
         } catch (err) {
-            alert("Could not delete the file. You have to delete it manually.");
+            thisWindow.Dialogs.alert("Could not delete the file. You have to delete it manually.");
         }
     }
     async removeFromQueue(name, self) {
@@ -185,7 +185,7 @@ class downloadQueue {
         let flag = true;
         for (let i = 0; i < self.queue.length; i++) {
             if (self.queue[i].data == data) {
-                alert("This is already in the queue");
+                await thisWindow.Dialogs.alert("This is already in the queue");
                 flag = false;
                 break;
             }

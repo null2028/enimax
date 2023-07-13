@@ -469,7 +469,7 @@ async function ini() {
                 if (localStorage.getItem("alwaysDown") === "true") {
                     res = true;
                 } else {
-                    res = confirm("Want to open the downloaded version?");
+                    res = await (window.parent as cordovaWindow).Dialogs.confirm("Want to open the downloaded version?");
                 }
                 if (res) {
                     let vidString = (await (<cordovaWindow>window.parent).makeLocalRequest("GET", `/manga/${rootDirCheck}/viddata.json`));

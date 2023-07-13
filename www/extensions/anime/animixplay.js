@@ -3,16 +3,16 @@ var animixplay = {
     baseURL: "https://animixplay.to",
     type: "anime",
     disableAutoDownload: false,
-    disabled: true,
+    disabled: false,
     name: "Animixplay",
     shortenedName: "Animix",
     searchApi: async function (query) {
         const response = [];
-        alert("Animixplay has been shut down.");
+        thisWindow.Dialogs.alert("Animixplay has been shut down.");
         return { status: 400, data: response };
     },
     getAnimeInfo: async function (url) {
-        alert("Animixplay has been shut down.");
+        thisWindow.Dialogs.alert("Animixplay has been shut down.");
         return {
             "name": "",
             "image": "",
@@ -22,7 +22,7 @@ var animixplay = {
         };
     },
     getLinkFromUrl: async function (url) {
-        alert("Animixplay has been shut down.");
+        thisWindow.Dialogs.alert("Animixplay has been shut down.");
         return {
             sources: [],
             name: "",

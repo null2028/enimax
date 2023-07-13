@@ -179,13 +179,13 @@ function getWebviewHTML(url = "https://www.zoro.to", hidden = false, timeout: nu
             inappRef.show();
         }
 
-        inappRef.addEventListener('loadstop', (event) => {
+        inappRef.addEventListener('loadstop', async (event) => {
             if (isAnilist) {
                 if (event.url.includes("enimax-anime.github.io/anilist")) {
                     const accessToken = new URLSearchParams((new URL(event.url)).hash.substring(1)).get("access_token");
                     localStorage.setItem("anilist-token", accessToken);
                     inappRef.close();
-                    const shouldUpdate = confirm("Logged in! Do you want to import your library? if you don't want to do that right now, you can do that later by going to the menu");
+                    const shouldUpdate = await (window.parent as cordovaWindow).Dialogs.confirm("Logged in! Do you want to import your library? if you don't want to do that right now, you can do that later by going to the menu");
                     if (shouldUpdate) {
                         getAllItems();
                     }

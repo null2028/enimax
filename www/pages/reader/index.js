@@ -406,7 +406,7 @@ async function ini() {
                     res = true;
                 }
                 else {
-                    res = confirm("Want to open the downloaded version?");
+                    res = await window.parent.Dialogs.confirm("Want to open the downloaded version?");
                 }
                 if (res) {
                     let vidString = (await window.parent.makeLocalRequest("GET", `/manga/${rootDirCheck}/viddata.json`));
