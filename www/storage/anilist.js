@@ -2,7 +2,6 @@ const anilistStatus = ["CURRENT", "PLANNING", "COMPLETED", "DROPPED", "PAUSED", 
 function returnAnilistStatus() {
     return anilistStatus;
 }
-thisWindow.Dialogs.alert("e");
 async function makeAnilistReq(query, variables, accessToken) {
     try {
         const response = await fetch("https://graphql.anilist.co", {

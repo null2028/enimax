@@ -126,10 +126,10 @@ var wco = {
             }
             infoData.episodes = animeEps;
             try {
-                infoData.mainName = (new URL(url)).pathname.replace("/anime/", "") + "-";
+                infoData.mainName = (new URL(rawURL)).pathname.replace("/anime/", "") + "-";
             }
             catch (err) {
-                infoData.mainName = url.split("/anime/")[1] + "-";
+                infoData.mainName = rawURL.split("/anime/")[1] + "-";
             }
             return infoData;
         }

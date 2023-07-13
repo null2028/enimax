@@ -4,8 +4,6 @@ function returnAnilistStatus() {
     return anilistStatus;
 }
 
-thisWindow.Dialogs.alert("e");
-
 async function makeAnilistReq(query: string, variables: any, accessToken: string) {
     try {
         const response = await fetch("https://graphql.anilist.co", {

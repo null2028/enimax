@@ -249,6 +249,7 @@ function ini() {
         }
         async function processEpisodeData(data, downloaded, main_url) {
             var _a, _b, _c;
+            console.log(data);
             showMainName = data.mainName;
             showImage = data.image;
             let currentLink = '';

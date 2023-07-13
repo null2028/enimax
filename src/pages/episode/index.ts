@@ -288,6 +288,7 @@ function ini() {
 
 
         async function processEpisodeData(data: extensionInfo, downloaded, main_url) {
+            console.log(data);
             showMainName = data.mainName;
             showImage = data.image;
             let currentLink = '';

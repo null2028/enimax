@@ -1587,6 +1587,9 @@ async function startCasting(shouldDestroy = false) {
         if (type == "hls") {
             type = "application/x-mpegURL";
         }
+        else if (type === "dash") {
+            type = "application/dash+xml";
+        }
         else {
             type = "video/mp4";
             url = currentVidData.sources[0].castURL;
