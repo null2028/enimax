@@ -374,7 +374,7 @@ async function batchPromisesMalSync(URLs, batchSize, anilistData, permNoti) {
         }
     }
 }
-async function getAllItems() {
+async function getAllItems(auto = false) {
     const accessToken = localStorage.getItem("anilist-token");
     if (!accessToken) {
         return;
@@ -439,7 +439,13 @@ async function getAllItems() {
                     anilistAllCats.push(lists[i].name);
                 }
             }
-            const makeRooms = await window.parent.Dialogs.confirm("Do you want to put the shows in their respective categories?");
+            let makeRooms;
+            if (auto === false) {
+                makeRooms = await window.parent.Dialogs.confirm("Do you want to put the shows in their respective categories?");
+            }
+            else {
+                makeRooms = true;
+            }
             if (makeRooms) {
                 try {
                     const categoryNames = [];

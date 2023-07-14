@@ -736,6 +736,10 @@ document.getElementById("anonModeToggle").onchange = function (){
     (window.parent as cordovaWindow).handleUpperBar();
 };
 
+document.getElementById("autoAniToggle").onchange = function (){
+    localStorage.setItem("anilist-auto", (this as HTMLInputElement).checked.toString());
+};
+
 document.getElementById("9animeHelper").oninput = function () {
     localStorage.setItem("9anime", (this as HTMLInputElement).value);
 }
@@ -827,6 +831,7 @@ document.getElementById("anilistImport").addEventListener("click", function (eve
 (document.getElementById("useImageBack") as HTMLInputElement).checked = localStorage.getItem("useImageBack") === "true";
 (document.getElementById("anonModeToggle") as HTMLInputElement).checked = localStorage.getItem("anon-anilist") === "true";
 (document.getElementById("offline") as HTMLInputElement).checked = (localStorage.getItem("offline") === 'true');
+(document.getElementById("autoAniToggle") as HTMLInputElement).checked = (localStorage.getItem("anilist-auto") === 'true');
 
 
 
@@ -2459,6 +2464,11 @@ if (true) {
 
         } else if ((curTime - parseInt(localStorage.getItem("lastupdatelib"))) > 43200) {
             updateNewEp();
+            
+            if(localStorage.getItem("anilist-auto") === "true"){
+                (window.parent as cordovaWindow).getAllItems(true);
+            }
+
             localStorage.setItem("lastupdatelib", curTime.toString());
         } else {
             updateNewEpCached();

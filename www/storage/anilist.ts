@@ -435,7 +435,7 @@ async function batchPromisesMalSync(URLs: { id: number, url: string }[], batchSi
     }
 }
 
-async function getAllItems() {
+async function getAllItems(auto = false) {
     const accessToken = localStorage.getItem("anilist-token");
     if (!accessToken) {
         return;
@@ -518,7 +518,13 @@ async function getAllItems() {
                 }
             }
 
-            const makeRooms = await (window.parent as cordovaWindow).Dialogs.confirm("Do you want to put the shows in their respective categories?");
+            let makeRooms;
+            
+            if(auto === false){
+                makeRooms = await (window.parent as cordovaWindow).Dialogs.confirm("Do you want to put the shows in their respective categories?");
+            }else{
+                makeRooms = true;
+            }
 
             if (makeRooms) {
                 try {

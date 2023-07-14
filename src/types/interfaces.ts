@@ -147,6 +147,7 @@ interface cordovaServerRequest {
     query: string,
 }
 interface cordovaWindow extends Window {
+    getAllItems: typeof getAllItems;
     anilistToMal: typeof anilistToMal;
     fixTitle(title: string, extension?: extension): string,
     Dialogs: {
@@ -182,7 +183,6 @@ interface cordovaWindow extends Window {
     returnExtensionList: Function,
     XMLHttpRequest: any,
     returnExtensionNames: Function,
-    getAllItems: Function,
     deleteAnilistShow: Function,
     returnDownloadQueue: Function,
     returnExtensionDisabled: Function,

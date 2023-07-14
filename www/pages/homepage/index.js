@@ -575,6 +575,9 @@ document.getElementById("anonModeToggle").onchange = function () {
     localStorage.setItem("anon-anilist", this.checked.toString());
     window.parent.handleUpperBar();
 };
+document.getElementById("autoAniToggle").onchange = function () {
+    localStorage.setItem("anilist-auto", this.checked.toString());
+};
 document.getElementById("9animeHelper").oninput = function () {
     localStorage.setItem("9anime", this.value);
 };
@@ -661,6 +664,7 @@ document.getElementById("alwaysDown").checked = localStorage.getItem("alwaysDown
 document.getElementById("useImageBack").checked = localStorage.getItem("useImageBack") === "true";
 document.getElementById("anonModeToggle").checked = localStorage.getItem("anon-anilist") === "true";
 document.getElementById("offline").checked = (localStorage.getItem("offline") === 'true');
+document.getElementById("autoAniToggle").checked = (localStorage.getItem("anilist-auto") === 'true');
 document.getElementById("reset").addEventListener("click", function () {
     window.parent.postMessage({ "action": 22, data: "" }, "*");
 });
@@ -2011,6 +2015,9 @@ if (true) {
         }
         else if ((curTime - parseInt(localStorage.getItem("lastupdatelib"))) > 43200) {
             updateNewEp();
+            if (localStorage.getItem("anilist-auto") === "true") {
+                window.parent.getAllItems(true);
+            }
             localStorage.setItem("lastupdatelib", curTime.toString());
         }
         else {
