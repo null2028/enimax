@@ -3,7 +3,7 @@ var animixplay: extension = {
     baseURL: "https://animixplay.to",
     type: "anime",
     disableAutoDownload: false,
-    disabled: false,
+    disabled: true,
     name: "Animixplay",
     shortenedName: "Animix",
     searchApi: async function (query: string) {
