@@ -193,15 +193,15 @@ if (isSnapSupported) {
     document.getElementById("custom_rooms").className = "snappedCustomRooms";
 }
 async function resetOfflineQual() {
-    let qual = [360, 480, 720, 1080];
+    let qual = [{ value: "360", realValue: "360" }, { value: "480", realValue: "480" }, { value: "720", realValue: "720" }, { value: "1080", realValue: "1080" }];
     while (true) {
-        let choice = parseInt(prompt(`What quality do you want the downloaded videos to be of? \n1. 360 \n2. 480\n3. 720 \n4. 1080`));
-        if (!isNaN(choice) && choice >= 1 && choice <= 4) {
-            localStorage.setItem("offlineQual", qual[choice - 1].toString());
+        let choice = parseInt(await window.parent.Dialogs.prompt(`What quality do you want the downloaded videos to be of?`, "1080", "select", qual));
+        if (!isNaN(choice)) {
+            localStorage.setItem("offlineQual", choice.toString());
             break;
         }
         else {
-            await thisWindow.Dialogs.alert("Enter a number between 1 and 4");
+            await thisWindow.Dialogs.alert("Nothing was selected");
         }
     }
 }
@@ -441,18 +441,22 @@ if (localStorage.getItem("offline") === 'true') {
     document.getElementById("resetQuality").style.display = "block";
     document.getElementById("searchIcon").style.display = "none";
 }
-document.getElementById("resetSource").onclick = function () {
+document.getElementById("resetSource").onclick = async function () {
     const extensionNames = window.parent.returnExtensionNames();
-    let message = `What extension's source do you want to reset?\n`;
+    let message = `What extension's source preference do you want to reset?`;
+    const promptConfig = [];
     for (let i = 0; i < extensionNames.length; i++) {
-        message += `${i}. ${extensionNames[i]}\n`;
+        promptConfig.push({
+            value: extensionNames[i],
+            realValue: extensionNames[i]
+        });
     }
-    while (true) {
-        let res = parseInt(prompt(message));
-        if (res >= 0 && res < extensionNames.length) {
-            localStorage.removeItem(`${res}-downloadSource`);
-            break;
-        }
+    let res = await window.parent.Dialogs.prompt(message, extensionNames[0], "select", promptConfig);
+    if (res) {
+        localStorage.removeItem(`${res}-downloadSource`);
+    }
+    else {
+        await window.parent.Dialogs.alert("Nothing was selected. Aborting.");
     }
 };
 let offlineDOM = document.getElementById("offline");
@@ -610,7 +614,7 @@ document.getElementById("anilistLogin").addEventListener("click", async function
             let url = undefined;
             while (!url) {
                 try {
-                    url = prompt("Enter the copied URL here");
+                    url = await thisWindow.Dialogs.prompt("Enter the copied URL here");
                     const accessToken = new URLSearchParams((new URL(url)).hash.substring(1)).get("access_token");
                     localStorage.setItem("anilist-token", accessToken);
                     if (accessToken) {
@@ -1308,9 +1312,9 @@ if (true) {
             window.parent.apiCall("POST", { "username": username, "action": 7, "name": selectedShow, "state": state }, getUserInfo);
             document.getElementById("room_add_show").style.display = "none";
         },
-        change_image_card: (name, domelem) => {
-            var img_url_prompt = prompt("Enter the URL of the image", domelem.getAttribute("data-bg1"));
-            var main_url_prompt = prompt("Enter the URL of the page", domelem.getAttribute("data-main-link"));
+        change_image_card: async (name, domelem) => {
+            var img_url_prompt = await window.parent.Dialogs.prompt("Enter the URL of the image", domelem.getAttribute("data-bg1"));
+            var main_url_prompt = await window.parent.Dialogs.prompt("Enter the URL of the page", domelem.getAttribute("data-main-link"));
             if (img_url_prompt != "" && img_url_prompt != null && img_url_prompt != undefined) {
                 img_url_prompt = img_url_prompt;
                 window.parent.apiCall("POST", { "username": username, "action": 9, "name": name, "img": img_url_prompt }, getUserInfo, [domelem, img_url_prompt]);

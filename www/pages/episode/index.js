@@ -265,11 +265,11 @@ function ini() {
             document.getElementById("copyLink").style.display = "inline-block";
             document.getElementById("updateLink").style.display = "inline-block";
             document.getElementById("copyImage").style.display = "inline-block";
-            document.getElementById("copyLink").onclick = function () {
-                window.prompt("Copy it from below:", location.search);
+            document.getElementById("copyLink").onclick = async function () {
+                window.parent.Dialogs.prompt("Copy it from below:", location.search);
             };
-            document.getElementById("copyImage").onclick = function () {
-                window.prompt("Copy it from below:", data.image);
+            document.getElementById("copyImage").onclick = async function () {
+                window.parent.Dialogs.prompt("Copy it from below:", data.image);
             };
             document.getElementById("updateLink").onclick = function () {
                 window.parent.apiCall("POST", { "username": username, "action": 14, "name": data.mainName, "url": location.search }, (x) => {
@@ -857,7 +857,7 @@ function ini() {
             if (scrollToDOM && !config.chrome) {
                 document.getElementById("downloadNext").style.display = "inline-block";
                 document.getElementById("downloadNext").onclick = async function () {
-                    let howmany = parseInt(prompt("How many episodes do you want to download?", "5"));
+                    let howmany = parseInt(await window.parent.Dialogs.prompt("How many episodes do you want to download?", "5"));
                     if (isNaN(howmany)) {
                         await thisWindow.Dialogs.alert("Not a valid number");
                     }
@@ -1044,17 +1044,19 @@ addToLibrary.onclick = async function () {
                         if (rooms.length === 0) {
                             return;
                         }
-                        let promptString = "";
+                        let promptObj = [];
                         for (let i = 0; i < rooms.length; i += 2) {
-                            promptString += `${i / 2}. ${rooms[i]}${i == rooms.length - 2 ? "" : "\n"}`;
+                            promptObj.push({
+                                realValue: rooms[i + 1],
+                                value: rooms[i]
+                            });
                         }
-                        const whatStatus = prompt(promptString, "0");
+                        const whatStatus = await window.parent.Dialogs.prompt("Choose the category name", "", "select", promptObj);
                         let roomID = parseInt(whatStatus);
                         if (isNaN(roomID)) {
                             thisWindow.Dialogs.alert("Not a valid number. Aborting.");
                         }
                         else {
-                            roomID = rooms[roomID * 2 + 1];
                             window.parent.apiCall("POST", {
                                 "username": "",
                                 "action": 7,
@@ -1140,7 +1142,7 @@ setAniID.onclick = async function () {
     if (search.has("aniID")) {
         return;
     }
-    const aniIDPrompt = prompt("Enter the anilist ID or the URL of the anime's anilist page");
+    const aniIDPrompt = await window.parent.Dialogs.prompt("Enter the anilist ID or the URL of the anime's anilist page");
     let aniId = null;
     if (!isNaN(parseInt(aniIDPrompt))) {
         aniId = parseInt(aniIDPrompt);

@@ -195,44 +195,31 @@ async function addShowToLib(data: { name: string, img: string, url: string, curr
 
 async function updateAnilistStatus(aniID: any) {
     const statuses = anilistStatus as anilistStatus[];
-    let promptString = "";
+    let promptObj = [];
 
     for (let i = 0; i < statuses.length; i++) {
-        promptString += `${i}. ${statuses[i]}${i == statuses.length - 1 ? "" : "\n"}`;
+        promptObj.push({
+            value: statuses[i],
+            realValue: statuses[i]
+        });
     }
 
-    const whatStatus = prompt(promptString, "0");
-    let status: anilistStatus;
-
-    if (isNaN(parseInt(whatStatus))) {
-        if (statuses.includes(whatStatus.toUpperCase() as anilistStatus)) {
-            status = whatStatus.toUpperCase() as anilistStatus;
-        } else {
-            await thisWindow.Dialogs.alert("Unexpected reply. Aborting.");
-            return;
-        }
-    } else {
-        const index = parseInt(whatStatus);
-        if (index >= 0 && index < statuses.length) {
-            status = statuses[index];
-        } else {
-            await thisWindow.Dialogs.alert("Unexpected reply. Aborting.");
-            return;
-        }
-    }
-
+    let status: anilistStatus = await (window.parent as cordovaWindow).Dialogs.prompt("Select the status", "", "select", promptObj) as anilistStatus;
     let permNoti: notification;
 
-    try {
-        permNoti = sendNoti([0, null, "Alert", "Trying to update the status..."]);
-        await (window.parent as cordovaWindow).changeShowStatus(aniID, status);
-        permNoti.updateBody("Updated!");
-        permNoti.notiTimeout(4000);
-    } catch (err) {
-        permNoti.remove();
-        sendNoti([4, "red", "Alert", err]);
+    if (status) {
+        try {
+            permNoti = sendNoti([0, null, "Alert", "Trying to update the status..."]);
+            await (window.parent as cordovaWindow).changeShowStatus(aniID, status);
+            permNoti.updateBody("Updated!");
+            permNoti.notiTimeout(4000);
+        } catch (err) {
+            permNoti.remove();
+            sendNoti([4, "red", "Alert", err]);
+        }
+    } else {
+        await (window.parent as cordovaWindow).Dialogs.alert("Aborting");
     }
-
 }
 
 async function changeShowStatus(anilistID: any, status: anilistStatus) {
@@ -311,9 +298,9 @@ async function malsyncPromise(url: string, id: number) {
     };
 }
 
-async function batchPromisesMalSync(URLs: {id: number, url: string}[], batchSize: number, anilistData: {[key: number]: string}, permNoti: notification) {
+async function batchPromisesMalSync(URLs: { id: number, url: string }[], batchSize: number, anilistData: { [key: number]: string }, permNoti: notification) {
     const allSettled = "allSettled" in Promise;
-    const promises: Array<Promise<{ id: number, result: string }>>  = [];
+    const promises: Array<Promise<{ id: number, result: string }>> = [];
 
     for (let i = 0; i < URLs.length; i++) {
         promises.push(malsyncPromise(URLs[i].url, URLs[i].id));
@@ -333,7 +320,7 @@ async function batchPromisesMalSync(URLs: {id: number, url: string}[], batchSize
                 try {
                     const res = await Promise.all(promises);
 
-                    for(const result of res){
+                    for (const result of res) {
                         anilistData[result.id] = result.result;
                     }
                 } catch (err) {
@@ -450,8 +437,8 @@ async function getAllItems() {
 
             const links: AnilistLinks = [];
             const anilistData = {};
-            const malsyncURLs: {id: number, url: string}[] = [];
-            
+            const malsyncURLs: { id: number, url: string }[] = [];
+
             for (let i = 0; i < anilistIDs.length; i++) {
                 const id = anilistIDs[i];
                 malsyncURLs.push({

@@ -163,41 +163,29 @@ async function addShowToLib(data) {
 }
 async function updateAnilistStatus(aniID) {
     const statuses = anilistStatus;
-    let promptString = "";
+    let promptObj = [];
     for (let i = 0; i < statuses.length; i++) {
-        promptString += `${i}. ${statuses[i]}${i == statuses.length - 1 ? "" : "\n"}`;
+        promptObj.push({
+            value: statuses[i],
+            realValue: statuses[i]
+        });
     }
-    const whatStatus = prompt(promptString, "0");
-    let status;
-    if (isNaN(parseInt(whatStatus))) {
-        if (statuses.includes(whatStatus.toUpperCase())) {
-            status = whatStatus.toUpperCase();
+    let status = await window.parent.Dialogs.prompt("Select the status", "", "select", promptObj);
+    let permNoti;
+    if (status) {
+        try {
+            permNoti = sendNoti([0, null, "Alert", "Trying to update the status..."]);
+            await window.parent.changeShowStatus(aniID, status);
+            permNoti.updateBody("Updated!");
+            permNoti.notiTimeout(4000);
         }
-        else {
-            await thisWindow.Dialogs.alert("Unexpected reply. Aborting.");
-            return;
+        catch (err) {
+            permNoti.remove();
+            sendNoti([4, "red", "Alert", err]);
         }
     }
     else {
-        const index = parseInt(whatStatus);
-        if (index >= 0 && index < statuses.length) {
-            status = statuses[index];
-        }
-        else {
-            await thisWindow.Dialogs.alert("Unexpected reply. Aborting.");
-            return;
-        }
-    }
-    let permNoti;
-    try {
-        permNoti = sendNoti([0, null, "Alert", "Trying to update the status..."]);
-        await window.parent.changeShowStatus(aniID, status);
-        permNoti.updateBody("Updated!");
-        permNoti.notiTimeout(4000);
-    }
-    catch (err) {
-        permNoti.remove();
-        sendNoti([4, "red", "Alert", err]);
+        await window.parent.Dialogs.alert("Aborting");
     }
 }
 async function changeShowStatus(anilistID, status) {

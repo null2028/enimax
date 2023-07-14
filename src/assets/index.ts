@@ -1,4 +1,4 @@
-function createElement(config: createElementConfig, obj?: Object, key?: string): HTMLElement {
+function createElement(config: createElementConfig): HTMLElement {
 
     if (config.shouldAdd === false) {
         return;
@@ -57,8 +57,8 @@ function createElement(config: createElementConfig, obj?: Object, key?: string):
         }
     }
 
-    if(obj){
-        obj[key] = temp;
+    if(config.obj){
+        config.obj[config.key] = temp;
     }
 
     return temp;
@@ -87,8 +87,8 @@ function applyTheme() {
     }
 }
 
-function changeTheme() {
-    let promptT = prompt("Enter the theme color", "#4b4bc2");
+async function changeTheme() {
+    let promptT = await (window.parent as cordovaWindow).Dialogs.prompt("Enter the theme color", "#4b4bc2");
     if (promptT.trim() != "" && promptT != null && promptT != undefined) {
         localStorage.setItem("themecolor", promptT);
         applyTheme()

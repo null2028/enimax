@@ -1,4 +1,4 @@
-function createElement(config, obj, key) {
+function createElement(config) {
     if (config.shouldAdd === false) {
         return;
     }
@@ -43,8 +43,8 @@ function createElement(config, obj, key) {
             }
         }
     }
-    if (obj) {
-        obj[key] = temp;
+    if (config.obj) {
+        config.obj[config.key] = temp;
     }
     return temp;
 }
@@ -70,8 +70,8 @@ function applyTheme() {
         document.documentElement.style.setProperty('--theme-color', "#4b4bc2");
     }
 }
-function changeTheme() {
-    let promptT = prompt("Enter the theme color", "#4b4bc2");
+async function changeTheme() {
+    let promptT = await window.parent.Dialogs.prompt("Enter the theme color", "#4b4bc2");
     if (promptT.trim() != "" && promptT != null && promptT != undefined) {
         localStorage.setItem("themecolor", promptT);
         applyTheme();

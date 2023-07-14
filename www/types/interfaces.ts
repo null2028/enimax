@@ -34,7 +34,9 @@ interface createElementConfig {
     innerText?: string,
     innerHTML?: string,
     children?: createElementConfig[]
-    listeners?: { [key: string]: Function }
+    listeners?: { [key: string]: Function },
+    obj?: Object,
+    key?: string
 }
 
 interface menuItemConfig {
@@ -147,8 +149,12 @@ interface cordovaServerRequest {
 interface cordovaWindow extends Window {
     fixTitle(title: string, extension?: extension): string,
     Dialogs: {
-        confirm: (message?: string) => Promise<boolean>
-        alert: (message?: string) => Promise<boolean>
+        confirm: typeof DialogsClass.confirm
+        alert: typeof DialogsClass.alert,
+        prompt: (message?: string, defaultValue?: string, type?: "text" | "select", options?: Array<{
+            value: string;
+            realValue: string;
+        }>) => Promise<string>
     },
     getEstimatedState: Function,
     handleUpperBar: Function,
