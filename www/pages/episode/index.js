@@ -959,12 +959,13 @@ function ini() {
             });
         }
         else {
-            if ((new URLSearchParams(location.search)).has("aniID") ||
+            const searchParams = new URLSearchParams(location.search);
+            if ((searchParams).has("aniID") ||
                 currentEngine.type !== "anime") {
                 setAniID.style.display = "none";
             }
             infoCurrentEngine = currentEngine;
-            currentEngine.getAnimeInfo(main_url).then(function (data) {
+            currentEngine.getAnimeInfo(main_url, searchParams.get("aniID")).then(function (data) {
                 if (data.isManga === true) {
                     downloadedIsManga = true;
                 }

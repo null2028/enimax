@@ -36,7 +36,7 @@ var nineAnime: extension = {
             throw err;
         }
     },
-    getAnimeInfo: async function (url): Promise<extensionInfo> {
+    getAnimeInfo: async function (url, aniID): Promise<extensionInfo> {
         const settled = "allSettled" in Promise;
         const id = (new URLSearchParams(`?watch=${url}`)).get("watch").split(".").pop();
         let response: extensionInfo = {
@@ -49,15 +49,22 @@ var nineAnime: extension = {
 
         try {
             if (settled) {
+
                 let anilistID: number;
 
-                try {
-                    anilistID = JSON.parse(await MakeFetch(`https://raw.githubusercontent.com/MALSync/MAL-Sync-Backup/master/data/pages/9anime/${id}.json`)).aniId;
-                } catch (err) {
-                    try{
-                        anilistID = JSON.parse(await MakeFetch(`https://api.malsync.moe/page/9anime/${id}`)).aniId;
-                    }catch(err){
-                        // anilistID will be undefined
+                if (!isNaN(parseInt(aniID))) {
+                    anilistID = parseInt(aniID);
+                }
+
+                if (!anilistID) {
+                    try {
+                        anilistID = JSON.parse(await MakeFetch(`https://raw.githubusercontent.com/MALSync/MAL-Sync-Backup/master/data/pages/9anime/${id}.json`)).aniId;
+                    } catch (err) {
+                        try {
+                            anilistID = JSON.parse(await MakeFetch(`https://api.malsync.moe/page/9anime/${id}`)).aniId;
+                        } catch (err) {
+                            // anilistID will be undefined
+                        }
                     }
                 }
 

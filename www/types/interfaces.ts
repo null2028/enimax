@@ -249,7 +249,7 @@ interface extension {
     type: "manga" | "anime" | "tv" | "others",
     name: string,
     searchApi: (query: string, params?: { [key: string]: any }) => Promise<extensionSearch>;
-    getAnimeInfo: (url: string) => Promise<extensionInfo>;
+    getAnimeInfo: (url: string, aniID?: string) => Promise<extensionInfo>;
     getLinkFromUrl: (url: any) => Promise<extensionVidSource | extensionMangaSource>;
     discover?: () => Promise<Array<extensionDiscoverData>>;
     fixTitle?: (title: string) => string;

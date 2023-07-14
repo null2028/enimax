@@ -1420,7 +1420,7 @@ var zoro = {
             throw err;
         }
     },
-    getAnimeInfo: async function (url) {
+    getAnimeInfo: async function (url, aniID) {
         const settled = "allSettled" in Promise;
         const id = (new URLSearchParams(`?watch=${url}`)).get("watch").split("-").pop();
         let response = {
@@ -1433,15 +1433,20 @@ var zoro = {
         try {
             if (settled) {
                 let anilistID;
-                try {
-                    anilistID = JSON.parse(await MakeFetch(`https://raw.githubusercontent.com/MALSync/MAL-Sync-Backup/master/data/pages/Zoro/${id}.json`)).aniId;
+                if (!isNaN(parseInt(aniID))) {
+                    anilistID = parseInt(aniID);
                 }
-                catch (err) {
+                if (!anilistID) {
                     try {
-                        anilistID = JSON.parse(await MakeFetch(`https://api.malsync.moe/page/Zoro/${id}`)).aniId;
+                        anilistID = JSON.parse(await MakeFetch(`https://raw.githubusercontent.com/MALSync/MAL-Sync-Backup/master/data/pages/Zoro/${id}.json`)).aniId;
                     }
                     catch (err) {
-                        // anilistID will be undefined
+                        try {
+                            anilistID = JSON.parse(await MakeFetch(`https://api.malsync.moe/page/Zoro/${id}`)).aniId;
+                        }
+                        catch (err) {
+                            // anilistID will be undefined
+                        }
                     }
                 }
                 if (anilistID) {
@@ -2708,7 +2713,7 @@ var nineAnime = {
             throw err;
         }
     },
-    getAnimeInfo: async function (url) {
+    getAnimeInfo: async function (url, aniID) {
         const settled = "allSettled" in Promise;
         const id = (new URLSearchParams(`?watch=${url}`)).get("watch").split(".").pop();
         let response = {
@@ -2721,15 +2726,20 @@ var nineAnime = {
         try {
             if (settled) {
                 let anilistID;
-                try {
-                    anilistID = JSON.parse(await MakeFetch(`https://raw.githubusercontent.com/MALSync/MAL-Sync-Backup/master/data/pages/9anime/${id}.json`)).aniId;
+                if (!isNaN(parseInt(aniID))) {
+                    anilistID = parseInt(aniID);
                 }
-                catch (err) {
+                if (!anilistID) {
                     try {
-                        anilistID = JSON.parse(await MakeFetch(`https://api.malsync.moe/page/9anime/${id}`)).aniId;
+                        anilistID = JSON.parse(await MakeFetch(`https://raw.githubusercontent.com/MALSync/MAL-Sync-Backup/master/data/pages/9anime/${id}.json`)).aniId;
                     }
                     catch (err) {
-                        // anilistID will be undefined
+                        try {
+                            anilistID = JSON.parse(await MakeFetch(`https://api.malsync.moe/page/9anime/${id}`)).aniId;
+                        }
+                        catch (err) {
+                            // anilistID will be undefined
+                        }
                     }
                 }
                 if (anilistID) {
@@ -4082,7 +4092,7 @@ var gogo = {
             throw err;
         }
     },
-    getAnimeInfo: async function (url) {
+    getAnimeInfo: async function (url, aniID) {
         const settled = "allSettled" in Promise;
         const id = (new URLSearchParams(`?watch=${url}`)).get("watch").replace("category/", "");
         let response = {
@@ -4095,15 +4105,20 @@ var gogo = {
         try {
             if (settled) {
                 let anilistID;
-                try {
-                    anilistID = JSON.parse(await MakeFetch(`https://raw.githubusercontent.com/MALSync/MAL-Sync-Backup/master/data/pages/Gogoanime/${id}.json`)).aniId;
+                if (!isNaN(parseInt(aniID))) {
+                    anilistID = parseInt(aniID);
                 }
-                catch (err) {
+                if (!anilistID) {
                     try {
-                        anilistID = JSON.parse(await MakeFetch(`https://api.malsync.moe/page/Gogoanime/${id}`)).aniId;
+                        anilistID = JSON.parse(await MakeFetch(`https://raw.githubusercontent.com/MALSync/MAL-Sync-Backup/master/data/pages/Gogoanime/${id}.json`)).aniId;
                     }
                     catch (err) {
-                        // anilistID will be undefined
+                        try {
+                            anilistID = JSON.parse(await MakeFetch(`https://api.malsync.moe/page/Gogoanime/${id}`)).aniId;
+                        }
+                        catch (err) {
+                            // anilistID will be undefined
+                        }
                     }
                 }
                 if (anilistID) {
