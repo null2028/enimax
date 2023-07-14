@@ -50,7 +50,11 @@ var zoro: extension = {
                 try {
                     anilistID = JSON.parse(await MakeFetch(`https://raw.githubusercontent.com/MALSync/MAL-Sync-Backup/master/data/pages/Zoro/${id}.json`)).aniId;
                 } catch (err) {
-                    // anilistID will be undefined
+                    try{
+                        anilistID = JSON.parse(await MakeFetch(`https://api.malsync.moe/page/Zoro/${id}`)).aniId;
+                    }catch(err){
+                        // anilistID will be undefined
+                    }
                 }
 
                 if (anilistID) {

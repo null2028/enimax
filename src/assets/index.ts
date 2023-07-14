@@ -423,12 +423,22 @@ async function fetchMapping(id: string, type: string | null) {
     }
 
     try {
-        const pages = JSON.parse(await (window.parent as cordovaWindow).MakeFetch(`https://raw.githubusercontent.com/MALSync/MAL-Sync-Backup/master/data/anilist/${type}/${id}.json`));
+        let pageKey = "Pages";
+        let pages;
+
+        try{
+            pages = JSON.parse(await (window.parent as cordovaWindow).MakeFetch(`https://raw.githubusercontent.com/MALSync/MAL-Sync-Backup/master/data/anilist/${type}/${id}.json`));
+        }catch(err){
+            pageKey = "Sites";
+            const malId = await (window.parent as cordovaWindow).anilistToMal(id);
+            pages = JSON.parse(await (window.parent as cordovaWindow).MakeFetch(`https://api.malsync.moe/mal/${type}/${malId}`));
+        }
+
         noti.remove();
         sourceChoiceDOM.style.display = "flex";
 
         for (let i = 0; i < sourcesToCheck.length; i++) {
-            const sourcePages = pages.Pages[sourcesToCheck[i]];
+            const sourcePages = pages[pageKey][sourcesToCheck[i]];
             sourcesURL[sourcesToCheck[i]] = [];
             const sourceDOM = (sourceChoiceDOM.getElementsByClassName(`${sourcesToCheck[i]}`)[0] as HTMLElement);
             if (sourceDOM) {
@@ -441,6 +451,7 @@ async function fetchMapping(id: string, type: string | null) {
             }
         }
     } catch (err) {
+        console.log(err);
         noti.remove();
         sendNoti([0, "red", "Alert", "Anime not found."]);
 

@@ -164,14 +164,16 @@ function getUserData() {
 }
 
 async function addShowToLib(data: { name: string, img: string, url: string, currentURL: string, currentEp: number, categoryID: number }) {
-    apiCall("POST", {
-        "username": "",
-        "action": 5,
-        "name": data.name,
-        "img": data.img,
-        "url": data.url
-    }, () => {
-        apiCall("POST",
+    try {
+        await apiCall("POST", {
+            "username": "",
+            "action": 5,
+            "name": data.name,
+            "img": data.img,
+            "url": data.url
+        }, () => { });
+
+        await apiCall("POST",
             {
                 "username": "",
                 "action": 2,
@@ -181,7 +183,7 @@ async function addShowToLib(data: { name: string, img: string, url: string, curr
             }, () => { });
 
         if (!isNaN(data.categoryID)) {
-            apiCall("POST",
+            await apiCall("POST",
                 {
                     "username": "",
                     "action": 7,
@@ -190,7 +192,9 @@ async function addShowToLib(data: { name: string, img: string, url: string, curr
                 }, () => { });
         }
 
-    });
+    } catch (err) {
+        console.warn(err);
+    }
 }
 
 async function updateAnilistStatus(aniID: any) {
@@ -298,6 +302,104 @@ async function malsyncPromise(url: string, id: number) {
     };
 }
 
+async function malsyncApiPromise(type: string, id: number, aniToMal: Object) {
+    let malId: string;
+
+    if (id.toString() in aniToMal) {
+        malId = aniToMal[id.toString()];
+    } else {
+        malId = await (window.parent as cordovaWindow).anilistToMal(id.toString());
+    }
+
+    const result = await fetch(`https://api.malsync.moe/mal/${type}/${malId}`);
+
+    return {
+        id,
+        result
+    };
+}
+
+async function batchPromisesMalSyncApi(URLs: { id: number, url: string, type: string }[], batchSize: number, anilistData: { [key: number]: string }, permNoti: notification) {
+    const allSettled = "allSettled" in Promise;
+    const promises: Array<Promise<{ id: number, result: Response }>> = [];
+    let aniToMal;
+
+    try {
+        aniToMal = await getBatchMalIds(URLs.map(elem => elem.id.toString()), URLs[0].type.toUpperCase() as "ANIME" | "MANGA");
+    } catch (err) {
+        console.log(err);
+    }
+
+    for (let i = 0; i < URLs.length; i++) {
+        let shouldSkip = false;
+        let rateLimited = false;
+
+        try {
+            const json = JSON.parse(anilistData[URLs[i].id]);
+            if ("Pages" in json) {
+                shouldSkip = true;
+            }
+        } catch (err) {
+
+        }
+
+        if (shouldSkip && i != URLs.length - 1) {
+            continue;
+        }
+
+        promises.push(malsyncApiPromise(URLs[i].type, URLs[i].id, aniToMal));
+        permNoti.updateBody(`Getting link for anilist ID: ${URLs[i].id}`);
+
+        if (promises.length >= batchSize || i == URLs.length - 1) {
+
+            if (allSettled) {
+                const res = await Promise.allSettled(promises);
+
+                for (const promise of res) {
+                    if (promise.status === "fulfilled") {
+                        if (promise.value.result.status === 429) {
+                            rateLimited = true;
+                            i = Math.max(i - batchSize - 1, 0);
+                        } else {
+                            try {
+                                anilistData[promise.value.id] = await promise.value.result.text();
+                            } catch (err) {
+                                console.warn(err);
+                            }
+                        }
+                    }
+                }
+            } else {
+                try {
+                    const res = await Promise.all(promises);
+
+                    for (const result of res) {
+                        if (result.result.status === 429) {
+                            rateLimited = true;
+                            i = Math.max(i - batchSize - 1, 0);
+                        } else {
+                            try {
+                                anilistData[result.id] = await result.result.text();
+                            } catch (err) {
+                                console.warn(err);
+                            }
+                        }
+                    }
+                } catch (err) {
+                    console.warn(err);
+                }
+            }
+
+            promises.splice(0);
+        }
+
+        if (rateLimited) {
+            permNoti.updateBody("Got rate limited. Waiting 10 seconds before trying again");
+            await new Promise(r => setTimeout(r, 10000));
+        }
+    }
+}
+
 async function batchPromisesMalSync(URLs: { id: number, url: string }[], batchSize: number, anilistData: { [key: number]: string }, permNoti: notification) {
     const allSettled = "allSettled" in Promise;
     const promises: Array<Promise<{ id: number, result: string }>> = [];
@@ -342,6 +444,7 @@ async function getAllItems() {
     const permNoti = sendNoti([0, null, "Alert", "Importing your anilist library. This may take a few minutes"]);
 
     try {
+        const userData = await getUserData() as any;
         for (let typeIndex = 0; typeIndex <= 1; typeIndex++) {
 
             const type = typeIndex === 0 ? "manga" : "anime";
@@ -383,10 +486,27 @@ async function getAllItems() {
             const categories = {};
             const lists = data.MediaListCollection.lists;
 
+            const alreadyAdded: Array<number> = userData.data[0].map((elem) => {
+                try {
+                    return parseInt((new URLSearchParams(elem[5])).get("aniID"));
+                } catch (err) {
+                    return null;
+                }
+            });
+
+            
+
+
+
             for (let i = 0; i < lists.length; i++) {
                 const entries = lists[i].entries;
 
                 for (let j = 0; j < entries.length; j++) {
+
+                    if(alreadyAdded.includes(entries[j].media.id)){
+                        continue;
+                    }
+
                     anilistIDs.push(entries[j].media.id);
                     anilistProgress.push(entries[j].progress);
 
@@ -402,7 +522,6 @@ async function getAllItems() {
 
             if (makeRooms) {
                 try {
-                    const userData = await getUserData() as any;
                     const categoryNames = [];
                     const categoryIDs = [];
 
@@ -437,25 +556,31 @@ async function getAllItems() {
 
             const links: AnilistLinks = [];
             const anilistData = {};
-            const malsyncURLs: { id: number, url: string }[] = [];
+            const malsyncURLs: { id: number, url: string, type: string }[] = [];
 
             for (let i = 0; i < anilistIDs.length; i++) {
                 const id = anilistIDs[i];
                 malsyncURLs.push({
                     url: `https://raw.githubusercontent.com/MALSync/MAL-Sync-Backup/master/data/anilist/${type.toLowerCase()}/${id}.json`,
-                    id: parseInt(id)
+                    id: parseInt(id),
+                    type: type.toLowerCase()
                 });
             }
 
             await batchPromisesMalSync(malsyncURLs, 5, anilistData, permNoti);
+            await batchPromisesMalSyncApi(malsyncURLs, 5, anilistData, permNoti);
+            console.log(anilistData);
 
             for (let i = 0; i < anilistIDs.length; i++) {
                 const id = anilistIDs[i];
 
                 try {
-                    const page = JSON.parse(
+                    const pageJSON = JSON.parse(
                         anilistData[parseInt(id)]
-                    ).Pages[pageKey];
+                    );
+
+                    const pagesMainKey = "Sites" in pageJSON ? "Sites" : "Pages";
+                    const page = pageJSON[pagesMainKey][pageKey];
 
                     links.push({
                         link: currentExtension.rawURLtoInfo(new URL(page[Object.keys(page)[0]].url)),
@@ -477,6 +602,9 @@ async function getAllItems() {
             }
 
             await batchPromises(promiseInput, 5, links, permNoti);
+
+            console.log(promiseInput);
+            console.log(links);
 
             for (const link of links) {
                 try {
@@ -501,14 +629,19 @@ async function getAllItems() {
                         currentEp = currentInfo.episodes[currentInfo.episodes.length - 1];
                     }
 
-                    addShowToLib({
-                        name: currentInfo.mainName,
-                        img: currentInfo.image,
-                        url: link.link + "&aniID=" + link.aniID,
-                        currentURL: currentEp.link,
-                        currentEp: parseFloat(currentEp[numberKey]) === 0 ? 0.1 : parseFloat(currentEp[numberKey]),
-                        categoryID: (link.anilistCategory in categories && makeRooms) ? parseInt(categories[link.anilistCategory]) : NaN,
-                    });
+                    const timeout = new Promise(r => setTimeout(r, 20000));
+
+                    await Promise.race([
+                        timeout,
+                        addShowToLib({
+                            name: currentInfo.mainName,
+                            img: currentInfo.image,
+                            url: link.link + "&aniID=" + link.aniID,
+                            currentURL: currentEp.link,
+                            currentEp: parseFloat(currentEp[numberKey]) === 0 ? 0.1 : parseFloat(currentEp[numberKey]),
+                            categoryID: (link.anilistCategory in categories && makeRooms) ? parseInt(categories[link.anilistCategory]) : NaN,
+                        })
+                    ]);
                 } catch (err) {
                     console.warn(err);
                 }

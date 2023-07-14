@@ -147,6 +147,7 @@ interface cordovaServerRequest {
     query: string,
 }
 interface cordovaWindow extends Window {
+    anilistToMal: typeof anilistToMal;
     fixTitle(title: string, extension?: extension): string,
     Dialogs: {
         confirm: typeof DialogsClass.confirm

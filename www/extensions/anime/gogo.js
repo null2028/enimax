@@ -51,7 +51,12 @@ var gogo = {
                     anilistID = JSON.parse(await MakeFetch(`https://raw.githubusercontent.com/MALSync/MAL-Sync-Backup/master/data/pages/Gogoanime/${id}.json`)).aniId;
                 }
                 catch (err) {
-                    // anilistID will be undefined
+                    try {
+                        anilistID = JSON.parse(await MakeFetch(`https://api.malsync.moe/page/Gogoanime/${id}`)).aniId;
+                    }
+                    catch (err) {
+                        // anilistID will be undefined
+                    }
                 }
                 if (anilistID) {
                     const promises = [

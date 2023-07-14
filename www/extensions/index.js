@@ -355,7 +355,13 @@ const anilistQueries = {
                             }
                         }
                     }
-                }`
+                }`,
+    "anilistToMal": `query ($id: Int) {
+                        Media(id: $id) {
+                            id
+                            idMal
+                        }
+                    }`
 };
 async function anilistAPI(query, variables = {}) {
     const url = 'https://graphql.anilist.co', options = {
@@ -372,8 +378,17 @@ async function anilistAPI(query, variables = {}) {
     return JSON.parse(await MakeFetch(url, options));
 }
 async function getAnilistInfo(type, id, mediaType = "ANIME") {
-    const anilistID = JSON.parse(await MakeFetch(`https://raw.githubusercontent.com/MALSync/MAL-Sync-Backup/master/data/pages/${type}/${id}.json`)).aniId;
+    let anilistID;
+    try {
+        anilistID = JSON.parse(await MakeFetch(`https://raw.githubusercontent.com/MALSync/MAL-Sync-Backup/master/data/pages/${type}/${id}.json`)).aniId;
+    }
+    catch (err) {
+        anilistID = JSON.parse(await MakeFetch(`https://api.malsync.moe/page/${type}/${id}`)).aniId;
+    }
     return (await anilistAPI(anilistQueries.info, { id: anilistID, type: mediaType })).data.Media;
+}
+async function anilistToMal(anilistID) {
+    return (await anilistAPI(anilistQueries.anilistToMal, { id: anilistID })).data.Media.idMal;
 }
 async function getMetaByAniID(anilistID, mediaType = "ANIME") {
     return (await anilistAPI(anilistQueries.info, { id: anilistID, type: mediaType })).data.Media;
@@ -408,7 +423,7 @@ function secondsToHuman(seconds, abbreviated = false) {
         return sDisplay;
     }
 }
-function batchConstructor(ids) {
+function batchConstructor(ids, isMalIdReq = false, type) {
     let subQueries = "";
     const batchReqs = [];
     let count = 0;
@@ -423,11 +438,20 @@ function batchConstructor(ids) {
             continue;
         }
         count++;
-        subQueries += `anime${id}: Page(page: 1, perPage: 1) {
+        if (isMalIdReq === true) {
+            subQueries += `anime${id}: Page(page: 1, perPage: 1) {
+                media(type: ${type}, id: ${id}) {
+                    idMal
+                }
+            }`;
+        }
+        else {
+            subQueries += `anime${id}: Page(page: 1, perPage: 1) {
                             media(type: ANIME, id: ${id}) {
                                 nextAiringEpisode { airingAt timeUntilAiring episode }
                             }
                         }`;
+        }
         if (count >= 82 || i == ids.length - 1) {
             batchReqs.push(`query{
                 ${subQueries}
@@ -450,6 +474,27 @@ async function sendBatchReqs(ids) {
     for (let i = 0; i < responses.length; i++) {
         for (const id in responses[i].data) {
             result[id] = (_a = responses[i]) === null || _a === void 0 ? void 0 : _a.data[id].media[0];
+        }
+    }
+    return result;
+}
+async function getBatchMalIds(ids, type) {
+    var _a, _b, _c;
+    const queries = batchConstructor(ids, true, type);
+    console.log(queries);
+    const promises = [];
+    for (const query of queries) {
+        promises.push(anilistAPI(query));
+    }
+    const responses = await Promise.all(promises);
+    const result = {};
+    for (let i = 0; i < responses.length; i++) {
+        for (const tempId in responses[i].data) {
+            const id = tempId.replace("anime", "");
+            result[id] = (_c = (_b = (_a = responses[i]) === null || _a === void 0 ? void 0 : _a.data[tempId]) === null || _b === void 0 ? void 0 : _b.media[0]) === null || _c === void 0 ? void 0 : _c.idMal;
+            if (isNaN(parseInt(result[id]))) {
+                delete result[id];
+            }
         }
     }
     return result;
@@ -1392,7 +1437,12 @@ var zoro = {
                     anilistID = JSON.parse(await MakeFetch(`https://raw.githubusercontent.com/MALSync/MAL-Sync-Backup/master/data/pages/Zoro/${id}.json`)).aniId;
                 }
                 catch (err) {
-                    // anilistID will be undefined
+                    try {
+                        anilistID = JSON.parse(await MakeFetch(`https://api.malsync.moe/page/Zoro/${id}`)).aniId;
+                    }
+                    catch (err) {
+                        // anilistID will be undefined
+                    }
                 }
                 if (anilistID) {
                     const promises = [
@@ -2675,7 +2725,12 @@ var nineAnime = {
                     anilistID = JSON.parse(await MakeFetch(`https://raw.githubusercontent.com/MALSync/MAL-Sync-Backup/master/data/pages/9anime/${id}.json`)).aniId;
                 }
                 catch (err) {
-                    // anilistID will be undefined
+                    try {
+                        anilistID = JSON.parse(await MakeFetch(`https://api.malsync.moe/page/9anime/${id}`)).aniId;
+                    }
+                    catch (err) {
+                        // anilistID will be undefined
+                    }
                 }
                 if (anilistID) {
                     const promises = [
@@ -4044,7 +4099,12 @@ var gogo = {
                     anilistID = JSON.parse(await MakeFetch(`https://raw.githubusercontent.com/MALSync/MAL-Sync-Backup/master/data/pages/Gogoanime/${id}.json`)).aniId;
                 }
                 catch (err) {
-                    // anilistID will be undefined
+                    try {
+                        anilistID = JSON.parse(await MakeFetch(`https://api.malsync.moe/page/Gogoanime/${id}`)).aniId;
+                    }
+                    catch (err) {
+                        // anilistID will be undefined
+                    }
                 }
                 if (anilistID) {
                     const promises = [
