@@ -382,17 +382,6 @@ let DMenu = new dropDownMenu(
 						subtitleConfig.lineHeight = parseInt(target.value);
 						applySubtitleConfig();
 					}
-				},
-				{
-					"text": "Subtitle Margin",
-					"textBox": true,
-					"classes": ["inputItem"],
-					"value": isNaN(parseInt(localStorage.getItem("sub-margin"))) ? "0" : parseInt(localStorage.getItem("sub-margin")).toString(),
-					"onInput": function (event: InputEvent) {
-						let target = <HTMLInputElement>event.target;
-						localStorage.setItem("sub-margin", target.value);
-						setSubtitleMargin(curTrack);
-					}
 				}
 			]
 		},
