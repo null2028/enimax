@@ -236,7 +236,7 @@ var kaa = {
                 finalResult.subtitles.map((sub) => {
                     response.subtitles.push({
                         label: `${sub.name} - ${shortName}`,
-                        file: new URL(sub.src, url).href
+                        file: sub.src.startsWith("//") ? `https:${sub.src}` : new URL(sub.src, url).href
                     });
                 });
             }
