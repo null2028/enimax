@@ -592,7 +592,7 @@ let DMenu = new dropDownMenu(
 
 function setSubtitleMarginMain(track: TextTrack) {
 	return -2;
-	
+
 	let success = -1;
 	try {
 		let subMargin = parseInt(localStorage.getItem("sub-margin"));
@@ -2222,7 +2222,7 @@ shadowBlurDOM = document.getElementById("shadowBlur");
 
 shadowOffsetXDOM.innerText = `(${localStorage.getItem("subtitle-shadowOffsetX") ?? "0"})`;
 shadowOffsetYDOM.innerText = `(${localStorage.getItem("subtitle-shadowOffsetY") ?? "0"})`;
-shadowBlurDOM.innerText = `(${localStorage.getItem("subtitle-shadowBlurDOM") ?? "0"})`;
+shadowBlurDOM.innerText = `(${localStorage.getItem("subtitle-shadowBlur") ?? "0"})`;
 
 
 updateCasting(false);
