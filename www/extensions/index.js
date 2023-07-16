@@ -3416,25 +3416,40 @@ var kaa = {
             const order = JSON.parse(await MakeFetch(`https://raw.githubusercontent.com/enimax-anime/gogo/main/KAA.json`))[shortName];
             const playerHTML = await MakeFetch(url.toString());
             const isBirb = shortName === "bird";
+            const usesMid = shortName === "duck";
             const cid = playerHTML.split("cid:")[1].split("'")[1].trim();
             const metaData = CryptoJS.enc.Hex.parse(cid).toString(CryptoJS.enc.Utf8);
             const sigArray = [];
+            let key = "";
+            try {
+                const res = await fetch(`https://raw.githubusercontent.com/enimax-anime/kaas/${shortName}/key.txt`);
+                if (res.status === 404) {
+                    throw new Error("Not found");
+                }
+                else {
+                    key = await res.text();
+                }
+            }
+            catch (err) {
+                key = await MakeFetch(`https://raw.githubusercontent.com/enimax-anime/kaas/duck/key.txt`);
+            }
             const signatureItems = {
                 SIG: playerHTML.split("signature:")[1].split("'")[1].trim(),
                 USERAGENT: navigator.userAgent,
                 IP: metaData.split("|")[0],
                 ROUTE: metaData.split("|")[1].replace("player.php", "source.php"),
-                KEY: await MakeFetch(`https://raw.githubusercontent.com/enimax-anime/kaas/${shortName}/key.txt`),
+                KEY: key,
                 TIMESTAMP: Math.floor(Date.now() / 1000),
-                MID: url.searchParams.get(isBirb ? "id" : "mid")
+                MID: url.searchParams.get(usesMid ? "mid" : "id")
             };
+            console.log(signatureItems);
             for (const item of order) {
                 sigArray.push(signatureItems[item]);
             }
             const sig = CryptoJS.SHA1(sigArray.join("")).toString(CryptoJS.enc.Hex);
-            const result = JSON.parse(await MakeFetch(`${url.origin}${signatureItems.ROUTE}?${isBirb ? "id" : "mid"}=${signatureItems.MID}${isBirb ? "" : "&e=" + signatureItems.TIMESTAMP}&s=${sig}`, {
+            const result = JSON.parse(await MakeFetch(`${url.origin}${signatureItems.ROUTE}?${!usesMid ? "id" : "mid"}=${signatureItems.MID}${isBirb ? "" : "&e=" + signatureItems.TIMESTAMP}&s=${sig}`, {
                 headers: {
-                    "referer": `${url.origin}${signatureItems.ROUTE.replace("source.php", "player.php")}?${isBirb ? "id" : "mid"}=${signatureItems.MID}`
+                    "referer": `${url.origin}${signatureItems.ROUTE.replace("source.php", "player.php")}?${!usesMid ? "id" : "mid"}=${signatureItems.MID}`
                 }
             })).data;
             const finalResult = JSON.parse(CryptoJS.AES.decrypt(result.split(":")[0], CryptoJS.enc.Utf8.parse(signatureItems.KEY), {
@@ -3443,6 +3458,7 @@ var kaa = {
                 keySize: 256
             }).toString(CryptoJS.enc.Utf8));
             let hlsURL = "", dashURL = "";
+            console.log(finalResult);
             if (finalResult.hls) {
                 hlsURL = finalResult.hls.startsWith("//") ? `https:${finalResult.hls}` : finalResult.hls;
                 sourceURLs.push({
@@ -3472,7 +3488,7 @@ var kaa = {
                 const url = dashURL === "" ? hlsURL : dashURL;
                 finalResult.subtitles.map((sub) => {
                     response.subtitles.push({
-                        label: sub.name,
+                        label: `${sub.name} - ${shortName}`,
                         file: new URL(sub.src, url).href
                     });
                 });
@@ -3510,7 +3526,7 @@ var kaa = {
                 // https://kickassanime.am/api/show/odd-taxi-8b25/episode/ep-2-a601c5
                 const slug = links[type];
                 const videoJSON = JSON.parse(await MakeFetchZoro(`${this.baseURL}/api/show/${id}/episode/${slug}`));
-                const servers = videoJSON.servers.filter((server) => server.shortName === "Duck" || server.shortName === "Bird");
+                const servers = videoJSON.servers;
                 for (const server of servers) {
                     promises.push(this.addSource(server, sourceURLs, type, resp));
                 }
