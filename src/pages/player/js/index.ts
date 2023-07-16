@@ -591,6 +591,8 @@ let DMenu = new dropDownMenu(
 
 
 function setSubtitleMarginMain(track: TextTrack) {
+	return -2;
+	
 	let success = -1;
 	try {
 		let subMargin = parseInt(localStorage.getItem("sub-margin"));
