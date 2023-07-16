@@ -335,17 +335,6 @@ let DMenu = new dropDownMenu([
                     subtitleConfig.lineHeight = parseInt(target.value);
                     applySubtitleConfig();
                 }
-            },
-            {
-                "text": "Subtitle Margin",
-                "textBox": true,
-                "classes": ["inputItem"],
-                "value": isNaN(parseInt(localStorage.getItem("sub-margin"))) ? "0" : parseInt(localStorage.getItem("sub-margin")).toString(),
-                "onInput": function (event) {
-                    let target = event.target;
-                    localStorage.setItem("sub-margin", target.value);
-                    setSubtitleMargin(curTrack);
-                }
             }
         ]
     },
@@ -536,6 +525,7 @@ let DMenu = new dropDownMenu([
     }
 ], document.querySelector(".menuCon"));
 function setSubtitleMarginMain(track) {
+    return -2;
     let success = -1;
     try {
         let subMargin = parseInt(localStorage.getItem("sub-margin"));
@@ -1929,5 +1919,5 @@ shadowOffsetYDOM = document.getElementById("shadowOffsetY");
 shadowBlurDOM = document.getElementById("shadowBlur");
 shadowOffsetXDOM.innerText = `(${(_e = localStorage.getItem("subtitle-shadowOffsetX")) !== null && _e !== void 0 ? _e : "0"})`;
 shadowOffsetYDOM.innerText = `(${(_f = localStorage.getItem("subtitle-shadowOffsetY")) !== null && _f !== void 0 ? _f : "0"})`;
-shadowBlurDOM.innerText = `(${(_g = localStorage.getItem("subtitle-shadowBlurDOM")) !== null && _g !== void 0 ? _g : "0"})`;
+shadowBlurDOM.innerText = `(${(_g = localStorage.getItem("subtitle-shadowBlur")) !== null && _g !== void 0 ? _g : "0"})`;
 updateCasting(false);
