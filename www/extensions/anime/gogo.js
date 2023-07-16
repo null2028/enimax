@@ -52,7 +52,7 @@ var gogo = {
                 }
                 if (!anilistID) {
                     try {
-                        anilistID = JSON.parse(await MakeFetch(`https://raw.githubusercontent.com/MALSync/MAL-Sync-Backup/master/data/pages/Gogoanime/${id}.json`)).aniId;
+                        anilistID = JSON.parse(await MakeFetch(`https://raw.githubusercontent.com/bal-mackup/mal-backup/master/page/Gogoanime/${id}.json`)).aniId;
                     }
                     catch (err) {
                         try {

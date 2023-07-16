@@ -47,7 +47,7 @@ var zoro = {
                 }
                 if (!anilistID) {
                     try {
-                        anilistID = JSON.parse(await MakeFetch(`https://raw.githubusercontent.com/MALSync/MAL-Sync-Backup/master/data/pages/Zoro/${id}.json`)).aniId;
+                        anilistID = JSON.parse(await MakeFetch(`https://raw.githubusercontent.com/bal-mackup/mal-backup/master/page/Zoro/${id}.json`)).aniId;
                     }
                     catch (err) {
                         try {

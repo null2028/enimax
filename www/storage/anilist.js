@@ -283,7 +283,7 @@ async function batchPromisesMalSyncApi(URLs, batchSize, anilistData, permNoti) {
         let rateLimited = false;
         try {
             const json = JSON.parse(anilistData[URLs[i].id]);
-            if ("Pages" in json) {
+            if ("Sites" in json) {
                 shouldSkip = true;
             }
         }
@@ -486,7 +486,7 @@ async function getAllItems(auto = false) {
             for (let i = 0; i < anilistIDs.length; i++) {
                 const id = anilistIDs[i];
                 malsyncURLs.push({
-                    url: `https://raw.githubusercontent.com/MALSync/MAL-Sync-Backup/master/data/anilist/${type.toLowerCase()}/${id}.json`,
+                    url: `https://raw.githubusercontent.com/bal-mackup/mal-backup/master/anilist/${type.toLowerCase()}/${id}.json`,
                     id: parseInt(id),
                     type: type.toLowerCase()
                 });

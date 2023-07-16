@@ -380,7 +380,7 @@ async function anilistAPI(query, variables = {}) {
 async function getAnilistInfo(type, id, mediaType = "ANIME") {
     let anilistID;
     try {
-        anilistID = JSON.parse(await MakeFetch(`https://raw.githubusercontent.com/MALSync/MAL-Sync-Backup/master/data/pages/${type}/${id}.json`)).aniId;
+        anilistID = JSON.parse(await MakeFetch(`https://raw.githubusercontent.com/bal-mackup/mal-backup/master/page/${type}/${id}.json`)).aniId;
     }
     catch (err) {
         anilistID = JSON.parse(await MakeFetch(`https://api.malsync.moe/page/${type}/${id}`)).aniId;
@@ -1438,7 +1438,7 @@ var zoro = {
                 }
                 if (!anilistID) {
                     try {
-                        anilistID = JSON.parse(await MakeFetch(`https://raw.githubusercontent.com/MALSync/MAL-Sync-Backup/master/data/pages/Zoro/${id}.json`)).aniId;
+                        anilistID = JSON.parse(await MakeFetch(`https://raw.githubusercontent.com/bal-mackup/mal-backup/master/page/Zoro/${id}.json`)).aniId;
                     }
                     catch (err) {
                         try {
@@ -2731,7 +2731,7 @@ var nineAnime = {
                 }
                 if (!anilistID) {
                     try {
-                        anilistID = JSON.parse(await MakeFetch(`https://raw.githubusercontent.com/MALSync/MAL-Sync-Backup/master/data/pages/9anime/${id}.json`)).aniId;
+                        anilistID = JSON.parse(await MakeFetch(`https://raw.githubusercontent.com/bal-mackup/mal-backup/master/page/9anime/${id}.json`)).aniId;
                     }
                     catch (err) {
                         try {
@@ -4110,7 +4110,7 @@ var gogo = {
                 }
                 if (!anilistID) {
                     try {
-                        anilistID = JSON.parse(await MakeFetch(`https://raw.githubusercontent.com/MALSync/MAL-Sync-Backup/master/data/pages/Gogoanime/${id}.json`)).aniId;
+                        anilistID = JSON.parse(await MakeFetch(`https://raw.githubusercontent.com/bal-mackup/mal-backup/master/page/Gogoanime/${id}.json`)).aniId;
                     }
                     catch (err) {
                         try {

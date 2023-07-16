@@ -423,11 +423,11 @@ async function fetchMapping(id: string, type: string | null) {
     }
 
     try {
-        let pageKey = "Pages";
+        let pageKey = "Sites";
         let pages;
 
         try{
-            pages = JSON.parse(await (window.parent as cordovaWindow).MakeFetch(`https://raw.githubusercontent.com/MALSync/MAL-Sync-Backup/master/data/anilist/${type}/${id}.json`));
+            pages = JSON.parse(await (window.parent as cordovaWindow).MakeFetch(`https://raw.githubusercontent.com/bal-mackup/mal-backup/master/anilist/${type}/${id}.json`));
         }catch(err){
             pageKey = "Sites";
             const malId = await (window.parent as cordovaWindow).anilistToMal(id);

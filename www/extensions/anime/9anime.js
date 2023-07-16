@@ -51,7 +51,7 @@ var nineAnime = {
                 }
                 if (!anilistID) {
                     try {
-                        anilistID = JSON.parse(await MakeFetch(`https://raw.githubusercontent.com/MALSync/MAL-Sync-Backup/master/data/pages/9anime/${id}.json`)).aniId;
+                        anilistID = JSON.parse(await MakeFetch(`https://raw.githubusercontent.com/bal-mackup/mal-backup/master/page/9anime/${id}.json`)).aniId;
                     }
                     catch (err) {
                         try {
