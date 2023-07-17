@@ -1,8 +1,11 @@
 class DialogsClass {
-    static confirm(message = "", isAlert = false) {
+    static confirm(message = "", isAlert = false, customClass) {
         return new Promise(function (resolve, reject) {
             const dialogCon = document.querySelector("#dialogs");
-            const dialog = document.createElement("dialog");
+            const dialog = createElement({
+                element: "dialog",
+                class: customClass
+            });
             dialogCon.append(dialog);
             dialog.append(createElement({
                 element: "form",
@@ -13,6 +16,7 @@ class DialogsClass {
                     {
                         element: "div",
                         innerText: message,
+                        class: "mainDialogBody",
                         style: {
                             marginBottom: "10px"
                         }
@@ -68,7 +72,7 @@ class DialogsClass {
         });
     }
     static alert(message) {
-        return DialogsClass.confirm(message, true);
+        return DialogsClass.confirm(message, true, "");
     }
     static prompt(message = "", defaultValue = "", type = "text", options) {
         return new Promise(function (resolve, reject) {

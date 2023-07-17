@@ -2617,6 +2617,7 @@ if (!!localStorage.getItem("anilist-token")) {
 // }
 
 (window.parent as cordovaWindow).handleFullscreen();
+(window.parent as cordovaWindow).checkForUpdate();
 
 
 for (const div of document.querySelectorAll("div")) {
@@ -2634,3 +2635,11 @@ if(hasAnilistToken){
         anilistMenuItem.textContent = "Anilist Log out";
     }
 }
+
+document.getElementById("changeUpdateChannel").onclick = function(){
+    const currentChannel = localStorage.getItem("updateChannel");
+    localStorage.removeItem("updateChannel");
+    localStorage.setItem("lastUpdateChannel", currentChannel);
+    (window.parent as cordovaWindow).checkForUpdate();
+}
+

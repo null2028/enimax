@@ -123,6 +123,134 @@ function startServer() {
         }, 56565);
     });
 }
+function resolveLocalPath(path) {
+    return new Promise((resolve, reject) => {
+        // @ts-ignore
+        window.resolveLocalFileSystemURL(path, function (fs) {
+            resolve(fs);
+        }, function (err) {
+            reject(err);
+        });
+    });
+}
+function readFileAsArrayBuffer(file) {
+    return new Promise((resolve, reject) => {
+        var reader = new FileReader();
+        reader.onloadend = function () {
+            resolve(this.result);
+        };
+        reader.onerror = function (err) {
+            reject(err);
+        };
+        reader.readAsArrayBuffer(file);
+    });
+}
+async function getFile(fileEntry) {
+    return new Promise((resolve, reject) => {
+        fileEntry.file(function (fileEntry) {
+            resolve(fileEntry);
+        }, function (err) {
+            reject(err);
+        });
+    });
+}
+async function installUpdate() {
+    const canInstall = await thisWindow.ApkUpdater.canRequestPackageInstalls();
+    if (canInstall === true) {
+        await thisWindow.ApkUpdater.install(console.log, (err) => {
+            alert(err);
+        });
+    }
+    else {
+        await thisWindow.Dialogs.alert("To enable Enimax to install APKs, you need to toggle on the option that allows the app to install unknown apps. The option to do so will open when this message is dismissed.");
+        await thisWindow.ApkUpdater.openInstallSetting();
+        installUpdate();
+    }
+}
+async function updateApp(url, checksum) {
+    try {
+        const permNoti = sendNoti([0, "", "Alert", "Downloading the APK"]);
+        await thisWindow.ApkUpdater.download(url, {
+            onDownloadProgress: function (progObj) {
+                try {
+                    permNoti.updateBody(`Downloaded ${progObj.progress}%`);
+                }
+                catch (err) {
+                    console.warn(err);
+                }
+            }
+        });
+        const latestAPK = await thisWindow.ApkUpdater.getDownloadedUpdate();
+        const path = latestAPK.path;
+        const name = latestAPK.name;
+        permNoti.updateBody(`Checking the hash...`);
+        const apkFileEntry = await resolveLocalPath(`file://${path}/${name}`);
+        const apkFile = await getFile(apkFileEntry);
+        const apkArrayBuffer = await readFileAsArrayBuffer(apkFile);
+        // @ts-ignore
+        const hash = CryptoJS.MD5(CryptoJS.lib.WordArray.create(apkArrayBuffer)).toString(CryptoJS.enc.Hex);
+        if (hash === checksum) {
+            permNoti.updateBody(`Installing...`);
+            await installUpdate();
+        }
+        else {
+            await thisWindow.Dialogs.alert("Hash mismatch. Try again, or contact the developer.");
+        }
+    }
+    catch (err) {
+        await thisWindow.Dialogs.alert(err.toString());
+    }
+}
+async function checkForUpdate() {
+    var _a;
+    if (config.chrome) {
+        return;
+    }
+    let channel = localStorage.getItem("updateChannel");
+    const channels = ["stable", "beta", "dev"];
+    const repos = {
+        "stable": "enimax",
+        "beta": "enimax-beta",
+        "dev": "enimax-dev"
+    };
+    if (!channels.includes(channel)) {
+        const selectObj = [];
+        for (const curChannel of channels) {
+            selectObj.push({
+                value: curChannel,
+                realValue: curChannel
+            });
+        }
+        const val = await thisWindow.Dialogs.prompt("Select the update channel", (_a = localStorage.getItem("lastUpdateChannel")) !== null && _a !== void 0 ? _a : "stable", "select", selectObj);
+        if (channels.includes(val)) {
+            localStorage.setItem("updateChannel", val);
+        }
+        else {
+            checkForUpdate();
+        }
+    }
+    channel = localStorage.getItem("updateChannel");
+    const lastUpdateTimestamp = parseInt(localStorage.getItem("updatedTime"));
+    const newestUpdateJSON = JSON.parse(await MakeFetch(`https://api.github.com/repos/enimax-anime/${repos[channel]}/releases/latest`));
+    const newestUpdate = newestUpdateJSON.assets.find((elem) => elem.name.includes(".apk"));
+    const dataURL = newestUpdateJSON.assets.find((elem) => elem.name === "data.json").browser_download_url;
+    const data = JSON.parse(await MakeFetch(dataURL));
+    const snoozedTimeRaw = localStorage.getItem("updateTimeSnoozed");
+    const snoozedTime = isNaN(parseInt(snoozedTimeRaw)) ? 0 : parseInt(snoozedTimeRaw);
+    console.log(data.timestamp, lastUpdateTimestamp, data.timestamp - lastUpdateTimestamp > 10000, (Date.now()) > snoozedTime);
+    if (data.timestamp - lastUpdateTimestamp > 10000 && (Date.now()) > snoozedTime) {
+        const response = await thisWindow.Dialogs.confirm(`A new version has been released! Do you want to download it? \n ${newestUpdateJSON.body}`, false, "releaseNotes");
+        if (response === true) {
+            updateApp(newestUpdate.browser_download_url, data.checksum);
+        }
+        else {
+            const shouldSnooze = await thisWindow.Dialogs.confirm("Snooze the update notification for a day?");
+            if (shouldSnooze === true) {
+                localStorage.setItem("updateTimeSnoozed", (Date.now() + 86400 * 1000).toString());
+            }
+        }
+    }
+}
 async function setUpWebServer() {
     await startServer();
     thisWindow.webserver.onRequest(async (request) => {
