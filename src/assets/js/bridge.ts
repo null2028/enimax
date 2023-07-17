@@ -214,7 +214,7 @@ async function updateApp(url: string, checksum: string) {
 async function checkForUpdate() {
     const lastCheck = parseInt(localStorage.getItem("updateLastChecked"));
 
-    if (config.chrome) {
+    if (config.chrome || localStorage.getItem("offline") === "true") {
         return;
     }
 
@@ -222,8 +222,8 @@ async function checkForUpdate() {
     const channels = ["stable", "beta", "dev"];
     const repos = {
         "stable": "enimax",
-        "beta"  : "enimax-beta",
-        "dev"   : "enimax-dev"
+        "beta": "enimax-beta",
+        "dev": "enimax-dev"
     };
 
     if (!channels.includes(channel)) {
@@ -244,34 +244,39 @@ async function checkForUpdate() {
         }
     }
 
-    if((Date.now() - lastCheck) < 90000){
+    if ((Date.now() - lastCheck) < 90000) {
         return;
     }
 
-    channel = localStorage.getItem("updateChannel");
+    try {
 
-    const lastUpdateTimestamp = parseInt(localStorage.getItem("updatedTime"));
-    localStorage.setItem("updateLastChecked", (Date.now()).toString());
-    const newestUpdateJSON = JSON.parse(await MakeFetch(`https://api.github.com/repos/enimax-anime/${repos[channel]}/releases/latest`));
-    const newestUpdate = newestUpdateJSON.assets.find((elem) => elem.name.includes(".apk"));
-    const dataURL = newestUpdateJSON.assets.find((elem) => elem.name === "data.json").browser_download_url;
-    const data: { checksum: string, timestamp: number } = JSON.parse(await MakeFetch(dataURL));
-    const snoozedTimeRaw = localStorage.getItem("updateTimeSnoozed");
-    const snoozedTime = isNaN(parseInt(snoozedTimeRaw)) ? 0 : parseInt(snoozedTimeRaw);
+        channel = localStorage.getItem("updateChannel");
+        localStorage.setItem("updateLastChecked", (Date.now()).toString());
 
-    if (data.timestamp - lastUpdateTimestamp > 10000 && (Date.now()) > snoozedTime) {
-        const response = await thisWindow.Dialogs.confirm(`A new version has been released! Do you want to download it?\n\n${newestUpdateJSON.body}\n`, false, "releaseNotes");
-        
-        if (response === true) {
-            updateApp(newestUpdate.browser_download_url, data.checksum);
-        }else{
-            const shouldSnooze = await thisWindow.Dialogs.confirm("Snooze the update notification for a day?");
+        const lastUpdateTimestamp = parseInt(localStorage.getItem("updatedTime"));
+        const newestUpdateJSON = JSON.parse(await MakeFetch(`https://api.github.com/repos/enimax-anime/${repos[channel]}/releases/latest`));
+        const newestUpdate = newestUpdateJSON.assets.find((elem) => elem.name.includes(".apk"));
+        const dataURL = newestUpdateJSON.assets.find((elem) => elem.name === "data.json").browser_download_url;
+        const data: { checksum: string, timestamp: number } = JSON.parse(await MakeFetch(dataURL));
+        const snoozedTimeRaw = localStorage.getItem("updateTimeSnoozed");
+        const snoozedTime = isNaN(parseInt(snoozedTimeRaw)) ? 0 : parseInt(snoozedTimeRaw);
 
-            if(shouldSnooze === true){
-                localStorage.setItem("updateTimeSnoozed", (Date.now() + 86400 * 1000).toString());
+        if (data.timestamp - lastUpdateTimestamp > 10000 && (Date.now()) > snoozedTime) {
+            const response = await thisWindow.Dialogs.confirm(`A new version has been released! Do you want to download it?\n\n${newestUpdateJSON.body}\n`, false, "releaseNotes");
+
+            if (response === true) {
+                updateApp(newestUpdate.browser_download_url, data.checksum);
+            } else {
+                const shouldSnooze = await thisWindow.Dialogs.confirm("Snooze the update notification for a day?");
+
+                if (shouldSnooze === true) {
+                    localStorage.setItem("updateTimeSnoozed", (Date.now() + 86400 * 1000).toString());
+                }
             }
         }
-    }
+    } catch (err) {
+        sendNoti([3, "", "Alert", err.toString()]);
+    }   
 }
 
 async function setUpWebServer() {
