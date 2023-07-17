@@ -212,6 +212,8 @@ async function updateApp(url: string, checksum: string) {
 }
 
 async function checkForUpdate() {
+    const lastCheck = parseInt(localStorage.getItem("updateLastChecked"));
+
     if (config.chrome) {
         return;
     }
@@ -242,9 +244,14 @@ async function checkForUpdate() {
         }
     }
 
+    if((Date.now() - lastCheck) < 90000){
+        return;
+    }
+
     channel = localStorage.getItem("updateChannel");
 
     const lastUpdateTimestamp = parseInt(localStorage.getItem("updatedTime"));
+    localStorage.setItem("updateLastChecked", (Date.now()).toString());
     const newestUpdateJSON = JSON.parse(await MakeFetch(`https://api.github.com/repos/enimax-anime/${repos[channel]}/releases/latest`));
     const newestUpdate = newestUpdateJSON.assets.find((elem) => elem.name.includes(".apk"));
     const dataURL = newestUpdateJSON.assets.find((elem) => elem.name === "data.json").browser_download_url;

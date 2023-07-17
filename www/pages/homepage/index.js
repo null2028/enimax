@@ -2042,32 +2042,34 @@ if (true) {
         handle: '.draggable_room',
         ghostClass: 'room_card_ghost'
     });
-    let verURL = "https://raw.githubusercontent.com/enimax-anime/enimax/main/version.json";
+    let verURL = undefined;
     if (config.firefox) {
         verURL = "https://raw.githubusercontent.com/enimax-anime/enimax-firefox-extension/main/version.json";
     }
     else if (config.chrome) {
         verURL = "https://raw.githubusercontent.com/enimax-anime/enimax-chrome-extension/main/version.json";
     }
-    fetch(verURL)
-        .then((x) => x.json())
-        .then(function (x) {
-        let curTime = Math.floor((new Date()).getTime() / 1000);
-        let lastUpdate = parseInt(localStorage.getItem("lastUpdate"));
-        let bool;
-        if (isNaN(lastUpdate)) {
-            bool = true;
-        }
-        else {
-            bool = (curTime - lastUpdate) > 86400; // 1 day
-        }
-        if (x.version != localStorage.getItem("version") && bool) {
-            sendNoti([0, "", "New update!", x.message]);
-            localStorage.setItem("lastUpdate", curTime.toString());
-        }
-    }).catch((err) => {
-        console.error(err);
-    });
+    if (verURL && (config.chrome || config.firefox)) {
+        fetch(verURL)
+            .then((x) => x.json())
+            .then(function (x) {
+            let curTime = Math.floor((new Date()).getTime() / 1000);
+            let lastUpdate = parseInt(localStorage.getItem("lastUpdate"));
+            let bool;
+            if (isNaN(lastUpdate)) {
+                bool = true;
+            }
+            else {
+                bool = (curTime - lastUpdate) > 86400; // 1 day
+            }
+            if (x.version != localStorage.getItem("version") && bool) {
+                sendNoti([0, "", "New update!", x.message]);
+                localStorage.setItem("lastUpdate", curTime.toString());
+            }
+        }).catch((err) => {
+            console.error(err);
+        });
+    }
 }
 for (let element of document.getElementsByClassName("menuItem")) {
     element.addEventListener("click", () => { toggleMenu(); });
