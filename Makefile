@@ -52,6 +52,7 @@ firefox:
 	rm enimax-firefox-extension/www/tsconfig.json
 
 ts:
+	node ./helper/updateTime.js
 	-rm www -rf
 	cp src www -r
 	-cd src && tsc -p tsconfig.json
