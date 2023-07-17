@@ -268,8 +268,6 @@ var kaa: extension = {
             
 
             if(finalResult.subtitles){
-                response.subtitles = [];
-
                 const url = dashURL === "" ? hlsURL : dashURL;
 
                 finalResult.subtitles.map((sub) => {
@@ -299,6 +297,7 @@ var kaa: extension = {
                 message: "",
                 next: null,
                 prev: null,
+                subtitles: [],
             };
 
             const epNum = params.get("ep");

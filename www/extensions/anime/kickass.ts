@@ -217,8 +217,6 @@ var kaa: extension = {
                 MID: url.searchParams.get(usesMid ? "mid" : "id")
             };
 
-            console.log(signatureItems);
-
             for (const item of order) {
                 sigArray.push(signatureItems[item]);
             }
@@ -238,8 +236,6 @@ var kaa: extension = {
             }).toString(CryptoJS.enc.Utf8));
 
             let hlsURL = "", dashURL = "";
-
-            console.log(finalResult);
 
             if (finalResult.hls) {
                 hlsURL = finalResult.hls.startsWith("//") ? `https:${finalResult.hls}` : finalResult.hls;
@@ -272,8 +268,6 @@ var kaa: extension = {
             
 
             if(finalResult.subtitles){
-                response.subtitles = [];
-
                 const url = dashURL === "" ? hlsURL : dashURL;
 
                 finalResult.subtitles.map((sub) => {
@@ -303,6 +297,7 @@ var kaa: extension = {
                 message: "",
                 next: null,
                 prev: null,
+                subtitles: [],
             };
 
             const epNum = params.get("ep");

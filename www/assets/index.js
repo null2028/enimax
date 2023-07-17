@@ -360,7 +360,7 @@ async function fetchMapping(id, type) {
         }
         catch (err) {
             pageKey = "Sites";
-            const malId = await window.parent.anilistToMal(id);
+            const malId = await window.parent.anilistToMal(id, type.toUpperCase());
             pages = JSON.parse(await window.parent.MakeFetch(`https://api.malsync.moe/mal/${type}/${malId}`));
         }
         noti.remove();

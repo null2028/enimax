@@ -49,7 +49,9 @@ jobs:
       run:  docker exec enimax-build sh -c "cd enimax && make cordova && make build"
 
     - name: Fetching the built APK
-      run: docker cp enimax-build:/usr/src/enimax/platforms/android/app/build/outputs/apk/release/app-release.apk ./      
+      run: | 
+        docker cp enimax-build:/usr/src/enimax/platforms/android/app/build/outputs/apk/release/app-release.apk ./      
+        docker cp enimax-build:/usr/src/enimax/helper/time.txt ./enimax/helper/time.txt
             
     - name: Upload the APK as an artifact
       uses: actions/upload-artifact@v3
@@ -70,6 +72,21 @@ jobs:
         BRANCH:  ${{ steps.branch-name.outputs.current_branch }}
         MESSAGE: ${{ github.event.head_commit.message }}
 
+    - name: Releasing the artifact to the beta repo, if necessary
+      run: |
+        npm install octokit dotenv crypto-js && node ./enimax/helper/release.js
+      env:
+        GITHUB_TOKEN: ${{ secrets.BETA_TOKEN }}
+        TYPE: "beta"
+
+    - name: Releasing the artifact to the dev repo, if necessary
+      run: |
+        npm install octokit dotenv crypto-js && node ./enimax/helper/release.js
+      env:
+        GITHUB_TOKEN: ${{ secrets.DEV_TOKEN }}
+        MESSAGE: ${{ github.event.head_commit.message }}
+        TYPE: "dev"
+
     - name: Checking if this is a beta release
       run: | 
         chmod +x ./enimax/helper/beta.sh && ./enimax/helper/beta.sh
@@ -89,4 +106,5 @@ jobs:
         BRANCH:  ${{ steps.branch-name.outputs.current_branch }}
         MESSAGE: ${{ github.event.head_commit.message }}
         RELEASE: true
+        TYPE: "stable"
 

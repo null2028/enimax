@@ -147,16 +147,15 @@ interface cordovaServerRequest {
     query: string,
 }
 interface cordovaWindow extends Window {
+    ApkUpdater: any,
+    checkForUpdate: typeof checkForUpdate;
     getAllItems: typeof getAllItems;
     anilistToMal: typeof anilistToMal;
     fixTitle(title: string, extension?: extension): string,
     Dialogs: {
         confirm: typeof DialogsClass.confirm
         alert: typeof DialogsClass.alert,
-        prompt: (message?: string, defaultValue?: string, type?: "text" | "select", options?: Array<{
-            value: string;
-            realValue: string;
-        }>) => Promise<string>
+        prompt: typeof DialogsClass.prompt
     },
     getEstimatedState: Function,
     handleUpperBar: Function,

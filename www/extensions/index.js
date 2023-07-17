@@ -356,8 +356,8 @@ const anilistQueries = {
                         }
                     }
                 }`,
-    "anilistToMal": `query ($id: Int) {
-                        Media(id: $id) {
+    "anilistToMal": `query ($id: Int, $type: MediaType) {
+                        Media(id: $id, type: $type) {
                             id
                             idMal
                         }
@@ -387,8 +387,8 @@ async function getAnilistInfo(type, id, mediaType = "ANIME") {
     }
     return (await anilistAPI(anilistQueries.info, { id: anilistID, type: mediaType })).data.Media;
 }
-async function anilistToMal(anilistID) {
-    return (await anilistAPI(anilistQueries.anilistToMal, { id: anilistID })).data.Media.idMal;
+async function anilistToMal(anilistID, type) {
+    return (await anilistAPI(anilistQueries.anilistToMal, { id: anilistID, type })).data.Media.idMal;
 }
 async function getMetaByAniID(anilistID, mediaType = "ANIME") {
     return (await anilistAPI(anilistQueries.info, { id: anilistID, type: mediaType })).data.Media;
@@ -3442,7 +3442,6 @@ var kaa = {
                 TIMESTAMP: Math.floor(Date.now() / 1000),
                 MID: url.searchParams.get(usesMid ? "mid" : "id")
             };
-            console.log(signatureItems);
             for (const item of order) {
                 sigArray.push(signatureItems[item]);
             }
@@ -3458,7 +3457,6 @@ var kaa = {
                 keySize: 256
             }).toString(CryptoJS.enc.Utf8));
             let hlsURL = "", dashURL = "";
-            console.log(finalResult);
             if (finalResult.hls) {
                 hlsURL = finalResult.hls.startsWith("//") ? `https:${finalResult.hls}` : finalResult.hls;
                 sourceURLs.push({
@@ -3484,7 +3482,6 @@ var kaa = {
                 });
             }
             if (finalResult.subtitles) {
-                response.subtitles = [];
                 const url = dashURL === "" ? hlsURL : dashURL;
                 finalResult.subtitles.map((sub) => {
                     response.subtitles.push({
@@ -3513,6 +3510,7 @@ var kaa = {
                 message: "",
                 next: null,
                 prev: null,
+                subtitles: [],
             };
             const epNum = params.get("ep");
             const epList = await this.getAnimeInfo(id);

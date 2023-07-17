@@ -189,7 +189,6 @@ var kaa = {
                 TIMESTAMP: Math.floor(Date.now() / 1000),
                 MID: url.searchParams.get(usesMid ? "mid" : "id")
             };
-            console.log(signatureItems);
             for (const item of order) {
                 sigArray.push(signatureItems[item]);
             }
@@ -205,7 +204,6 @@ var kaa = {
                 keySize: 256
             }).toString(CryptoJS.enc.Utf8));
             let hlsURL = "", dashURL = "";
-            console.log(finalResult);
             if (finalResult.hls) {
                 hlsURL = finalResult.hls.startsWith("//") ? `https:${finalResult.hls}` : finalResult.hls;
                 sourceURLs.push({
@@ -231,7 +229,6 @@ var kaa = {
                 });
             }
             if (finalResult.subtitles) {
-                response.subtitles = [];
                 const url = dashURL === "" ? hlsURL : dashURL;
                 finalResult.subtitles.map((sub) => {
                     response.subtitles.push({
@@ -260,6 +257,7 @@ var kaa = {
                 message: "",
                 next: null,
                 prev: null,
+                subtitles: [],
             };
             const epNum = params.get("ep");
             const epList = await this.getAnimeInfo(id);

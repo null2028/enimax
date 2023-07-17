@@ -430,7 +430,7 @@ async function fetchMapping(id: string, type: string | null) {
             pages = JSON.parse(await (window.parent as cordovaWindow).MakeFetch(`https://raw.githubusercontent.com/bal-mackup/mal-backup/master/anilist/${type}/${id}.json`));
         }catch(err){
             pageKey = "Sites";
-            const malId = await (window.parent as cordovaWindow).anilistToMal(id);
+            const malId = await (window.parent as cordovaWindow).anilistToMal(id, type.toUpperCase() as "ANIME" | "MANGA");
             pages = JSON.parse(await (window.parent as cordovaWindow).MakeFetch(`https://api.malsync.moe/mal/${type}/${malId}`));
         }
 
