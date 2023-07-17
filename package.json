@@ -70,7 +70,8 @@
       "cordova-plugin-file-transfer": {},
       "cordova-plugin-chromecast": {},
       "cordova-plugin-webserver": {},
-      "cordova-plugin-networkinterface": {}
+      "cordova-plugin-networkinterface": {},
+      "cordova-plugin-apkupdater": {}
     },
     "platforms": [
       "android"

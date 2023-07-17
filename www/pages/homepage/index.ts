@@ -2639,6 +2639,7 @@ if(hasAnilistToken){
 document.getElementById("changeUpdateChannel").onclick = function(){
     const currentChannel = localStorage.getItem("updateChannel");
     localStorage.removeItem("updateChannel");
+    localStorage.removeItem("updateTimeSnoozed");
     localStorage.setItem("lastUpdateChannel", currentChannel);
     (window.parent as cordovaWindow).checkForUpdate();
 }

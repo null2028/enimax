@@ -267,12 +267,11 @@ input[type="color"]::-webkit-color-swatch {
     color: white;
     box-sizing: border-box;
     width: 100%;
-    padding: 15px;
-    margin: 20px 0 20px 0;
+    font-size: 13px;
+    padding: 10px;
+    margin: 10px 0 10px 0;
     border-radius: 10px;
     transition-duration: 0.4s;
-
-
 }
 
 #menuBg {
