@@ -237,7 +237,6 @@ async function checkForUpdate() {
     const data = JSON.parse(await MakeFetch(dataURL));
     const snoozedTimeRaw = localStorage.getItem("updateTimeSnoozed");
     const snoozedTime = isNaN(parseInt(snoozedTimeRaw)) ? 0 : parseInt(snoozedTimeRaw);
-    console.log(data.timestamp, lastUpdateTimestamp, data.timestamp - lastUpdateTimestamp > 10000, (Date.now()) > snoozedTime);
     if (data.timestamp - lastUpdateTimestamp > 10000 && (Date.now()) > snoozedTime) {
         const response = await thisWindow.Dialogs.confirm(`A new version has been released! Do you want to download it? \n ${newestUpdateJSON.body}`, false, "releaseNotes");
         if (response === true) {
