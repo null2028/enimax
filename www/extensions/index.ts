@@ -398,8 +398,8 @@ const anilistQueries = {
                         }
                     }
                 }`,
-    "anilistToMal": `query ($id: Int) {
-                        Media(id: $id) {
+    "anilistToMal": `query ($id: Int, $type: MediaType) {
+                        Media(id: $id, type: $type) {
                             id
                             idMal
                         }
@@ -436,8 +436,8 @@ async function getAnilistInfo(type: anilistType, id: string, mediaType: "ANIME" 
     return (await anilistAPI(anilistQueries.info, { id: anilistID, type: mediaType })).data.Media;
 }
 
-async function anilistToMal(anilistID: string) {
-    return (await anilistAPI(anilistQueries.anilistToMal, { id: anilistID })).data.Media.idMal;
+async function anilistToMal(anilistID: string, type: "ANIME" | "MANGA") {
+    return (await anilistAPI(anilistQueries.anilistToMal, { id: anilistID, type })).data.Media.idMal;
 }
 
 async function getMetaByAniID(anilistID: string, mediaType: "ANIME" | "MANGA" = "ANIME") {
