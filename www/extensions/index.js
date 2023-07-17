@@ -3482,7 +3482,6 @@ var kaa = {
                 });
             }
             if (finalResult.subtitles) {
-                response.subtitles = [];
                 const url = dashURL === "" ? hlsURL : dashURL;
                 finalResult.subtitles.map((sub) => {
                     response.subtitles.push({
@@ -3511,6 +3510,7 @@ var kaa = {
                 message: "",
                 next: null,
                 prev: null,
+                subtitles: [],
             };
             const epNum = params.get("ep");
             const epList = await this.getAnimeInfo(id);
