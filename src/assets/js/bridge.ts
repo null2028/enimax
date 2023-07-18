@@ -27,8 +27,12 @@ async function getCachedAvatar() {
     if (cachedAvatar === undefined) {
         cachedAvatar = await getAvatar() ?? "";
     }
-    
+
     return cachedAvatar;
+}
+
+function resetCachedAvatar(){
+    cachedAvatar = undefined;
 }
 
 function updateCastTime(time: string) {

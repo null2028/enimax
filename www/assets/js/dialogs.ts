@@ -1,5 +1,5 @@
 class DialogsClass {
-    static confirm(message: string = "", isAlert = false, customClass?: string) {
+    static confirm(message: string = "", isAlert = false, customClass?: string): Promise<boolean> {
         return new Promise(function (resolve, reject) {
             const dialogCon: HTMLDialogElement = document.querySelector("#dialogs");
             const dialog = createElement({

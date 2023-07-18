@@ -515,6 +515,48 @@ function reloadQueue(mode = 0) {
 
 }
 
+async function loginAni() {
+    (window.parent as cordovaWindow).resetCachedAvatar();
+
+    if(hasAnilistToken){
+        localStorage.removeItem("anilist-token");
+        window.location.reload();
+        return;
+    }
+
+    if (config.chrome) {
+        try {
+            await thisWindow.Dialogs.alert("A new tab will open asking you to log in, and then you will be redirected to a new page. Copy the URL of the new page and paste it when prompted");
+            window.open("https://anilist.co/api/v2/oauth/authorize?client_id=13095&response_type=token", '_blank', 'location=yes,height=570,width=520,scrollbars=yes,status=yes');
+            let url = undefined;
+
+            while (!url) {
+                try {
+                    url = await thisWindow.Dialogs.prompt("Enter the copied URL here");
+                    const accessToken = new URLSearchParams((new URL(url)).hash.substring(1)).get("access_token");
+                    localStorage.setItem("anilist-token", accessToken);
+                    updateAvatar();
+                    if (accessToken) {
+                        const shouldUpdate = await (window.parent as cordovaWindow).Dialogs.confirm("Logged in! Do you want to import your library? if you don't want to do that right now, you can do that later by going to the menu.");
+                        if (shouldUpdate) {
+                            (window.parent as cordovaWindow).getAllItems();
+                        }
+                    } else {
+                        await thisWindow.Dialogs.alert("Seems like something went wrong.");
+                    }
+                } catch (err) {
+                    await thisWindow.Dialogs.alert(err + "\n" + "Try again.");
+                }
+            }
+        } catch (err) {
+            await thisWindow.Dialogs.alert(err);
+        }
+    } else {
+        await (window.parent as cordovaWindow).getWebviewHTML("https://anilist.co/api/v2/oauth/authorize?client_id=13095&response_type=token", false, null, "console.log()", true);
+        updateAvatar();
+    }
+}
+
 
 
 
@@ -771,44 +813,7 @@ document.getElementById("rangeCon").addEventListener("touchmove", function (even
     event.stopPropagation();
 });
 
-document.getElementById("anilistLogin").addEventListener("click", async function (event) {
-    if(hasAnilistToken){
-        localStorage.removeItem("anilist-token");
-        window.location.reload();
-        return;
-    }
-
-    if (config.chrome) {
-        try {
-            await thisWindow.Dialogs.alert("A new tab will open asking you to log in, and then you will be redirected to a new page. Copy the URL of the new page and paste it when prompted");
-            window.open("https://anilist.co/api/v2/oauth/authorize?client_id=13095&response_type=token", '_blank', 'location=yes,height=570,width=520,scrollbars=yes,status=yes');
-            let url = undefined;
-
-            while (!url) {
-                try {
-                    url = await thisWindow.Dialogs.prompt("Enter the copied URL here");
-                    const accessToken = new URLSearchParams((new URL(url)).hash.substring(1)).get("access_token");
-                    localStorage.setItem("anilist-token", accessToken);
-
-                    if (accessToken) {
-                        const shouldUpdate = await (window.parent as cordovaWindow).Dialogs.confirm("Logged in! Do you want to import your library? if you don't want to do that right now, you can do that later by going to the menu.");
-                        if (shouldUpdate) {
-                            (window.parent as cordovaWindow).getAllItems();
-                        }
-                    } else {
-                        await thisWindow.Dialogs.alert("Seems like something went wrong.");
-                    }
-                } catch (err) {
-                    await thisWindow.Dialogs.alert(err + "\n" + "Try again.");
-                }
-            }
-        } catch (err) {
-            await thisWindow.Dialogs.alert(err);
-        }
-    } else {
-        (window.parent as cordovaWindow).getWebviewHTML("https://anilist.co/api/v2/oauth/authorize?client_id=13095&response_type=token", false, null, "console.log()", true);
-    }
-});
+document.getElementById("anilistLogin").addEventListener("click", loginAni);
 
 document.getElementById("anilistImport").addEventListener("click", function (event) {
     (window.parent as cordovaWindow).getAllItems();
@@ -2646,8 +2651,17 @@ document.getElementById("changeUpdateChannel").onclick = function(){
     (window.parent as cordovaWindow).checkForUpdate();
 };
 
-(async function (){
+async function updateAvatar(){
     try{
+        document.getElementById("topBarLogo").onclick = async function (){
+            const shouldLogin = await (window.parent as cordovaWindow).Dialogs.confirm("Do you want to log in to anilist?");
+            
+            if(shouldLogin){
+                (window.parent as cordovaWindow).resetCachedAvatar();
+                loginAni();
+            }
+        };
+
         const avatarURL = await (window.parent as cordovaWindow).getCachedAvatar();
         
         if(avatarURL && typeof avatarURL === "string"){
@@ -2660,5 +2674,6 @@ document.getElementById("changeUpdateChannel").onclick = function(){
     }catch(err){
         console.warn(err);
     }
-})();
+};
 
+updateAvatar();

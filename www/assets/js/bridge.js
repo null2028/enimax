@@ -30,6 +30,9 @@ async function getCachedAvatar() {
     }
     return cachedAvatar;
 }
+function resetCachedAvatar() {
+    cachedAvatar = undefined;
+}
 function updateCastTime(time) {
     try {
         const currentTime = parseFloat(time);
@@ -264,7 +267,7 @@ async function checkForUpdate() {
                         realValue: i.toString()
                     });
                 }
-                const shouldSnooze = await thisWindow.Dialogs.prompt("For how many days do you want to snooze these update notifications for?", "1", "select", selectObj);
+                const shouldSnooze = await thisWindow.Dialogs.prompt("How many days do you want to snooze these update notifications for?", "1", "select", selectObj);
                 if (!isNaN(parseInt(shouldSnooze))) {
                     localStorage.setItem("updateTimeSnoozed", (Date.now() + 86400 * 1000 * parseInt(shouldSnooze)).toString());
                 }

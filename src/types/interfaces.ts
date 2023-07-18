@@ -150,6 +150,7 @@ interface cordovaWindow extends Window {
     ApkUpdater: any,
     openWebview: typeof openWebview;
     getCachedAvatar: typeof getCachedAvatar;
+    resetCachedAvatar: typeof resetCachedAvatar;
     checkForUpdate: typeof checkForUpdate;
     getAllItems: typeof getAllItems;
     anilistToMal: typeof anilistToMal;
@@ -191,7 +192,7 @@ interface cordovaWindow extends Window {
     getAnilistTrending: Function,
     listDir: Function,
     updateEpWatched: Function,
-    getWebviewHTML: Function,
+    getWebviewHTML: typeof getWebviewHTML,
     back: Function,
     sendBatchReqs: Function,
     secondsToHuman: Function,
