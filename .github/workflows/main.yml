@@ -63,15 +63,7 @@ jobs:
       uses: actions/setup-node@v3
       with:
           node-version: 18
-
-    - name: Uploading the APK to discord
-      run: npm install dotenv discord.js@14.11.0 && node ./enimax/helper/uploader.js
-      env:
-        TOKEN: ${{ secrets.TOKEN }}
-        CHANNELID: ${{ secrets.CHANNELID }}
-        BRANCH:  ${{ steps.branch-name.outputs.current_branch }}
-        MESSAGE: ${{ github.event.head_commit.message }}
-
+          
     - name: Releasing the artifact to the beta repo, if necessary
       run: |
         npm install octokit dotenv crypto-js && node ./enimax/helper/release.js
