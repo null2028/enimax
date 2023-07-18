@@ -277,11 +277,28 @@ async function checkForUpdate() {
             if (response === true) {
                 updateApp(newestUpdate.browser_download_url, data.checksum);
             } else {
-                const shouldSnooze = await thisWindow.Dialogs.confirm("Snooze the update notification for a day?");
 
-                if (shouldSnooze === true) {
-                    localStorage.setItem("updateTimeSnoozed", (Date.now() + 86400 * 1000).toString());
+                const selectObj: Array<{ value: string, realValue: string }> = [];
+                
+                for(let i = 1; i <=7; i++){
+                    selectObj.push({
+                        value: `${i} day${i == 1 ? "" : "s"}`,
+                        realValue: i.toString()
+                    });
                 }
+
+                const shouldSnooze = await thisWindow.Dialogs.prompt(
+                    "For how many days do you want to snooze these update notifications for?",
+                    "1",
+                    "select",
+                    selectObj
+                );
+
+                if (!isNaN(parseInt(shouldSnooze))) {
+                    localStorage.setItem("updateTimeSnoozed", (Date.now() + 86400 * 1000 * parseInt(shouldSnooze)).toString());
+                }
+
+                console.log(shouldSnooze);
             }
         }
     } catch (err) {

@@ -3,7 +3,7 @@ const path = require("path");
 const configJSON = path.join(__dirname, "../src/assets/js/config.ts");
 
 const currentTime = Date.now();
-const newConfigJSON = fs.readFileSync(configJSON, "utf-8").replace(/localStorage.setItem\(\"updatedTime\".+?\n/g, `localStorage.setItem("updatedTime", "${currentTime}");\n`);
+const newConfigJSON = fs.readFileSync(configJSON, "utf-8").replace(/localStorage.setItem\(\"updatedTime\".+?\n/g, `localStorage.setItem("updatedTime", "${0}");\n`);
 fs.writeFileSync(configJSON, newConfigJSON);
 
 fs.writeFileSync(

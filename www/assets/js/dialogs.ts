@@ -81,7 +81,7 @@ class DialogsClass {
         return DialogsClass.confirm(message, true, "");
     }
 
-    static prompt(message: string = "", defaultValue: string = "", type: "text" | "select" = "text", options?: Array<{ value: string, realValue: string }>) {
+    static prompt(message: string = "", defaultValue: string = "", type: "text" | "select" = "text", options?: Array<{ value: string, realValue: string }>): Promise<string | null> {
         return new Promise(function (resolve, reject) {
             const dialogCon: HTMLDialogElement = document.querySelector("#dialogs");
             const dialog = document.createElement("dialog");
