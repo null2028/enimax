@@ -9,6 +9,8 @@ let seekCheck = true;
 let backFunction: Function;
 let castSession = null;
 let lastRequestTime = 0;
+let cachedAvatar = undefined;
+
 function isCasting() {
     try {
         if (castSession && "status" in castSession) {
@@ -19,6 +21,14 @@ function isCasting() {
     } catch (err) {
         return false;
     }
+}
+
+async function getCachedAvatar() {
+    if (cachedAvatar === undefined) {
+        cachedAvatar = await getAvatar() ?? "";
+    }
+    
+    return cachedAvatar;
 }
 
 function updateCastTime(time: string) {
@@ -276,7 +286,7 @@ async function checkForUpdate() {
         }
     } catch (err) {
         sendNoti([3, "", "Alert", err.toString()]);
-    }   
+    }
 }
 
 async function setUpWebServer() {

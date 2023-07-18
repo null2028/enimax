@@ -9,6 +9,7 @@ let seekCheck = true;
 let backFunction;
 let castSession = null;
 let lastRequestTime = 0;
+let cachedAvatar = undefined;
 function isCasting() {
     try {
         if (castSession && "status" in castSession) {
@@ -21,6 +22,13 @@ function isCasting() {
     catch (err) {
         return false;
     }
+}
+async function getCachedAvatar() {
+    var _a;
+    if (cachedAvatar === undefined) {
+        cachedAvatar = (_a = await getAvatar()) !== null && _a !== void 0 ? _a : "";
+    }
+    return cachedAvatar;
 }
 function updateCastTime(time) {
     try {
@@ -235,8 +243,8 @@ async function checkForUpdate() {
     }
     try {
         channel = localStorage.getItem("updateChannel");
-        const lastUpdateTimestamp = parseInt(localStorage.getItem("updatedTime"));
         localStorage.setItem("updateLastChecked", (Date.now()).toString());
+        const lastUpdateTimestamp = parseInt(localStorage.getItem("updatedTime"));
         const newestUpdateJSON = JSON.parse(await MakeFetch(`https://api.github.com/repos/enimax-anime/${repos[channel]}/releases/latest`));
         const newestUpdate = newestUpdateJSON.assets.find((elem) => elem.name.includes(".apk"));
         const dataURL = newestUpdateJSON.assets.find((elem) => elem.name === "data.json").browser_download_url;

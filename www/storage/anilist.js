@@ -2,7 +2,7 @@ const anilistStatus = ["CURRENT", "PLANNING", "COMPLETED", "DROPPED", "PAUSED", 
 function returnAnilistStatus() {
     return anilistStatus;
 }
-async function makeAnilistReq(query, variables, accessToken) {
+async function makeAnilistReq(query, variables, accessToken, showAlert = true) {
     try {
         const response = await fetch("https://graphql.anilist.co", {
             method: "POST",
@@ -30,10 +30,34 @@ async function makeAnilistReq(query, variables, accessToken) {
                 localStorage.setItem("anilist-last-error", variablesString);
             }
         }
-        else {
+        else if (showAlert) {
             thisWindow.Dialogs.alert(err);
         }
         throw Error("Could not update");
+    }
+}
+async function getAvatar() {
+    const accessToken = localStorage.getItem("anilist-token");
+    if (!accessToken) {
+        return;
+    }
+    const query = `query {
+                        Viewer {
+                            avatar {
+                                medium
+                            }
+                        }
+                    }`;
+    const variables = {};
+    let url = undefined;
+    try {
+        url = JSON.parse(await makeAnilistReq(query, variables, accessToken, false)).data.Viewer.avatar.medium;
+    }
+    catch (err) {
+        console.warn(err);
+    }
+    finally {
+        return url;
     }
 }
 async function updateEpWatched(anilistID, epNum) {

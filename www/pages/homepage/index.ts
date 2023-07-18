@@ -2643,5 +2643,21 @@ document.getElementById("changeUpdateChannel").onclick = function(){
     localStorage.removeItem("updateTimeSnoozed");
     localStorage.setItem("lastUpdateChannel", currentChannel);
     (window.parent as cordovaWindow).checkForUpdate();
-}
+};
+
+(async function (){
+    try{
+        const avatarURL = await (window.parent as cordovaWindow).getCachedAvatar();
+        
+        if(avatarURL && typeof avatarURL === "string"){
+            document.getElementById("topBarLogo").style.backgroundImage = `url("${avatarURL}")`;
+
+            document.getElementById("topBarLogo").onclick = function (){
+                (window.parent as cordovaWindow).openWebview("https://anilist.co/home");
+            };
+        }
+    }catch(err){
+        console.warn(err);
+    }
+})();
 

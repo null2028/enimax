@@ -4,7 +4,7 @@ function returnAnilistStatus() {
     return anilistStatus;
 }
 
-async function makeAnilistReq(query: string, variables: any, accessToken: string) {
+async function makeAnilistReq(query: string, variables: any, accessToken: string, showAlert = true) {
     try {
         const response = await fetch("https://graphql.anilist.co", {
             method: "POST",
@@ -33,10 +33,37 @@ async function makeAnilistReq(query: string, variables: any, accessToken: string
                 thisWindow.Dialogs.alert(err);
                 localStorage.setItem("anilist-last-error", variablesString);
             }
-        } else {
+        } else if(showAlert){
             thisWindow.Dialogs.alert(err);
         }
         throw Error("Could not update");
+    }
+}
+
+async function getAvatar(): Promise<string | undefined>{
+    const accessToken = localStorage.getItem("anilist-token");
+    
+    if (!accessToken) {
+        return;
+    }
+
+    const query = `query {
+                        Viewer {
+                            avatar {
+                                medium
+                            }
+                        }
+                    }`;
+
+    const variables = {};
+    let url = undefined;
+    
+    try{
+        url = JSON.parse(await makeAnilistReq(query, variables, accessToken, false)).data.Viewer.avatar.medium;
+    }catch(err){
+        console.warn(err);
+    }finally{
+        return url;
     }
 }
 

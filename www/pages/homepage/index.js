@@ -2158,3 +2158,17 @@ document.getElementById("changeUpdateChannel").onclick = function () {
     localStorage.setItem("lastUpdateChannel", currentChannel);
     window.parent.checkForUpdate();
 };
+(async function () {
+    try {
+        const avatarURL = await window.parent.getCachedAvatar();
+        if (avatarURL && typeof avatarURL === "string") {
+            document.getElementById("topBarLogo").style.backgroundImage = `url("${avatarURL}")`;
+            document.getElementById("topBarLogo").onclick = function () {
+                window.parent.openWebview("https://anilist.co/home");
+            };
+        }
+    }
+    catch (err) {
+        console.warn(err);
+    }
+})();
