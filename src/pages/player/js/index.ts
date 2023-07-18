@@ -916,7 +916,7 @@ async function update(shouldCheck: number, altCurrentTime?: any, altDuration?: a
 		}
 	}
 
-	(<cordovaWindow>window.parent).apiCall("POST", { "username": username, "action": 1, "time": currentTime, "ep": currentVidData.episode, "name": currentVidData.nameWSeason, "nameUm": currentVidData.name, "prog": currentDuration }, () => { }, [], true, false).then(function (response: any) {
+	(<cordovaWindow>window.parent).apiCall("POST", { "username": username, "action": 1, "time": currentTime, "ep": currentVidData.episode, "name": currentVidData.nameWSeason, "nameUm": localStorage.getItem("mainName"), "prog": currentDuration }, () => { }, [], true, false).then(function (response: any) {
 		try {
 			if (response.status == 200) {
 				lastUpdate = currentTime;
@@ -1480,7 +1480,7 @@ async function getEp(x = 0) {
 				"username": username,
 				"action": 2,
 				"name": currentVidData.nameWSeason,
-				"nameUm": currentVidData.name,
+				"nameUm": localStorage.getItem("mainName"),
 				"ep": currentVidData.episode,
 				"cur": location.search
 			}, () => { });
@@ -1850,7 +1850,7 @@ async function startCasting(shouldDestroy = false) {
 				"username": username,
 				"action": 2,
 				"name": currentVidData.nameWSeason,
-				"nameUm": currentVidData.name,
+				"nameUm": localStorage.getItem("mainName"),
 				"ep": currentVidData.episode,
 				"cur": location.search
 			}, () => { });
@@ -2078,7 +2078,7 @@ window.addEventListener("videoDurationChanged", () => {
 				"username": username,
 				"action": 2,
 				"name": currentVidData.nameWSeason,
-				"nameUm": currentVidData.name,
+				"nameUm": localStorage.getItem("mainName"),
 				"ep": currentVidData.episode,
 				"duration": Math.floor(vidInstance.vid.duration),
 				"cur": location.search
