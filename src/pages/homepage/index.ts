@@ -601,7 +601,7 @@ document.getElementById("resetSource").onclick = async function () {
     for (let i = 0; i < extensionNames.length; i++) {
         promptConfig.push({
             value: extensionNames[i],
-            realValue: extensionNames[i]
+            realValue: i
         });
     }
 

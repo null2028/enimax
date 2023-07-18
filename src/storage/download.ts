@@ -685,6 +685,8 @@ class DownloadVid {
 
             if(hasConfig){
                 headersConfig = extensionList[this.engine].getConfig(self.url);
+                console.log(self.url, headersConfig);
+
                 m3u8File = await self.makeRequest(`${self.url}`, (x) => x.text(), headersConfig);
             }else{
                 m3u8File = await self.makeRequest(`${self.url}`, (x) => x.text());

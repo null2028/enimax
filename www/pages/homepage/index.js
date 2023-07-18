@@ -491,7 +491,7 @@ document.getElementById("resetSource").onclick = async function () {
     for (let i = 0; i < extensionNames.length; i++) {
         promptConfig.push({
             value: extensionNames[i],
-            realValue: extensionNames[i]
+            realValue: i
         });
     }
     let res = await window.parent.Dialogs.prompt(message, extensionNames[0], "select", promptConfig);
