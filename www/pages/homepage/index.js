@@ -299,6 +299,7 @@ document.getElementById("errorRemove").onclick = function () {
 };
 if (config.chrome) {
     document.getElementById("queueOpen").style.display = "none";
+    document.getElementById("changeUpdateChannel").style.display = "none";
     document.getElementById("restoreData").style.display = "none";
 }
 // todo
