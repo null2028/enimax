@@ -1183,7 +1183,8 @@ playIcon.onclick = function () {
         (selectedExists.querySelector(".episodesPlaySmall") as HTMLElement)?.click();
         (selectedExists.querySelector(".episodesPlay") as HTMLElement)?.click();
     } else {
-        (document.querySelector(".episodesCon").querySelector(".episodesPlaySmall") as HTMLElement).click();
+        (document.querySelector(".episodesCon")?.querySelector(".episodesPlaySmall") as HTMLElement)?.click();
+        (document.querySelector(".episodesCon")?.querySelector(".episodesPlay") as HTMLElement)?.click();
     }
 };
 

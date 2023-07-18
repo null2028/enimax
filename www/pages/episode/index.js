@@ -989,14 +989,15 @@ function ini() {
 const addToLibrary = document.getElementById("addToLibrary");
 const playIcon = document.getElementById("play");
 playIcon.onclick = function () {
-    var _a, _b;
+    var _a, _b, _c, _d, _e, _f;
     const selectedExists = document.querySelector(".episodesSelected");
     if (selectedExists) {
         (_a = selectedExists.querySelector(".episodesPlaySmall")) === null || _a === void 0 ? void 0 : _a.click();
         (_b = selectedExists.querySelector(".episodesPlay")) === null || _b === void 0 ? void 0 : _b.click();
     }
     else {
-        document.querySelector(".episodesCon").querySelector(".episodesPlaySmall").click();
+        (_d = (_c = document.querySelector(".episodesCon")) === null || _c === void 0 ? void 0 : _c.querySelector(".episodesPlaySmall")) === null || _d === void 0 ? void 0 : _d.click();
+        (_f = (_e = document.querySelector(".episodesCon")) === null || _e === void 0 ? void 0 : _e.querySelector(".episodesPlay")) === null || _f === void 0 ? void 0 : _f.click();
     }
 };
 addToLibrary.onclick = async function () {
