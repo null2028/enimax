@@ -1232,8 +1232,8 @@ addToLibrary.onclick = async function () {
                                 const shouldAdd = await (window.parent as cordovaWindow).Dialogs.confirm("Do you want to add this show to your anilist library?");
 
                                 if (shouldAdd) {
-                                    await (window.parent as cordovaWindow).updateEpWatched(aniID, 1);
-                                    await (window.parent as cordovaWindow).updateAnilistStatus(aniID);
+                                    await (window.parent as cordovaWindow).AnilistHelperFunctions.updateEpWatched(aniID, 1);
+                                    await (window.parent as cordovaWindow).AnilistHelperFunctions.updateAnilistStatus(aniID);
                                 }
                             }
                         }
@@ -1285,7 +1285,7 @@ addToLibrary.onclick = async function () {
                 const aniID = parseInt(searchQuery.get("aniID"));
                 const shouldDelete = await (window.parent as cordovaWindow).Dialogs.confirm("Do you want to delete this show from your anilist account?");
                 if (shouldDelete) {
-                    (window.parent as cordovaWindow).deleteAnilistShow(aniID);
+                    (window.parent as cordovaWindow).AnilistHelperFunctions.deleteAnilistShow(aniID);
                 }
 
             }

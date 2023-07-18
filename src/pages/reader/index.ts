@@ -731,7 +731,7 @@ async function ini() {
                                 (pageIndex + 3) > totalPages - 1 &&
                                 localStorage.getItem("anilist-last") != identifier
                             ) {
-                                await (window.parent as cordovaWindow).updateEpWatched(aniID, currentMangaData.chapter);
+                                await (window.parent as cordovaWindow).AnilistHelperFunctions.updateEpWatched(aniID, currentMangaData.chapter);
                                 localStorage.setItem("anilist-last", identifier);
                             }
                         } catch (err) {

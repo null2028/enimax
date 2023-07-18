@@ -155,7 +155,7 @@ function getWebviewHTML(url = "https://www.zoro.to", hidden = false, timeout = 1
                     inappRef.close();
                     const shouldUpdate = await window.parent.Dialogs.confirm("Logged in! Do you want to import your library? if you don't want to do that right now, you can do that later by going to the menu");
                     if (shouldUpdate) {
-                        getAllItems();
+                        AnilistHelper.getAllItems();
                     }
                     resolve("Done");
                 }

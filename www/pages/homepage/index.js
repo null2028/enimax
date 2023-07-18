@@ -440,7 +440,7 @@ async function loginAni() {
                     if (accessToken) {
                         const shouldUpdate = await window.parent.Dialogs.confirm("Logged in! Do you want to import your library? if you don't want to do that right now, you can do that later by going to the menu.");
                         if (shouldUpdate) {
-                            window.parent.getAllItems();
+                            window.parent.AnilistHelperFunctions.getAllItems();
                         }
                     }
                     else {
@@ -649,7 +649,7 @@ document.getElementById("rangeCon").addEventListener("touchmove", function (even
 });
 document.getElementById("anilistLogin").addEventListener("click", loginAni);
 document.getElementById("anilistImport").addEventListener("click", function (event) {
-    window.parent.getAllItems();
+    window.parent.AnilistHelperFunctions.getAllItems();
 });
 document.getElementById("outlineColor").value = localStorage.getItem("outlineColor");
 document.getElementById("outlineWidth").value = localStorage.getItem("outlineWidth");
@@ -1783,7 +1783,7 @@ if (true) {
                                                     if (!isNaN(aniID) && hasAnilistToken) {
                                                         const shouldDelete = await window.parent.Dialogs.confirm("Do you want to delete this show from your anilist account?");
                                                         if (shouldDelete) {
-                                                            window.parent.deleteAnilistShow(aniID);
+                                                            window.parent.AnilistHelperFunctions.deleteAnilistShow(aniID);
                                                         }
                                                     }
                                                 }
@@ -1822,13 +1822,7 @@ if (true) {
                                         "listeners": {
                                             "click": async function (event) {
                                                 event.stopPropagation();
-                                                window.parent.updateAnilistStatus(aniID);
-                                                // if (!isNaN(aniID) && hasAnilistToken) {
-                                                //     const shouldDelete = confirm("Do you want to delete this show from your anilist account?");
-                                                //     if (shouldDelete) {
-                                                //         (window.parent as cordovaWindow).deleteAnilistShow(aniID);
-                                                //     }
-                                                // }
+                                                window.parent.AnilistHelperFunctions.updateAnilistStatus(aniID);
                                             }
                                         }
                                     }
@@ -2021,7 +2015,7 @@ if (true) {
         else if ((curTime - parseInt(localStorage.getItem("lastupdatelib"))) > 43200) {
             updateNewEp();
             if (localStorage.getItem("anilist-auto") === "true") {
-                window.parent.getAllItems(true);
+                window.parent.AnilistHelperFunctions.getAllItems(true);
             }
             localStorage.setItem("lastupdatelib", curTime.toString());
         }

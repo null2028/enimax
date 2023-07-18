@@ -1,6 +1,13 @@
 const playerIFrame = document.getElementById("player");
 const mainIFrame = document.getElementById("frame");
 const anonDOM = document.getElementById("anonMode");
+var AnilistHelperFunctions = {
+    updateEpWatched: AnilistHelper.updateEpWatched,
+    getAllItems: AnilistHelper.getAllItems,
+    updateAnilistStatus: AnilistHelper.updateAnilistStatus,
+    deleteAnilistShow: AnilistHelper.deleteAnilistShow,
+    changeShowStatus: AnilistHelper.changeShowStatus
+};
 var thisWindow = window;
 var socket;
 let frameHistory = [];
@@ -26,7 +33,7 @@ function isCasting() {
 async function getCachedAvatar() {
     var _a;
     if (cachedAvatar === undefined) {
-        cachedAvatar = (_a = await getAvatar()) !== null && _a !== void 0 ? _a : "";
+        cachedAvatar = (_a = await AnilistHelper.getAvatar()) !== null && _a !== void 0 ? _a : "";
     }
     return cachedAvatar;
 }

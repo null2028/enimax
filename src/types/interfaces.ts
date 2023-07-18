@@ -152,7 +152,13 @@ interface cordovaWindow extends Window {
     getCachedAvatar: typeof getCachedAvatar;
     resetCachedAvatar: typeof resetCachedAvatar;
     checkForUpdate: typeof checkForUpdate;
-    getAllItems: typeof getAllItems;
+    AnilistHelperFunctions: {
+        updateEpWatched: typeof AnilistHelper.updateEpWatched,
+        getAllItems: typeof AnilistHelper.getAllItems,
+        updateAnilistStatus: typeof AnilistHelper.updateAnilistStatus,
+        deleteAnilistShow: typeof AnilistHelper.deleteAnilistShow,
+        changeShowStatus: typeof AnilistHelper.changeShowStatus
+    };
     anilistToMal: typeof anilistToMal;
     fixTitle(title: string, extension?: extension): string,
     Dialogs: {
@@ -174,10 +180,7 @@ interface cordovaWindow extends Window {
     cordova: any,
     handleFullscreen: () => void;
     returnAnilistStatus: () => anilistStatus[],
-    updateAnilistStatus: Function,
     addRoom: Function,
-    getUserData: Function,
-    changeShowStatus: (anilistID: any, status: anilistStatus) => Promise<void>,
     anilist: extension,
     makeLocalRequest: Function,
     normalise: Function,
@@ -185,13 +188,11 @@ interface cordovaWindow extends Window {
     returnExtensionList: Function,
     XMLHttpRequest: any,
     returnExtensionNames: Function,
-    deleteAnilistShow: Function,
     returnDownloadQueue: Function,
     returnExtensionDisabled: Function,
     returnExtensionTypes: Function,
     getAnilistTrending: Function,
     listDir: Function,
-    updateEpWatched: Function,
     getWebviewHTML: typeof getWebviewHTML,
     back: Function,
     sendBatchReqs: Function,

@@ -1,6 +1,15 @@
 const playerIFrame = document.getElementById("player") as HTMLIFrameElement;
 const mainIFrame = document.getElementById("frame") as HTMLIFrameElement;
 const anonDOM = document.getElementById("anonMode") as HTMLElement;
+
+var AnilistHelperFunctions = {
+    updateEpWatched: AnilistHelper.updateEpWatched,
+    getAllItems: AnilistHelper.getAllItems,
+    updateAnilistStatus: AnilistHelper.updateAnilistStatus,
+    deleteAnilistShow: AnilistHelper.deleteAnilistShow,
+    changeShowStatus: AnilistHelper.changeShowStatus
+};
+
 var thisWindow = (window as unknown as cordovaWindow);
 var socket;
 let frameHistory: Array<string> = [];
@@ -25,7 +34,7 @@ function isCasting() {
 
 async function getCachedAvatar() {
     if (cachedAvatar === undefined) {
-        cachedAvatar = await getAvatar() ?? "";
+        cachedAvatar = await AnilistHelper.getAvatar() ?? "";
     }
 
     return cachedAvatar;

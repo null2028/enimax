@@ -908,7 +908,7 @@ async function update(shouldCheck: number, altCurrentTime?: any, altDuration?: a
 				(currentTime + 120) > vidInstance.vid.duration &&
 				localStorage.getItem("anilist-last") != identifier
 			) {
-				await (window.parent as cordovaWindow).updateEpWatched(aniID, currentVidData.episode);
+				await (window.parent as cordovaWindow).AnilistHelperFunctions.updateEpWatched(aniID, currentVidData.episode);
 				localStorage.setItem("anilist-last", identifier);
 			}
 		} catch (err) {

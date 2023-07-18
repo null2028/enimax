@@ -628,7 +628,7 @@ async function ini() {
                                 totalPages - 1 > 0 &&
                                 (pageIndex + 3) > totalPages - 1 &&
                                 localStorage.getItem("anilist-last") != identifier) {
-                                await window.parent.updateEpWatched(aniID, currentMangaData.chapter);
+                                await window.parent.AnilistHelperFunctions.updateEpWatched(aniID, currentMangaData.chapter);
                                 localStorage.setItem("anilist-last", identifier);
                             }
                         }

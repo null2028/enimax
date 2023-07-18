@@ -1035,8 +1035,8 @@ addToLibrary.onclick = async function () {
                         if (!isNaN(aniID)) {
                             const shouldAdd = await window.parent.Dialogs.confirm("Do you want to add this show to your anilist library?");
                             if (shouldAdd) {
-                                await window.parent.updateEpWatched(aniID, 1);
-                                await window.parent.updateAnilistStatus(aniID);
+                                await window.parent.AnilistHelperFunctions.updateEpWatched(aniID, 1);
+                                await window.parent.AnilistHelperFunctions.updateAnilistStatus(aniID);
                             }
                         }
                     }
@@ -1076,7 +1076,7 @@ addToLibrary.onclick = async function () {
                 const aniID = parseInt(searchQuery.get("aniID"));
                 const shouldDelete = await window.parent.Dialogs.confirm("Do you want to delete this show from your anilist account?");
                 if (shouldDelete) {
-                    window.parent.deleteAnilistShow(aniID);
+                    window.parent.AnilistHelperFunctions.deleteAnilistShow(aniID);
                 }
             }
             const shouldDelete = await window.parent.Dialogs.confirm("Are you sure that you want to remove this show from your library?");

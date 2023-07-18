@@ -801,7 +801,7 @@ async function update(shouldCheck, altCurrentTime, altDuration) {
                 vidInstance.vid.duration > 0 &&
                 (currentTime + 120) > vidInstance.vid.duration &&
                 localStorage.getItem("anilist-last") != identifier) {
-                await window.parent.updateEpWatched(aniID, currentVidData.episode);
+                await window.parent.AnilistHelperFunctions.updateEpWatched(aniID, currentVidData.episode);
                 localStorage.setItem("anilist-last", identifier);
             }
         }

@@ -187,7 +187,7 @@ function getWebviewHTML(url = "https://www.zoro.to", hidden = false, timeout: nu
                     inappRef.close();
                     const shouldUpdate = await (window.parent as cordovaWindow).Dialogs.confirm("Logged in! Do you want to import your library? if you don't want to do that right now, you can do that later by going to the menu");
                     if (shouldUpdate) {
-                        getAllItems();
+                        AnilistHelper.getAllItems();
                     }
                     resolve("Done");
                 } else if ((new URL(event.url)).hostname === "anilist.co") {
