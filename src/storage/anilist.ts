@@ -335,7 +335,7 @@ async function malsyncApiPromise(type: string, id: number, aniToMal: Object) {
     if (id.toString() in aniToMal) {
         malId = aniToMal[id.toString()];
     } else {
-        malId = await (window.parent as cordovaWindow).anilistToMal(id.toString());
+        malId = await (window.parent as cordovaWindow).anilistToMal(id.toString(), type.toUpperCase() as "ANIME" | "MANGA");
     }
 
     const result = await fetch(`https://api.malsync.moe/mal/${type}/${malId}`);
@@ -545,18 +545,12 @@ async function getAllItems(auto = false) {
                 }
             }
 
-            let makeRooms;
-            
-            if(auto === false){
-                makeRooms = await (window.parent as cordovaWindow).Dialogs.confirm("Do you want to put the shows in their respective categories?");
-            }else{
-                makeRooms = true;
-            }
+            let makeRooms = true;
 
             if (makeRooms) {
                 try {
-                    const categoryNames = [];
-                    const categoryIDs = [];
+                    const categoryNames = ["Watching"];
+                    const categoryIDs = [-1];
 
                     for (let i = 0; i < userData.data[1].length; i++) {
                         if (i % 2 === 0) {
@@ -602,7 +596,6 @@ async function getAllItems(auto = false) {
 
             await batchPromisesMalSync(malsyncURLs, 5, anilistData, permNoti);
             await batchPromisesMalSyncApi(malsyncURLs, 5, anilistData, permNoti);
-            console.log(anilistData);
 
             for (let i = 0; i < anilistIDs.length; i++) {
                 const id = anilistIDs[i];
@@ -635,9 +628,6 @@ async function getAllItems(auto = false) {
             }
 
             await batchPromises(promiseInput, 5, links, permNoti);
-
-            console.log(promiseInput);
-            console.log(links);
 
             for (const link of links) {
                 try {
