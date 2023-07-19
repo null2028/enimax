@@ -58,6 +58,7 @@ function extractKey(id: number, url = null, useCached = false): Promise<string> 
     }));
 }
 
+// @ts-ignore
 async function MakeFetch(url: string, options = {}): Promise<string> {
     return new Promise(function (resolve, reject) {
         fetch(url, options).then(response => response.text()).then((response: string) => {

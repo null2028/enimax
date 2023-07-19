@@ -67,6 +67,7 @@ const setAniID = document.querySelector("#setAniID") as HTMLElement;
 let didScroll = false;
 let lastScrollPos: number;
 let scrollDownTopDOM = document.getElementById("scrollDownTop");
+// @ts-ignore
 let scrollSnapFunc: undefined | Function;
 let showMainName = null;
 let showImage = null;
@@ -222,6 +223,8 @@ async function updateShow(params: { [key: string]: any }, currentEngine: extensi
     }
 }
 
+// @ts-ignore
+// todo
 function sendNoti(notiConfig: any) {
     return new notification(document.getElementById("noti_con"), {
         "perm": notiConfig[0],
@@ -265,6 +268,7 @@ function checkIfExists(localURL: string, dList: Array<string>, dName: string): P
     }));
 }
 
+// @ts-ignore
 function ini() {
     let downloadQueue = (<cordovaWindow>window.parent).returnDownloadQueue();
 
@@ -329,7 +333,6 @@ function ini() {
             };
 
             let downloadedList = [];
-            let doesExist: Array<Promise> = [];
             if (!config.chrome) {
                 try {
                     downloadedList = await (<cordovaWindow>window.parent).listDir(`${downloadedIsManga ? "manga/" : ""}${data.mainName}`);

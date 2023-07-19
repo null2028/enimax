@@ -8,6 +8,7 @@ var AnilistHelperFunctions = {
     deleteAnilistShow: AnilistHelper.deleteAnilistShow,
     changeShowStatus: AnilistHelper.changeShowStatus
 };
+// @ts-ignore
 var thisWindow = window;
 var socket;
 let frameHistory = [];
@@ -666,7 +667,7 @@ function removeDirectory(url) {
 }
 function executeAction(message, reqSource) {
     if (message.action == 1) {
-        screen.orientation.lock(message.data).then(() => { }).catch(() => { });
+        thisWindow.screen.orientation.lock(message.data).then(() => { }).catch(() => { });
     }
     else if (message.action == 3) {
         window.location = message.data;
@@ -707,14 +708,14 @@ function executeAction(message, reqSource) {
         }
     }
     else if (message.action == 400) {
-        screen.orientation.lock("any").then(() => { }).catch(() => { });
+        thisWindow.screen.orientation.lock("any").then(() => { }).catch(() => { });
         playerIFrame.classList.add("pop");
         mainIFrame.classList.add("mainPop");
         mainIFrame.style.display = "block";
         playerIFrame.style.display = "block";
     }
     else if (message.action == 401) {
-        screen.orientation.lock("landscape").then(() => { }).catch(() => { });
+        thisWindow.screen.orientation.lock("landscape").then(() => { }).catch(() => { });
         playerIFrame.classList.remove("pop");
         mainIFrame.classList.remove("mainPop");
         mainIFrame.style.display = "none";
@@ -891,7 +892,7 @@ function executeAction(message, reqSource) {
                 }
             }, 100);
             if (!isManga) {
-                screen.orientation.lock("landscape")
+                thisWindow.screen.orientation.lock("landscape")
                     .then(() => { })
                     .catch(() => { })
                     .finally(function () {
@@ -1054,7 +1055,7 @@ async function onDeviceReady() {
             }
             // @ts-ignore
             MusicControls.destroy(() => { }, () => { });
-            screen.orientation.lock("any").then(() => { }).catch(() => { });
+            thisWindow.screen.orientation.lock("any").then(() => { }).catch(() => { });
         }
         else {
             if (frameHistory.length > 1) {

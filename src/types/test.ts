@@ -16,7 +16,8 @@ function getRealValue(key: Key, scopeObj: any) {
     }
 }
 
-async function executeAction(actionObj: Action, scopeObj: any) {
+async function executeAction2(actionObj: Action, scopeObj: any) {
+    // async function executeAction(actionObj: Action, scopeObj: any) {
     switch (actionObj.type) {
         case "network": {
 
@@ -179,7 +180,7 @@ async function executeAction(actionObj: Action, scopeObj: any) {
 
 async function executeActions(actionObj: Action[], scope: any) {
     for (const action of actionObj) {
-        await executeAction(action, scope);
+        await executeAction2(action, scope);
     }
 }
 

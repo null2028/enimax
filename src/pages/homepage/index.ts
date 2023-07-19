@@ -84,6 +84,7 @@ function addState(id: string) {
     }
 }
 
+// @ts-ignore
 function checkIfExists(localURL: string): Promise<string> {
     return (new Promise(function (resolve, reject) {
 
@@ -102,6 +103,7 @@ function checkIfExists(localURL: string): Promise<string> {
     }));
 }
 
+// @ts-ignore
 function normalise(url: string) {
     let engine = 0;
 
@@ -1062,8 +1064,9 @@ function updateRoomAdd() {
     }
 }
 
-
+// @ts-ignore
 let scrollLastIndex;
+// @ts-ignore
 let cusRoomDOM = document.getElementById("custom_rooms");
 
 function cusRoomScroll(forced = false) {
@@ -1204,7 +1207,7 @@ function makeDiscoverCard(data: DiscoverData) {
         "listeners": {
             "click": async function () {
                 openCon(sourceChoiceDOM, "flex");
-                fetchMapping(this.getAttribute("data-id"));
+                fetchMapping(this.getAttribute("data-id"), "ANIME");
             }
         }
     });
@@ -1311,76 +1314,76 @@ async function populateDiscover() {
         const type = types[i];
         const currentTrending = await (window.parent as cordovaWindow).getAnilistTrending(type);
 
-        if (!addedBanner && false) {
-            const node = currentTrending[0];
-            const id = node.id;
+        // if (!addedBanner && false) {
+        //     const node = currentTrending[0];
+        //     const id = node.id;
 
-            addedBanner = true;
-            const bannerCon = createElement({
-                "class": "bannerCon hasBackground",
-                "style": {
-                    "backgroundImage": `url("${node.bannerImage}")`
-                }
-            });
+        //     addedBanner = true;
+        //     const bannerCon = createElement({
+        //         "class": "bannerCon hasBackground",
+        //         "style": {
+        //             "backgroundImage": `url("${node.bannerImage}")`
+        //         }
+        //     });
 
-            const bannerMainContent = createElement({
-                "style": {
-                    "position": "relative"
-                }
-            });
+        //     const bannerMainContent = createElement({
+        //         "style": {
+        //             "position": "relative"
+        //         }
+        //     });
 
-            bannerCon.append(createElement({
-                "class": "bannerBackdrop"
-            }));
+        //     bannerCon.append(createElement({
+        //         "class": "bannerBackdrop"
+        //     }));
 
-            bannerMainContent.append(createElement({
-                "class": "bannerDescription",
-                "innerText": node.description,
-                "listeners": {
-                    "click": function () {
-                        this.classList.toggle("open");
-                    }
-                }
-            }));
+        //     bannerMainContent.append(createElement({
+        //         "class": "bannerDescription",
+        //         "innerText": node.description,
+        //         "listeners": {
+        //             "click": function () {
+        //                 this.classList.toggle("open");
+        //             }
+        //         }
+        //     }));
 
-            if (node?.genres?.length > 0) {
-                const genreCon = createElement({
-                    style: {
-                        marginTop: "10px"
-                    }
-                });
+        //     if (node?.genres?.length > 0) {
+        //         const genreCon = createElement({
+        //             style: {
+        //                 marginTop: "10px"
+        //             }
+        //         });
 
-                for (let i = 0; i < node.genres.length; i++) {
-                    genreCon.append(createElement({
-                        class: "card_title_extension",
-                        style: {
-                            margin: "5px",
-                            fontWeight: "500",
-                            position: "static"
-                        },
-                        innerText: node.genres[i]
-                    }));
-                }
+        //         for (let i = 0; i < node.genres.length; i++) {
+        //             genreCon.append(createElement({
+        //                 class: "card_title_extension",
+        //                 style: {
+        //                     margin: "5px",
+        //                     fontWeight: "500",
+        //                     position: "static"
+        //                 },
+        //                 innerText: node.genres[i]
+        //             }));
+        //         }
 
-                bannerMainContent.append(genreCon);
-            }
+        //         bannerMainContent.append(genreCon);
+        //     }
 
-            bannerMainContent.append(createElement({
-                "class": "bannerTitle",
-                "innerText": node.title.english ? node.title.english : node.title.native,
-                "listeners": {
-                    "click": function () {
-                        openCon(sourceChoiceDOM, "flex");
-                        fetchMapping(id);
-                    }
-                }
-            }));
+        //     bannerMainContent.append(createElement({
+        //         "class": "bannerTitle",
+        //         "innerText": node.title.english ? node.title.english : node.title.native,
+        //         "listeners": {
+        //             "click": function () {
+        //                 openCon(sourceChoiceDOM, "flex");
+        //                 fetchMapping(id);
+        //             }
+        //         }
+        //     }));
 
-            bannerCon.append(bannerMainContent);
-            disCon.append(bannerCon);
+        //     bannerCon.append(bannerMainContent);
+        //     disCon.append(bannerCon);
 
-            currentTrending.shift();
-        }
+        //     currentTrending.shift();
+        // }
 
         const title = createElement({
             "style": {

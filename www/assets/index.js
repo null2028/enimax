@@ -1,3 +1,4 @@
+// @ts-ignore
 function createElement(config) {
     if (config.shouldAdd === false) {
         return;
@@ -248,6 +249,7 @@ function constructErrorPage(errorCon, message, config) {
     errorCon.append(container);
     return container;
 }
+// @ts-ignore
 function openWebview(url) {
     if (config.chrome) {
         window.open(url, "_blank");

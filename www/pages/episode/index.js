@@ -48,6 +48,7 @@ const setAniID = document.querySelector("#setAniID");
 let didScroll = false;
 let lastScrollPos;
 let scrollDownTopDOM = document.getElementById("scrollDownTop");
+// @ts-ignore
 let scrollSnapFunc;
 let showMainName = null;
 let showImage = null;
@@ -192,6 +193,8 @@ async function updateShow(params, currentEngine) {
         await window.parent.apiCall("POST", params, () => { });
     }
 }
+// @ts-ignore
+// todo
 function sendNoti(notiConfig) {
     return new notification(document.getElementById("noti_con"), {
         "perm": notiConfig[0],
@@ -230,6 +233,7 @@ function checkIfExists(localURL, dList, dName) {
         }
     }));
 }
+// @ts-ignore
 function ini() {
     let downloadQueue = window.parent.returnDownloadQueue();
     let username = "hi";
@@ -282,7 +286,6 @@ function ini() {
                 });
             };
             let downloadedList = [];
-            let doesExist = [];
             if (!config.chrome) {
                 try {
                     downloadedList = await window.parent.listDir(`${downloadedIsManga ? "manga/" : ""}${data.mainName}`);

@@ -50,6 +50,7 @@ function extractKey(id, url = null, useCached = false) {
         }
     }));
 }
+// @ts-ignore
 async function MakeFetch(url, options = {}) {
     return new Promise(function (resolve, reject) {
         fetch(url, options).then(response => response.text()).then((response) => {

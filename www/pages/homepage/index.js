@@ -74,6 +74,7 @@ function addState(id) {
         window.history.replaceState({}, "", `?action=${id}`);
     }
 }
+// @ts-ignore
 function checkIfExists(localURL) {
     return (new Promise(function (resolve, reject) {
         let timeout = setTimeout(function () {
@@ -88,6 +89,7 @@ function checkIfExists(localURL) {
         });
     }));
 }
+// @ts-ignore
 function normalise(url) {
     let engine = 0;
     try {
@@ -849,7 +851,9 @@ function updateRoomAdd() {
         document.getElementById("room_add_child").append(makeRoomElem(roomID, roomName, true));
     }
 }
+// @ts-ignore
 let scrollLastIndex;
+// @ts-ignore
 let cusRoomDOM = document.getElementById("custom_rooms");
 function cusRoomScroll(forced = false) {
     let tempCatDOM = document.getElementsByClassName("categories");
@@ -968,7 +972,7 @@ function makeDiscoverCard(data) {
         "listeners": {
             "click": async function () {
                 openCon(sourceChoiceDOM, "flex");
-                fetchMapping(this.getAttribute("data-id"));
+                fetchMapping(this.getAttribute("data-id"), "ANIME");
             }
         }
     });
@@ -1047,7 +1051,7 @@ function humanDate(date) {
     return `${thisDate.getDate()} ${thisDate.toLocaleString('en-us', { month: "short" })} ${thisDate.getFullYear()}`;
 }
 async function populateDiscover() {
-    var _a, _b;
+    var _a;
     const disCon = document.getElementById("discoverCon");
     const types = ["current", "next"];
     const typesTitle = ["Popular this season", "Next season"];
@@ -1055,66 +1059,66 @@ async function populateDiscover() {
     for (let i = 0; i < types.length; i++) {
         const type = types[i];
         const currentTrending = await window.parent.getAnilistTrending(type);
-        if (!addedBanner && false) {
-            const node = currentTrending[0];
-            const id = node.id;
-            addedBanner = true;
-            const bannerCon = createElement({
-                "class": "bannerCon hasBackground",
-                "style": {
-                    "backgroundImage": `url("${node.bannerImage}")`
-                }
-            });
-            const bannerMainContent = createElement({
-                "style": {
-                    "position": "relative"
-                }
-            });
-            bannerCon.append(createElement({
-                "class": "bannerBackdrop"
-            }));
-            bannerMainContent.append(createElement({
-                "class": "bannerDescription",
-                "innerText": node.description,
-                "listeners": {
-                    "click": function () {
-                        this.classList.toggle("open");
-                    }
-                }
-            }));
-            if (((_a = node === null || node === void 0 ? void 0 : node.genres) === null || _a === void 0 ? void 0 : _a.length) > 0) {
-                const genreCon = createElement({
-                    style: {
-                        marginTop: "10px"
-                    }
-                });
-                for (let i = 0; i < node.genres.length; i++) {
-                    genreCon.append(createElement({
-                        class: "card_title_extension",
-                        style: {
-                            margin: "5px",
-                            fontWeight: "500",
-                            position: "static"
-                        },
-                        innerText: node.genres[i]
-                    }));
-                }
-                bannerMainContent.append(genreCon);
-            }
-            bannerMainContent.append(createElement({
-                "class": "bannerTitle",
-                "innerText": node.title.english ? node.title.english : node.title.native,
-                "listeners": {
-                    "click": function () {
-                        openCon(sourceChoiceDOM, "flex");
-                        fetchMapping(id);
-                    }
-                }
-            }));
-            bannerCon.append(bannerMainContent);
-            disCon.append(bannerCon);
-            currentTrending.shift();
-        }
+        // if (!addedBanner && false) {
+        //     const node = currentTrending[0];
+        //     const id = node.id;
+        //     addedBanner = true;
+        //     const bannerCon = createElement({
+        //         "class": "bannerCon hasBackground",
+        //         "style": {
+        //             "backgroundImage": `url("${node.bannerImage}")`
+        //         }
+        //     });
+        //     const bannerMainContent = createElement({
+        //         "style": {
+        //             "position": "relative"
+        //         }
+        //     });
+        //     bannerCon.append(createElement({
+        //         "class": "bannerBackdrop"
+        //     }));
+        //     bannerMainContent.append(createElement({
+        //         "class": "bannerDescription",
+        //         "innerText": node.description,
+        //         "listeners": {
+        //             "click": function () {
+        //                 this.classList.toggle("open");
+        //             }
+        //         }
+        //     }));
+        //     if (node?.genres?.length > 0) {
+        //         const genreCon = createElement({
+        //             style: {
+        //                 marginTop: "10px"
+        //             }
+        //         });
+        //         for (let i = 0; i < node.genres.length; i++) {
+        //             genreCon.append(createElement({
+        //                 class: "card_title_extension",
+        //                 style: {
+        //                     margin: "5px",
+        //                     fontWeight: "500",
+        //                     position: "static"
+        //                 },
+        //                 innerText: node.genres[i]
+        //             }));
+        //         }
+        //         bannerMainContent.append(genreCon);
+        //     }
+        //     bannerMainContent.append(createElement({
+        //         "class": "bannerTitle",
+        //         "innerText": node.title.english ? node.title.english : node.title.native,
+        //         "listeners": {
+        //             "click": function () {
+        //                 openCon(sourceChoiceDOM, "flex");
+        //                 fetchMapping(id);
+        //             }
+        //         }
+        //     }));
+        //     bannerCon.append(bannerMainContent);
+        //     disCon.append(bannerCon);
+        //     currentTrending.shift();
+        // }
         const title = createElement({
             "style": {
                 "display": "block",
@@ -1136,7 +1140,7 @@ async function populateDiscover() {
             }
             con.append(makeDiscoverCard({
                 id: node.id,
-                image: (_b = node === null || node === void 0 ? void 0 : node.coverImage) === null || _b === void 0 ? void 0 : _b.extraLarge,
+                image: (_a = node === null || node === void 0 ? void 0 : node.coverImage) === null || _a === void 0 ? void 0 : _a.extraLarge,
                 name: (node === null || node === void 0 ? void 0 : node.title) ? node.title.english ? node.title.english : node.title.native : "",
                 label
             }));

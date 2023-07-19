@@ -152,13 +152,7 @@ interface cordovaWindow extends Window {
     getCachedAvatar: typeof getCachedAvatar;
     resetCachedAvatar: typeof resetCachedAvatar;
     checkForUpdate: typeof checkForUpdate;
-    AnilistHelperFunctions: {
-        updateEpWatched: typeof AnilistHelper.updateEpWatched,
-        getAllItems: typeof AnilistHelper.getAllItems,
-        updateAnilistStatus: typeof AnilistHelper.updateAnilistStatus,
-        deleteAnilistShow: typeof AnilistHelper.deleteAnilistShow,
-        changeShowStatus: typeof AnilistHelper.changeShowStatus
-    };
+    AnilistHelperFunctions: typeof AnilistHelperFunctions;
     anilistToMal: typeof anilistToMal;
     fixTitle(title: string, extension?: extension): string,
     Dialogs: {
@@ -166,6 +160,7 @@ interface cordovaWindow extends Window {
         alert: typeof DialogsClass.alert,
         prompt: typeof DialogsClass.prompt
     },
+    screen: any,
     getEstimatedState: Function,
     handleUpperBar: Function,
     toggleCastState: Function,
