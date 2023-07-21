@@ -252,7 +252,29 @@ var zoro: extension = {
                     let decryptKey, tempFile;
                     try {
                         decryptKey = await extractKey(baseType ? 0 : 6, null, true);
-                        sourceJSON.sources = JSON.parse(CryptoJS.AES.decrypt(encryptedURL, decryptKey).toString(CryptoJS.enc.Utf8));
+                        
+                        try{
+                            decryptKey = JSON.parse(decryptKey);
+                        }catch(err){
+
+                        }
+
+                        if(typeof decryptKey === "string"){
+                            sourceJSON.sources = JSON.parse(CryptoJS.AES.decrypt(encryptedURL, decryptKey).toString(CryptoJS.enc.Utf8));
+                        }else{
+                            decryptKey = JSON.parse(decryptKey);
+                            const encryptedURLTemp = encryptedURL.split("");
+                            for(const index of decryptKey[1]){
+                                for(let i = index[0]; i <= index[1]; i++){
+                                    encryptedURLTemp[i] = null;
+                                }
+                            }
+
+                            encryptedURL = encryptedURLTemp.filter((x) => x !== null);
+
+                            sourceJSON.sources = JSON.parse(CryptoJS.AES.decrypt(encryptedURL, decryptKey[0]).toString(CryptoJS.enc.Utf8));
+                        }
+
                     } catch (err) {
                         if (err.message == "Malformed UTF-8 data") {
                             decryptKey = await extractKey(baseType ? 0 : 6);

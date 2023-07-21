@@ -44,6 +44,7 @@ var twitch = {
             };
         }
     },
+    // @ts-ignore
     getAnimeInfo: function (url, sibling = false, currentID = -1) {
         url = url.split("&engine")[0];
         let id = url.replace("?watch=/", "");

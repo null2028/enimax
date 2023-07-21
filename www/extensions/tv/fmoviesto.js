@@ -40,6 +40,7 @@ var fmoviesto = {
             throw err;
         }
     },
+    // @ts-ignore
     getAnimeInfo: async function (url, nextPrev = false) {
         url = url.split("&engine")[0];
         const response = {

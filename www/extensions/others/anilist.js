@@ -90,7 +90,7 @@ var anilist = {
             };
         }
     },
-    getAnimeInfo: async function (url, sibling = false, currentID = -1) {
+    getAnimeInfo: async function () {
         let response = {
             "name": "",
             "image": "",

@@ -49,6 +49,7 @@ var fmoviesto: extension = {
             throw err;
         }
     },
+    // @ts-ignore
     getAnimeInfo: async function (url: string, nextPrev: Boolean = false): Promise<extensionInfo> {
         url = url.split("&engine")[0];
         const response: extensionInfo = {

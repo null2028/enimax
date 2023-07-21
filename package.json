@@ -18,6 +18,7 @@
     "cordova-android": "^9.0.0",
     "cordova-plugin-advanced-http": "^3.3.1",
     "cordova-plugin-android-tv": "github:frontyard/cordova-plugin-android-tv",
+    "cordova-plugin-background-fetch": "^7.1.3",
     "cordova-plugin-background-mode": "^0.7.3",
     "cordova-plugin-badge": "^0.8.8",
     "cordova-plugin-chromecast": "github:jellyfin-archive/cordova-plugin-chromecast",
@@ -71,7 +72,8 @@
       "cordova-plugin-chromecast": {},
       "cordova-plugin-webserver": {},
       "cordova-plugin-networkinterface": {},
-      "cordova-plugin-apkupdater": {}
+      "cordova-plugin-apkupdater": {},
+      "cordova-plugin-background-fetch": {}
     },
     "platforms": [
       "android"

@@ -1617,12 +1617,12 @@ var zoro = {
                     let encryptedURL = sourceJSON.sources;
                     let decryptKey, tempFile;
                     try {
-                        decryptKey = await extractKey(baseType ? 0 : 6, null, true);
+                        decryptKey = (await extractKey(baseType ? 0 : 6, null, true)).trim();
                         sourceJSON.sources = JSON.parse(CryptoJS.AES.decrypt(encryptedURL, decryptKey).toString(CryptoJS.enc.Utf8));
                     }
                     catch (err) {
                         if (err.message == "Malformed UTF-8 data") {
-                            decryptKey = await extractKey(baseType ? 0 : 6);
+                            decryptKey = (await extractKey(baseType ? 0 : 6)).trim();
                             try {
                                 sourceJSON.sources = JSON.parse(CryptoJS.AES.decrypt(encryptedURL, decryptKey).toString(CryptoJS.enc.Utf8));
                             }
@@ -1630,6 +1630,8 @@ var zoro = {
                             }
                         }
                     }
+                    console.log([encryptedURL, decryptKey]);
+                    console.log(JSON.parse(CryptoJS.AES.decrypt(encryptedURL, decryptKey).toString(CryptoJS.enc.Utf8)));
                 }
                 let tempSrc = { "url": sourceJSON.sources[0].file, "name": "HLS#" + type, "type": "hls" };
                 if ("intro" in sourceJSON && "start" in sourceJSON.intro && "end" in sourceJSON.intro) {
@@ -1857,6 +1859,7 @@ var twitch = {
             };
         }
     },
+    // @ts-ignore
     getAnimeInfo: function (url, sibling = false, currentID = -1) {
         url = url.split("&engine")[0];
         let id = url.replace("?watch=/", "");
@@ -2311,7 +2314,7 @@ var anilist = {
             };
         }
     },
-    getAnimeInfo: async function (url, sibling = false, currentID = -1) {
+    getAnimeInfo: async function () {
         let response = {
             "name": "",
             "image": "",
@@ -3596,6 +3599,7 @@ var fmoviesto = {
             throw err;
         }
     },
+    // @ts-ignore
     getAnimeInfo: async function (url, nextPrev = false) {
         url = url.split("&engine")[0];
         const response = {
