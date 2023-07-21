@@ -617,7 +617,6 @@ class DownloadVid {
                 }
                 else if (x[i].includes("#EXTINF")) {
                     let temp = x[i + 1];
-                    console.log(mainManifestURL);
                     const newURL = new URL(temp, mainManifestURL);
                     temp = newURL.toString();
                     // if (temp.substring(0, 4) != "http") {
