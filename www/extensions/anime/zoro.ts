@@ -251,11 +251,41 @@ var zoro: extension = {
                     let encryptedURL = sourceJSON.sources;
                     let decryptKey, tempFile;
                     try {
-                        decryptKey = (await extractKey(baseType ? 0 : 6, null, true)).trim();
-                        sourceJSON.sources = JSON.parse(CryptoJS.AES.decrypt(encryptedURL, decryptKey).toString(CryptoJS.enc.Utf8));
+                        decryptKey = await extractKey(baseType ? 0 : 6, null, true);
+                        try{
+                            decryptKey = JSON.parse(decryptKey);
+                        }catch(err){
+
+                        }
+
+                        console.log(decryptKey);
+
+                        if(typeof decryptKey === "string"){
+                            sourceJSON.sources = JSON.parse(CryptoJS.AES.decrypt(encryptedURL, decryptKey).toString(CryptoJS.enc.Utf8));
+                        }else{
+                            console.log(decryptKey, encryptedURL);
+                            const encryptedURLTemp = encryptedURL.split("");
+                            let key = "";
+
+                            for(const index of decryptKey){
+                                for(let i = index[0]; i < index[1]; i++){
+                                    key += encryptedURLTemp[i];
+                                    encryptedURLTemp[i] = null;
+                                }
+                            }
+
+                            decryptKey = key;
+                            encryptedURL = encryptedURLTemp.filter((x) => x !== null).join("");
+
+                            console.log(encryptedURL, decryptKey);
+
+
+                            sourceJSON.sources = JSON.parse(CryptoJS.AES.decrypt(encryptedURL, decryptKey).toString(CryptoJS.enc.Utf8));
+                        }
+
                     } catch (err) {
                         if (err.message == "Malformed UTF-8 data") {
-                            decryptKey = (await extractKey(baseType ? 0 : 6)).trim();
+                            decryptKey = await extractKey(baseType ? 0 : 6);
                             try {
                                 sourceJSON.sources = JSON.parse(CryptoJS.AES.decrypt(encryptedURL, decryptKey).toString(CryptoJS.enc.Utf8));
                             } catch (err) {
@@ -263,9 +293,6 @@ var zoro: extension = {
                             }
                         }
                     }
-
-                    console.log([encryptedURL, decryptKey]);
-                    console.log(JSON.parse(CryptoJS.AES.decrypt(encryptedURL, decryptKey).toString(CryptoJS.enc.Utf8)));
                 }
                 let tempSrc: videoSource = { "url": sourceJSON.sources[0].file, "name": "HLS#" + type, "type": "hls" };
                 if ("intro" in sourceJSON && "start" in sourceJSON.intro && "end" in sourceJSON.intro) {

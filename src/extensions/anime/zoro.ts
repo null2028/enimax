@@ -252,27 +252,30 @@ var zoro: extension = {
                     let decryptKey, tempFile;
                     try {
                         decryptKey = await extractKey(baseType ? 0 : 6, null, true);
-                        
                         try{
                             decryptKey = JSON.parse(decryptKey);
                         }catch(err){
 
                         }
 
+                        console.log(decryptKey);
+
                         if(typeof decryptKey === "string"){
                             sourceJSON.sources = JSON.parse(CryptoJS.AES.decrypt(encryptedURL, decryptKey).toString(CryptoJS.enc.Utf8));
                         }else{
-                            decryptKey = JSON.parse(decryptKey);
                             const encryptedURLTemp = encryptedURL.split("");
-                            for(const index of decryptKey[1]){
-                                for(let i = index[0]; i <= index[1]; i++){
+                            let key = "";
+
+                            for(const index of decryptKey){
+                                for(let i = index[0]; i < index[1]; i++){
+                                    key += encryptedURLTemp[i];
                                     encryptedURLTemp[i] = null;
                                 }
                             }
 
-                            encryptedURL = encryptedURLTemp.filter((x) => x !== null);
-
-                            sourceJSON.sources = JSON.parse(CryptoJS.AES.decrypt(encryptedURL, decryptKey[0]).toString(CryptoJS.enc.Utf8));
+                            decryptKey = key;
+                            encryptedURL = encryptedURLTemp.filter((x) => x !== null).join("");
+                            sourceJSON.sources = JSON.parse(CryptoJS.AES.decrypt(encryptedURL, decryptKey).toString(CryptoJS.enc.Utf8));
                         }
 
                     } catch (err) {
