@@ -419,7 +419,9 @@ class DownloadVid {
                     reject("timeout");
                 }, 60000);
 
-                fetch(uri, { signal: controller.signal }).then((x) => {
+                fetch(uri, { signal: controller.signal, headers: {
+                    "X-Requested-With" : "XMLHttpRequest"
+                } }).then((x) => {
                     if (x.status >= 200 && x.status < 300) {
                         return x;
                     } else {
@@ -682,7 +684,7 @@ class DownloadVid {
             const hasConfig = !!extensionList[this.engine].getConfig;
             let headersConfig: any;
             let m3u8File : string;
-
+            let mainManifestURL = self.url;
             if(hasConfig){
                 headersConfig = extensionList[this.engine].getConfig(self.url);
                 console.log(self.url, headersConfig);
@@ -722,6 +724,7 @@ class DownloadVid {
                 }
 
 
+
                 let min = differences[0];
                 let minIndex = 0;
 
@@ -732,17 +735,9 @@ class DownloadVid {
                     }
                 }
 
+                url = (new URL(parser.manifest.playlists[resIndex[minIndex]].uri, mainManifestURL)).toString();
 
-
-                url = parser.manifest.playlists[resIndex[minIndex]].uri;
-
-
-
-                if (url.substring(0, 4) != "http") {
-                    url = self.baseURL + url;
-                }
-
-                self.baseURL = self.getBaseUrl(url);
+                mainManifestURL = url;
                 if(hasConfig){
                     m3u8File = await self.makeRequest(`${url}`, (x) => x.text(), headersConfig);
                 }else{
@@ -750,7 +745,6 @@ class DownloadVid {
                 }
 
             }
-
 
             let x = m3u8File.split("\n");
 
@@ -795,6 +789,10 @@ class DownloadVid {
                         if (temp[j].substring(0, 4) == "URI=") {
                             let downloaded = false;
                             let uri = temp[j].substring(5, temp[j].length - 1);
+
+                            uri = (new URL(uri, mainManifestURL)).toString();
+
+
                             if (`key${i}` in localMapping) {
                                 downloaded = localMapping[`key${i}`].downloaded;
                             }
@@ -818,9 +816,11 @@ class DownloadVid {
                 else if (x[i].includes("#EXTINF")) {
                     let temp = x[i + 1];
 
-                    if (temp.substring(0, 4) != "http") {
-                        temp = self.baseURL + temp;
-                    }
+                    const newURL = new URL(temp, mainManifestURL);
+                    temp = newURL.toString();
+                    // if (temp.substring(0, 4) != "http") {
+                    //     temp = self.baseURL + temp;
+                    // }
                     let downloaded = false;
                     if (`segment${i}` in localMapping) {
                         downloaded = localMapping[`segment${i}`].downloaded;
@@ -885,6 +885,9 @@ class DownloadVid {
                         } catch (err) {
                             console.error(err);
                         }
+
+                        console.log(mapping[j].uri);
+
                         promises.push(self.downloadFileTransfer(mapping[j].fileName, mapping[j].uri, self, {
                             "headers": headers
                         }));

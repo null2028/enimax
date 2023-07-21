@@ -263,7 +263,6 @@ var zoro: extension = {
                         if(typeof decryptKey === "string"){
                             sourceJSON.sources = JSON.parse(CryptoJS.AES.decrypt(encryptedURL, decryptKey).toString(CryptoJS.enc.Utf8));
                         }else{
-                            console.log(decryptKey, encryptedURL);
                             const encryptedURLTemp = encryptedURL.split("");
                             let key = "";
 
@@ -276,10 +275,6 @@ var zoro: extension = {
 
                             decryptKey = key;
                             encryptedURL = encryptedURLTemp.filter((x) => x !== null).join("");
-
-                            console.log(encryptedURL, decryptKey);
-
-
                             sourceJSON.sources = JSON.parse(CryptoJS.AES.decrypt(encryptedURL, decryptKey).toString(CryptoJS.enc.Utf8));
                         }
 
