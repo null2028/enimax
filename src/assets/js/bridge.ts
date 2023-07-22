@@ -1286,6 +1286,8 @@ async function onDeviceReady() {
             }
         }
     }, 120000); // 2 minutes
+
+    thisWindow.ApkUpdater.reset();
 }
 
 document.addEventListener("deviceready", onDeviceReady, false);
