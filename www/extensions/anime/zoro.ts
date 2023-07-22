@@ -232,7 +232,7 @@ var zoro: extension = {
 
             let token = localStorage.getItem("rapidToken");
 
-            let sourceJSON = JSON.parse((await MakeFetchZoro(`${urlHost}${baseType ? "/ajax/embed-6/getSources?id=" : "/embed-2/ajax/e-1/getSources?id="}${sourceId}&token=${token}`, {})));
+            let sourceJSON = JSON.parse((await MakeFetchZoro(`${urlHost}${baseType ? "/ajax/embed-6-v2/getSources?id=" : "/embed-2/ajax/e-1/getSources?id="}${sourceId}&token=${token}`, {})));
             if (sourceJSON.status === false) {
                 shouldThrow = true;
             }
@@ -264,6 +264,8 @@ var zoro: extension = {
                             sourceJSON.sources = JSON.parse(CryptoJS.AES.decrypt(encryptedURL, decryptKey).toString(CryptoJS.enc.Utf8));
                         }else{
                             const encryptedURLTemp = encryptedURL.split("");
+                            console.log(encryptedURL)
+
                             let key = "";
 
                             for(const index of decryptKey){
@@ -275,6 +277,9 @@ var zoro: extension = {
 
                             decryptKey = key;
                             encryptedURL = encryptedURLTemp.filter((x) => x !== null).join("");
+
+                            console.log(decryptKey, encryptedURL)
+
                             sourceJSON.sources = JSON.parse(CryptoJS.AES.decrypt(encryptedURL, decryptKey).toString(CryptoJS.enc.Utf8));
                         }
 
@@ -489,11 +494,11 @@ var zoro: extension = {
     }
 };
 
-try {
-    (async function () {
-        const keys: Array<string> = JSON.parse(await MakeFetchZoro(`https://raw.githubusercontent.com/enimax-anime/gogo/main/zoro.json`));
-        zoro.baseURL = keys[0];
-    })();
-} catch (err) {
-    console.error(err);
-}
+// try {
+//     (async function () {
+//         const keys: Array<string> = JSON.parse(await MakeFetchZoro(`https://raw.githubusercontent.com/enimax-anime/gogo/main/zoro.json`));
+//         zoro.baseURL = keys[0];
+//     })();
+// } catch (err) {
+//     console.error(err);
+// }

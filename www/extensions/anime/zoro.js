@@ -206,7 +206,7 @@ var zoro = {
             let sourceId = sourceIdArray[sourceIdArray.length - 1];
             sourceId = sourceId.split("?")[0];
             let token = localStorage.getItem("rapidToken");
-            let sourceJSON = JSON.parse((await MakeFetchZoro(`${urlHost}${baseType ? "/ajax/embed-6/getSources?id=" : "/embed-2/ajax/e-1/getSources?id="}${sourceId}&token=${token}`, {})));
+            let sourceJSON = JSON.parse((await MakeFetchZoro(`${urlHost}${baseType ? "/ajax/embed-6-v2/getSources?id=" : "/embed-2/ajax/e-1/getSources?id="}${sourceId}&token=${token}`, {})));
             if (sourceJSON.status === false) {
                 shouldThrow = true;
             }
@@ -237,6 +237,7 @@ var zoro = {
                         }
                         else {
                             const encryptedURLTemp = encryptedURL.split("");
+                            console.log(encryptedURL);
                             let key = "";
                             for (const index of decryptKey) {
                                 for (let i = index[0]; i < index[1]; i++) {
@@ -246,6 +247,7 @@ var zoro = {
                             }
                             decryptKey = key;
                             encryptedURL = encryptedURLTemp.filter((x) => x !== null).join("");
+                            console.log(decryptKey, encryptedURL);
                             sourceJSON.sources = JSON.parse(CryptoJS.AES.decrypt(encryptedURL, decryptKey).toString(CryptoJS.enc.Utf8));
                         }
                     }
@@ -431,12 +433,11 @@ var zoro = {
         return `?watch=${url.pathname}&engine=3`;
     }
 };
-try {
-    (async function () {
-        const keys = JSON.parse(await MakeFetchZoro(`https://raw.githubusercontent.com/enimax-anime/gogo/main/zoro.json`));
-        zoro.baseURL = keys[0];
-    })();
-}
-catch (err) {
-    console.error(err);
-}
+// try {
+//     (async function () {
+//         const keys: Array<string> = JSON.parse(await MakeFetchZoro(`https://raw.githubusercontent.com/enimax-anime/gogo/main/zoro.json`));
+//         zoro.baseURL = keys[0];
+//     })();
+// } catch (err) {
+//     console.error(err);
+// }

@@ -232,7 +232,7 @@ var zoro: extension = {
 
             let token = localStorage.getItem("rapidToken");
 
-            let sourceJSON = JSON.parse((await MakeFetchZoro(`${urlHost}${baseType ? "/ajax/embed-6/getSources?id=" : "/embed-2/ajax/e-1/getSources?id="}${sourceId}&token=${token}`, {})));
+            let sourceJSON = JSON.parse((await MakeFetchZoro(`${urlHost}${baseType ? "/ajax/embed-6-v2/getSources?id=" : "/embed-2/ajax/e-1/getSources?id="}${sourceId}&token=${token}`, {})));
             if (sourceJSON.status === false) {
                 shouldThrow = true;
             }
@@ -264,6 +264,7 @@ var zoro: extension = {
                             sourceJSON.sources = JSON.parse(CryptoJS.AES.decrypt(encryptedURL, decryptKey).toString(CryptoJS.enc.Utf8));
                         }else{
                             const encryptedURLTemp = encryptedURL.split("");
+
                             let key = "";
 
                             for(const index of decryptKey){
@@ -275,6 +276,7 @@ var zoro: extension = {
 
                             decryptKey = key;
                             encryptedURL = encryptedURLTemp.filter((x) => x !== null).join("");
+
                             sourceJSON.sources = JSON.parse(CryptoJS.AES.decrypt(encryptedURL, decryptKey).toString(CryptoJS.enc.Utf8));
                         }
 

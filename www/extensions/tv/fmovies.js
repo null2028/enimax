@@ -387,7 +387,6 @@ var fmovies = {
                     }
                     catch (err) {
                     }
-                    console.log(decryptKey);
                     if (typeof decryptKey === "string") {
                         sourceJSON.sources = JSON.parse(CryptoJS.AES.decrypt(encryptedURL, decryptKey).toString(CryptoJS.enc.Utf8));
                     }
