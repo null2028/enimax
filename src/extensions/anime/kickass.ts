@@ -169,7 +169,7 @@ var kaa: extension = {
                         id: el.slug,
                         number: parseFloat(epNum),
                         sourceID: JSON.stringify(sourceID),
-                        thumbnail: `${this.baseURL}/image/thumbnail/${el.thumbnail.sm ?? el.thumbnail.sm}.${el.thumbnail.formats.includes("webp") ? "webp" : el.thumbnail.formats[0]}`,
+                        thumbnail: `${this.baseURL}/image/thumbnail/${el?.thumbnail?.sm ?? el?.thumbnail?.sm}.${el?.thumbnail?.formats?.includes("webp") ? "webp" : el?.thumbnail?.formats[0]}`,
                         altTitle: `Episode ${epNum}`,
                     }
                 );
@@ -178,6 +178,7 @@ var kaa: extension = {
             response.episodes = epData;
             return response;
         } catch (err) {
+            console.error(err);
             err.url = rawURL;
             throw err;
         }

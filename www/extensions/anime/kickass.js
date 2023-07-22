@@ -69,7 +69,7 @@ var kaa = {
         }
     },
     getAnimeInfo: async function (url) {
-        var _a, _b, _c, _d, _e, _f, _g, _h, _j;
+        var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o, _p;
         const id = (new URLSearchParams(`?watch=${url}`)).get("watch");
         const rawURL = `${this.baseURL}/${id}`;
         const self = this;
@@ -143,7 +143,7 @@ var kaa = {
                     id: el.slug,
                     number: parseFloat(epNum),
                     sourceID: JSON.stringify(sourceID),
-                    thumbnail: `${this.baseURL}/image/thumbnail/${(_j = el.thumbnail.sm) !== null && _j !== void 0 ? _j : el.thumbnail.sm}.${el.thumbnail.formats.includes("webp") ? "webp" : el.thumbnail.formats[0]}`,
+                    thumbnail: `${this.baseURL}/image/thumbnail/${(_k = (_j = el === null || el === void 0 ? void 0 : el.thumbnail) === null || _j === void 0 ? void 0 : _j.sm) !== null && _k !== void 0 ? _k : (_l = el === null || el === void 0 ? void 0 : el.thumbnail) === null || _l === void 0 ? void 0 : _l.sm}.${((_o = (_m = el === null || el === void 0 ? void 0 : el.thumbnail) === null || _m === void 0 ? void 0 : _m.formats) === null || _o === void 0 ? void 0 : _o.includes("webp")) ? "webp" : (_p = el === null || el === void 0 ? void 0 : el.thumbnail) === null || _p === void 0 ? void 0 : _p.formats[0]}`,
                     altTitle: `Episode ${epNum}`,
                 });
             }
@@ -151,6 +151,7 @@ var kaa = {
             return response;
         }
         catch (err) {
+            console.error(err);
             err.url = rawURL;
             throw err;
         }
