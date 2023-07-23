@@ -241,12 +241,15 @@ async function checkForUpdate() {
                 realValue: curChannel
             });
         }
-        const val = await thisWindow.Dialogs.prompt("Select the update channel", (_a = localStorage.getItem("lastUpdateChannel")) !== null && _a !== void 0 ? _a : "stable", "select", selectObj);
+        const val = await thisWindow.Dialogs.prompt("Select the update channel", (_a = localStorage.getItem("lastUpdateChannel")) !== null && _a !== void 0 ? _a : "beta", "select", selectObj);
         if (channels.includes(val)) {
             localStorage.setItem("updateChannel", val);
         }
         else {
+            await thisWindow.Dialogs.alert("Defaulting to beta.");
+            localStorage.setItem("updateChannel", "beta");
             checkForUpdate();
+            return;
         }
     }
     if ((Date.now() - lastCheck) < 90000) {
@@ -1082,6 +1085,7 @@ async function onDeviceReady() {
             }
         }
     }, 120000); // 2 minutes
+    thisWindow.ApkUpdater.reset();
 }
 document.addEventListener("deviceready", onDeviceReady, false);
 if (config.chrome) {

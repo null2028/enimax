@@ -259,12 +259,15 @@ async function checkForUpdate() {
             })
         }
 
-        const val = await thisWindow.Dialogs.prompt("Select the update channel", localStorage.getItem("lastUpdateChannel") ?? "stable", "select", selectObj) as string;
+        const val = await thisWindow.Dialogs.prompt("Select the update channel", localStorage.getItem("lastUpdateChannel") ?? "beta", "select", selectObj) as string;
 
         if (channels.includes(val)) {
             localStorage.setItem("updateChannel", val);
         } else {
+            await thisWindow.Dialogs.alert("Defaulting to beta.");
+            localStorage.setItem("updateChannel", "beta");
             checkForUpdate();
+            return;
         }
     }
 
@@ -1286,6 +1289,8 @@ async function onDeviceReady() {
             }
         }
     }, 120000); // 2 minutes
+
+    thisWindow.ApkUpdater.reset();
 }
 
 document.addEventListener("deviceready", onDeviceReady, false);

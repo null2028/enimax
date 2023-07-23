@@ -203,7 +203,9 @@ async function resetOfflineQual() {
             break;
         }
         else {
-            await thisWindow.Dialogs.alert("Nothing was selected");
+            await thisWindow.Dialogs.alert("Nothing was selected. Defaulting to 1080.");
+            localStorage.setItem("offlineQual", "1080");
+            break;
         }
     }
 }
