@@ -81,7 +81,7 @@ jobs:
 
     - name: Checking if this is a beta release
       run: | 
-        chmod +x ./enimax/helper/beta.sh && ./enimax/helper/beta.sh
+        npm install discord.js@14.11.0 && chmod +x ./enimax/helper/beta.sh && ./enimax/helper/beta.sh
       env:
         CHANNELID:  ${{ secrets.BETACHANNEL }}
         TOKEN: ${{ secrets.TOKEN }}
