@@ -15,6 +15,18 @@
   </a>
 </p>
 
+# Builds
+<p align="center">
+  <a href="https://github.com/enimax-anime/enimax-dev/releases/latest">
+    <img src="https://img.shields.io/badge/Dev-ee5693?style=for-the-badge">
+  </a>
+  
+  <a href="https://github.com/enimax-anime/enimax-beta/releases/latest">
+    <img src="https://img.shields.io/badge/Beta-82cfff?style=for-the-badge">
+  </a>
+</p>
+
+
 # Synchronizing across devices
 <details>
   <summary><b>Option 1 (Anilist)</b></summary>
