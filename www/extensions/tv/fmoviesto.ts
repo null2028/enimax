@@ -502,12 +502,11 @@ var fmoviesto: extension = {
 
         try {
             const parsedJSON = JSON.parse(source);
-            if (parsedJSON.data &&
-                parsedJSON.data.media &&
-                parsedJSON.data.media.sources &&
-                parsedJSON.data.media.sources[0] &&
-                parsedJSON.data.media.sources[0].file) {
-                return parsedJSON.data.media.sources[0].file;
+            if (parsedJSON.result &&
+                parsedJSON.result.sources &&
+                parsedJSON.result.sources[0] &&
+                parsedJSON.result.sources[0].file) {
+                return parsedJSON.result.sources[0].file;
             } else {
                 throw new Error("VIZCLOUD1: Received an empty URL or the URL was not found.");
             }
