@@ -476,34 +476,40 @@ function setURL(url) {
 function saveAsImport(arrayInt) {
     try {
         let blob = new Blob([arrayInt]);
-        db.close(async function () {
+        db.close(function () {
             thisWindow.resolveLocalFileSystemURL(`${thisWindow.cordova.file.applicationStorageDirectory}${"databases"}`, function (fileSystem) {
                 fileSystem.getFile("data4.db", { create: true, exclusive: false }, function (file) {
                     file.createWriter(function (fileWriter) {
-                        fileWriter.onwriteend = async function (e) {
-                            await thisWindow.Dialogs.alert("Done!");
-                            window.location.reload();
+                        fileWriter.onwriteend = function (e) {
+                            thisWindow.Dialogs.alert("Done!").then(function () {
+                                window.location.reload();
+                            });
                         };
-                        fileWriter.onerror = async function (e) {
-                            await thisWindow.Dialogs.alert("Couldn't write to the file - 2.");
-                            window.location.reload();
+                        fileWriter.onerror = function (e) {
+                            thisWindow.Dialogs.alert("Couldn't write to the file - 2.").then(function () {
+                                window.location.reload();
+                            });
                         };
                         fileWriter.write(blob);
-                    }, async (err) => {
-                        await thisWindow.Dialogs.alert("Couldn't write to the file.");
+                    }, (err) => {
+                        thisWindow.Dialogs.alert("Couldn't write to the file.").then(function () {
+                            window.location.reload();
+                        });
+                    });
+                }, function (error) {
+                    thisWindow.Dialogs.alert("Error opening the database file.").then(function () {
                         window.location.reload();
                     });
-                }, async function (error) {
-                    await thisWindow.Dialogs.alert("Error opening the database file.");
+                });
+            }, function (error) {
+                thisWindow.Dialogs.alert("Error opening the database folder.").then(function () {
                     window.location.reload();
                 });
-            }, async function (error) {
-                await thisWindow.Dialogs.alert("Error opening the database folder.");
+            });
+        }, function (error) {
+            thisWindow.Dialogs.alert("Error closing the database.").then(function () {
                 window.location.reload();
             });
-        }, async function (error) {
-            await thisWindow.Dialogs.alert("Error closing the database.");
-            window.location.reload();
         });
     }
     catch (err) {
@@ -517,21 +523,21 @@ function saveImage(arrayInt) {
     thisWindow.resolveLocalFileSystemURL(`${thisWindow.cordova.file.externalDataDirectory}`, function (fileSystem) {
         fileSystem.getFile("background.png", { create: true, exclusive: false }, function (file) {
             file.createWriter(function (fileWriter) {
-                fileWriter.onwriteend = async function (e) {
+                fileWriter.onwriteend = function (e) {
                     thisWindow.updateImage();
                     thisWindow.Dialogs.alert("Done!");
                 };
-                fileWriter.onerror = async function (e) {
+                fileWriter.onerror = function (e) {
                     thisWindow.Dialogs.alert("Couldn't write to the file - 2.");
                 };
                 fileWriter.write(blob);
-            }, async (err) => {
+            }, (err) => {
                 thisWindow.Dialogs.alert("Couldn't write to the file.");
             });
-        }, async function (x) {
+        }, function (x) {
             thisWindow.Dialogs.alert("Error opening the database file.");
         });
-    }, async function (error) {
+    }, function (error) {
         thisWindow.Dialogs.alert("Error opening the database folder.");
     });
 }

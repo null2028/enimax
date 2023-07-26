@@ -259,6 +259,8 @@ document.getElementById("getImage").onchange = async function (event) {
         window.parent.saveImage(result);
     }
     catch (err) {
+        console.log(err);
+        alert(err.toString());
         await thisWindow.Dialogs.alert("Error reading the file.");
     }
 };

@@ -302,6 +302,8 @@ document.getElementById("getImage").onchange = async function (event) {
         let result = await readImage(fileList[0]);
         (<cordovaWindow>window.parent).saveImage(result);
     } catch (err) {
+        console.log(err);
+        alert(err.toString());
         await thisWindow.Dialogs.alert("Error reading the file.");
     }
 

@@ -195,7 +195,7 @@ interface cordovaWindow extends Window {
     removeDirectory: Function,
     extractKey: Function,
     saveAsImport: Function,
-    saveImage: Function,
+    saveImage: typeof saveImage,
     plugins: any,
     updateImage: Function,
     getMetaByAniID: Function,
