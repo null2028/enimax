@@ -7,6 +7,7 @@ var username = "hi";
 // @ts-ignore
 const extensionList = (<cordovaWindow>window.parent).returnExtensionList();
 let hls: any;
+let dashInstance: any;
 let doubleTapTime = isNaN(parseInt(localStorage.getItem("doubleTapTime"))) ? 5 : parseInt(localStorage.getItem("doubleTapTime"));
 let skipButTime = isNaN(parseInt(localStorage.getItem("skipButTime"))) ? 30 : parseInt(localStorage.getItem("skipButTime"));
 let currentVidData: videoData;
@@ -381,17 +382,6 @@ let DMenu = new dropDownMenu(
 						subtitleConfig.lineHeight = parseInt(target.value);
 						applySubtitleConfig();
 					}
-				},
-				{
-					"text": "Subtitle Margin",
-					"textBox": true,
-					"classes": ["inputItem"],
-					"value": isNaN(parseInt(localStorage.getItem("sub-margin"))) ? "0" : parseInt(localStorage.getItem("sub-margin")).toString(),
-					"onInput": function (event: InputEvent) {
-						let target = <HTMLInputElement>event.target;
-						localStorage.setItem("sub-margin", target.value);
-						setSubtitleMargin(curTrack);
-					}
 				}
 			]
 		},
@@ -590,6 +580,8 @@ let DMenu = new dropDownMenu(
 
 
 function setSubtitleMarginMain(track: TextTrack) {
+	return -2;
+
 	let success = -1;
 	try {
 		let subMargin = parseInt(localStorage.getItem("sub-margin"));
@@ -702,7 +694,7 @@ function sendNoti(notiConfig: any) {
 function nextTrack() {
 	let curTime = vidInstance.vid.currentTime;
 	let check = false;
-	for (let i = 0; i < curTrack.cues.length; i++) {
+	for (let i = 0; i < curTrack?.cues?.length; i++) {
 		if (curTrack.cues[i].startTime > curTime) {
 			nextTrackTime = curTrack.cues[i].startTime;
 			check = true;
@@ -916,7 +908,7 @@ async function update(shouldCheck: number, altCurrentTime?: any, altDuration?: a
 				(currentTime + 120) > vidInstance.vid.duration &&
 				localStorage.getItem("anilist-last") != identifier
 			) {
-				await (window.parent as cordovaWindow).updateEpWatched(aniID, currentVidData.episode);
+				await (window.parent as cordovaWindow).AnilistHelperFunctions.updateEpWatched(aniID, currentVidData.episode);
 				localStorage.setItem("anilist-last", identifier);
 			}
 		} catch (err) {
@@ -924,7 +916,7 @@ async function update(shouldCheck: number, altCurrentTime?: any, altDuration?: a
 		}
 	}
 
-	(<cordovaWindow>window.parent).apiCall("POST", { "username": username, "action": 1, "time": currentTime, "ep": currentVidData.episode, "name": currentVidData.nameWSeason, "nameUm": currentVidData.name, "prog": currentDuration }, () => { }, [], true, false).then(function (response: any) {
+	(<cordovaWindow>window.parent).apiCall("POST", { "username": username, "action": 1, "time": currentTime, "ep": currentVidData.episode, "name": currentVidData.nameWSeason, "nameUm": localStorage.getItem("mainName"), "prog": currentDuration }, () => { }, [], true, false).then(function (response: any) {
 		try {
 			if (response.status == 200) {
 				lastUpdate = currentTime;
@@ -963,6 +955,19 @@ async function update(shouldCheck: number, altCurrentTime?: any, altDuration?: a
 
 function chooseQualHls(x: string, type: string, elem: HTMLElement): void {
 	hls.loadLevel = parseInt(x);
+	localStorage.setItem("hlsqual", x);
+	localStorage.setItem("hlsqualnum", parseInt(elem.innerText).toString());
+}
+
+
+function chooseQualDash(x: string, type: string, elem: HTMLElement): void {
+	if(parseInt(x) === -1){
+		dashInstance.configure("abr.enabled", true);
+	}else{
+		const tracks = dashInstance.getVariantTracks();
+		dashInstance.selectVariantTrack(tracks[parseInt(x)]);
+	}
+
 	localStorage.setItem("hlsqual", x);
 	localStorage.setItem("hlsqualnum", parseInt(elem.innerText).toString());
 }
@@ -1075,7 +1080,15 @@ function loadSubs(sourceName: string) {
 	}
 }
 
-function chooseQual(config: sourceConfig) {
+async function destroyDash() {
+	try {
+		await dashInstance.destroy();
+	} catch (error) {
+		console.error('Error code', error.code, 'object', error);
+	}
+}
+
+async function chooseQual(config: sourceConfig) {
 	let skipTo = 0;
 	let defURL: string = "";
 	let selectedSourceName: string;
@@ -1106,6 +1119,7 @@ function chooseQual(config: sourceConfig) {
 			if (sName == qCon[i].getAttribute("data-name")) {
 				selectedSourceName = sName;
 				defURL = currentVidData.sources[i].url;
+				config.type = currentVidData.sources[i].type;
 				if (qCon[i].getAttribute("data-intro") === "true") {
 					skipIntroInfo.start = parseInt(qCon[i].getAttribute("data-start"));
 					skipIntroInfo.end = parseInt(qCon[i].getAttribute("data-end"));
@@ -1129,6 +1143,10 @@ function chooseQual(config: sourceConfig) {
 
 	if (hls) {
 		hls.destroy();
+	}
+
+	if(dashInstance){
+		await dashInstance.destroy();
 	}
 
 	if (config.type == "hls") {
@@ -1213,8 +1231,30 @@ function chooseQual(config: sourceConfig) {
 			});
 		}
 
-	}
-	else {
+	}else if(config.type === "dash"){
+		// @ts-ignore
+		dashInstance = new shaka.Player(vidInstance.vid);
+		const url = !config.clicked ? defURL : config.url;
+
+		async function init() {
+			try {
+				dashInstance.addEventListener('loaded', () => {
+					vidInstance.vid.currentTime = skipTo;
+				});
+
+				await dashInstance.load(url);
+
+				vidInstance.vid.play();
+				loadSubs(selectedSourceName);
+				dashInstance.configure("abr.enabled", false);
+				loadDashSource();
+			} catch (error) {
+			  	console.error('Error code', error.code, 'object', error);
+			}
+		}
+
+		init();
+	}else {
 		try {
 			if (!config.clicked) {
 				vidInstance.vid.src = defURL;
@@ -1298,6 +1338,71 @@ function loadHLSsource() {
 }
 
 
+function loadDashSource() {
+	try {
+
+		DMenu.getScene("quality").deleteItems();
+		DMenu.getScene("quality").addItem({
+			"text": "Quality",
+		}, true);
+
+		const levels = dashInstance.getVariantTracks();
+		let hlsqualnum = parseInt(localStorage.getItem("hlsqualnum"));
+		let hslLevel = -1;
+		if (isNaN(hlsqualnum)) {
+			hslLevel = -1;
+		}
+		else {
+			let differences = [];
+
+			for (let i = 0; i < levels.length; i++) {
+				differences.push(Math.abs(hlsqualnum - levels[i].height));
+			}
+
+			let min = differences[0];
+			let minIndex = 0;
+
+			for (let i = 0; i < differences.length; i++) {
+				if (min > differences[i]) {
+					minIndex = i;
+					min = differences[i];
+				}
+			}
+
+			hslLevel = minIndex;
+		}
+
+		if(hslLevel != -1){
+			dashInstance.selectVariantTrack(levels[hslLevel]);
+		}else{
+			dashInstance.configure("abr.enabled", true);
+		}
+
+		for (var i = -1; i < levels.length; i++) {
+			let selected = false;
+			if (i == hslLevel) {
+				selected = true;
+			}
+
+			DMenu.getScene("quality").addItem({
+				"text": (i == -1) ? "Auto" : levels[i].height + "p",
+				"attributes": {
+					"data-url": i.toString(),
+					"data-type": "hls",
+				},
+				"callback": function () {
+					chooseQualDash(this.getAttribute("data-url"), this.getAttribute("data-type"), this);
+				},
+				"highlightable": true,
+				"selected": selected,
+			}, false);
+
+		}
+	} catch (err) {
+		console.error(err);
+	}
+}
+
 async function getEp(x = 0) {
 	if (getEpCheck == 1) {
 		return;
@@ -1375,7 +1480,7 @@ async function getEp(x = 0) {
 				"username": username,
 				"action": 2,
 				"name": currentVidData.nameWSeason,
-				"nameUm": currentVidData.name,
+				"nameUm": localStorage.getItem("mainName"),
 				"ep": currentVidData.episode,
 				"cur": location.search
 			}, () => { });
@@ -1536,7 +1641,7 @@ function updateEpListSelected() {
 	}
 }
 
-function enableRemote(time: number) {
+async function enableRemote(time: number) {
 	const currentTime = time;
 	const duration = 86400;
 	const remoteDOM = document.querySelector("#remote") as HTMLElement;
@@ -1548,8 +1653,10 @@ function enableRemote(time: number) {
 	if (hls) {
 		hls.destroy();
 	}
-
-	console.log(JSON.parse(JSON.stringify(currentVidData)), hasNext, hasPrev);
+	
+	if(dashInstance){
+		await dashInstance.destroy();
+	}
 
 	vidInstance.vid.src = "";
 	clearInterval(updateCurrentTime);
@@ -1701,7 +1808,6 @@ async function startCasting(shouldDestroy = false) {
 
 	if ((window.parent as cordovaWindow).isCasting() && shouldDestroy === false) {
 		const changed = (await (window.parent as cordovaWindow).destroySession());
-		console.log("DESTROY", changed);
 
 		if (changed === true) {
 			classname = "notCasting";
@@ -1719,6 +1825,8 @@ async function startCasting(shouldDestroy = false) {
 
 		if (type == "hls") {
 			type = "application/x-mpegURL";
+		} else if(type === "dash"){
+			type = "application/dash+xml";
 		} else {
 			type = "video/mp4";
 			url = currentVidData.sources[0].castURL;
@@ -1742,7 +1850,7 @@ async function startCasting(shouldDestroy = false) {
 				"username": username,
 				"action": 2,
 				"name": currentVidData.nameWSeason,
-				"nameUm": currentVidData.name,
+				"nameUm": localStorage.getItem("mainName"),
 				"ep": currentVidData.episode,
 				"cur": location.search
 			}, () => { });
@@ -1857,7 +1965,7 @@ window.onmessage = async function (message: MessageEvent) {
 				if (localStorage.getItem("alwaysDown") === "true") {
 					res = true;
 				} else {
-					res = confirm("Want to open the downloaded version?");
+					res = await (window.parent as cordovaWindow).Dialogs.confirm("Want to open the downloaded version?");
 				}
 				if (res) {
 					loadsLocally = true;
@@ -1970,7 +2078,7 @@ window.addEventListener("videoDurationChanged", () => {
 				"username": username,
 				"action": 2,
 				"name": currentVidData.nameWSeason,
-				"nameUm": currentVidData.name,
+				"nameUm": localStorage.getItem("mainName"),
 				"ep": currentVidData.episode,
 				"duration": Math.floor(vidInstance.vid.duration),
 				"cur": location.search
@@ -2103,7 +2211,7 @@ shadowBlurDOM = document.getElementById("shadowBlur");
 
 shadowOffsetXDOM.innerText = `(${localStorage.getItem("subtitle-shadowOffsetX") ?? "0"})`;
 shadowOffsetYDOM.innerText = `(${localStorage.getItem("subtitle-shadowOffsetY") ?? "0"})`;
-shadowBlurDOM.innerText = `(${localStorage.getItem("subtitle-shadowBlurDOM") ?? "0"})`;
+shadowBlurDOM.innerText = `(${localStorage.getItem("subtitle-shadowBlur") ?? "0"})`;
 
 
 updateCasting(false);

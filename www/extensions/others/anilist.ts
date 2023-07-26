@@ -105,7 +105,7 @@ var anilist: extension = {
             };
         }
     },
-    getAnimeInfo: async function (url, sibling = false, currentID = -1) {
+    getAnimeInfo: async function () {
         let response: extensionInfo = {
             "name": "",
             "image": "",

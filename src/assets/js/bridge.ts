@@ -1,7 +1,17 @@
 const playerIFrame = document.getElementById("player") as HTMLIFrameElement;
 const mainIFrame = document.getElementById("frame") as HTMLIFrameElement;
 const anonDOM = document.getElementById("anonMode") as HTMLElement;
-let thisWindow = (window as unknown as cordovaWindow);
+
+var AnilistHelperFunctions = {
+    updateEpWatched: AnilistHelper.updateEpWatched,
+    getAllItems: AnilistHelper.getAllItems,
+    updateAnilistStatus: AnilistHelper.updateAnilistStatus,
+    deleteAnilistShow: AnilistHelper.deleteAnilistShow,
+    changeShowStatus: AnilistHelper.changeShowStatus
+};
+
+// @ts-ignore
+var thisWindow = (window as unknown as cordovaWindow);
 var socket;
 let frameHistory: Array<string> = [];
 var token;
@@ -9,6 +19,8 @@ let seekCheck = true;
 let backFunction: Function;
 let castSession = null;
 let lastRequestTime = 0;
+let cachedAvatar = undefined;
+
 function isCasting() {
     try {
         if (castSession && "status" in castSession) {
@@ -19,6 +31,18 @@ function isCasting() {
     } catch (err) {
         return false;
     }
+}
+
+async function getCachedAvatar() {
+    if (cachedAvatar === undefined) {
+        cachedAvatar = await AnilistHelper.getAvatar() ?? "";
+    }
+
+    return cachedAvatar;
+}
+
+function resetCachedAvatar(){
+    cachedAvatar = undefined;
 }
 
 function updateCastTime(time: string) {
@@ -122,6 +146,184 @@ function startServer() {
     });
 }
 
+function resolveLocalPath(path: string): Promise<FileEntry> {
+    return new Promise((resolve, reject) => {
+        // @ts-ignore
+        (window as unknown as cordovaWindow).resolveLocalFileSystemURL(path, function (fs: FileEntry) {
+            resolve(fs);
+        }, function (err: Error) {
+            reject(err);
+        });
+    });
+}
+
+function readFileAsArrayBuffer(file: File): Promise<ArrayBuffer> {
+    return new Promise((resolve, reject) => {
+        var reader = new FileReader();
+        reader.onloadend = function () {
+            resolve(this.result as ArrayBuffer);
+        };
+
+        reader.onerror = function (err) {
+            reject(err);
+        }
+
+        reader.readAsArrayBuffer(file);
+    });
+}
+
+async function getFile(fileEntry: FileEntry): Promise<File> {
+    return new Promise((resolve, reject) => {
+        fileEntry.file(function (fileEntry) {
+            resolve(fileEntry);
+        }, function (err) {
+            reject(err);
+        });
+    });
+}
+
+async function installUpdate() {
+    const canInstall = await thisWindow.ApkUpdater.canRequestPackageInstalls();
+
+    if (canInstall === true) {
+        await thisWindow.ApkUpdater.install(console.log, (err) => {
+            alert(err);
+        });
+    } else {
+        await thisWindow.Dialogs.alert("To enable Enimax to install APKs, you need to toggle on the option that allows the app to install unknown apps. The option to do so will open when this message is dismissed.");
+        await thisWindow.ApkUpdater.openInstallSetting();
+        installUpdate();
+    }
+}
+
+async function updateApp(url: string, checksum: string) {
+    try {
+        const permNoti = sendNoti([0, "", "Alert", "Downloading the APK"]);
+
+        await thisWindow.ApkUpdater.download(url, {
+            onDownloadProgress: function (progObj) {
+                try {
+                    permNoti.updateBody(`Downloaded ${progObj.progress}%`);
+                } catch (err) {
+                    console.warn(err);
+                }
+            }
+        });
+
+        // const latestAPK = await thisWindow.ApkUpdater.getDownloadedUpdate();
+        // const path = latestAPK.path;
+        // const name = latestAPK.name;
+
+        // permNoti.updateBody(`Checking the hash...`);
+
+        // const apkFileEntry: FileEntry = await resolveLocalPath(`file://${path}/${name}`);
+        // const apkFile = await getFile(apkFileEntry);
+        // const apkArrayBuffer: ArrayBuffer = await readFileAsArrayBuffer(apkFile);
+
+        // @ts-ignore
+        // const hash = CryptoJS.MD5(CryptoJS.lib.WordArray.create(apkArrayBuffer)).toString(CryptoJS.enc.Hex);
+
+        // if (hash === checksum) {
+        if(true){
+            permNoti.updateBody(`Installing...`);
+            await installUpdate();
+        } else {
+            await thisWindow.Dialogs.alert("Hash mismatch. Try again, or contact the developer.");
+        }
+    } catch (err) {
+        await thisWindow.Dialogs.alert(err.toString());
+    }
+}
+
+async function checkForUpdate(bypassCheck = false) {
+    const lastCheck = parseInt(localStorage.getItem("updateLastChecked"));
+
+    if (config.chrome || localStorage.getItem("offline") === "true") {
+        return;
+    }
+
+    let channel = localStorage.getItem("updateChannel");
+    const channels = ["stable", "beta", "dev"];
+    const repos = {
+        "stable": "enimax",
+        "beta": "enimax-beta",
+        "dev": "enimax-dev"
+    };
+
+    if (!channels.includes(channel)) {
+        const selectObj: { value: string, realValue: string }[] = [];
+        for (const curChannel of channels) {
+            selectObj.push({
+                value: curChannel,
+                realValue: curChannel
+            })
+        }
+
+        const val = await thisWindow.Dialogs.prompt("Select the update channel", localStorage.getItem("lastUpdateChannel") ?? "beta", "select", selectObj) as string;
+
+        if (channels.includes(val)) {
+            localStorage.setItem("updateChannel", val);
+        } else {
+            await thisWindow.Dialogs.alert("Defaulting to beta.");
+            localStorage.setItem("updateChannel", "beta");
+            checkForUpdate();
+            return;
+        }
+    }
+
+    if ((Date.now() - lastCheck) < 90000 && bypassCheck !== true) {
+        return;
+    }
+
+    try {
+
+        channel = localStorage.getItem("updateChannel");
+        localStorage.setItem("updateLastChecked", (Date.now()).toString());
+
+        const lastUpdateTimestamp = parseInt(localStorage.getItem("updatedTime"));
+        const newestUpdateJSON = JSON.parse(await MakeFetch(`https://api.github.com/repos/enimax-anime/${repos[channel]}/releases/latest`));
+        const newestUpdate = newestUpdateJSON.assets.find((elem) => elem.name.includes(".apk"));
+        const dataURL = newestUpdateJSON.assets.find((elem) => elem.name === "data.json").browser_download_url;
+        const data: { checksum: string, timestamp: number } = JSON.parse(await MakeFetch(dataURL));
+        const snoozedTimeRaw = localStorage.getItem("updateTimeSnoozed");
+        const snoozedTime = isNaN(parseInt(snoozedTimeRaw)) ? 0 : parseInt(snoozedTimeRaw);
+
+        if (data.timestamp - lastUpdateTimestamp > 10000 && ((Date.now()) > snoozedTime || bypassCheck === true)) {
+            const response = await thisWindow.Dialogs.confirm(`A new version has been released! Do you want to download it?\n\n${newestUpdateJSON.body}\n`, false, "releaseNotes");
+
+            if (response === true) {
+                updateApp(newestUpdate.browser_download_url, data.checksum);
+            } else {
+
+                const selectObj: Array<{ value: string, realValue: string }> = [];
+                
+                for(let i = 1; i <=7; i++){
+                    selectObj.push({
+                        value: `${i} day${i == 1 ? "" : "s"}`,
+                        realValue: i.toString()
+                    });
+                }
+
+                const shouldSnooze = await thisWindow.Dialogs.prompt(
+                    "How many days do you want to snooze these update notifications for?",
+                    "1",
+                    "select",
+                    selectObj
+                );
+
+                if (!isNaN(parseInt(shouldSnooze))) {
+                    localStorage.setItem("updateTimeSnoozed", (Date.now() + 86400 * 1000 * parseInt(shouldSnooze)).toString());
+                }
+            }
+
+        } else if (bypassCheck === true){
+            await thisWindow.Dialogs.alert("No update available :(");
+        }
+    } catch (err) {
+        sendNoti([3, "", "Alert", err.toString()]);
+    }
+}
+
 async function setUpWebServer() {
     await startServer();
 
@@ -209,8 +411,8 @@ function castVid(data, requiresWebServer: boolean) {
                 thisWindow.chrome.cast.requestSession((session) => {
                     onSessionRequestSuccess(session, data);
                     resolve(true);
-                }, () => {
-                    alert("Could not cast the video. Try again.");
+                }, async () => {
+                    await thisWindow.Dialogs.alert("Could not cast the video. Try again.");
                     resolve(false);
                 });
             }
@@ -335,7 +537,7 @@ function setURL(url: string) {
 function saveAsImport(arrayInt: ArrayBuffer) {
     try {
         let blob = new Blob([arrayInt]);
-        db.close(async function () {
+        db.close(function () {
             thisWindow.resolveLocalFileSystemURL(`${thisWindow.cordova.file.applicationStorageDirectory}${"databases"}`, function (fileSystem: DirectoryEntry) {
 
                 fileSystem.getFile("data4.db", { create: true, exclusive: false }, function (file: FileEntry) {
@@ -343,52 +545,48 @@ function saveAsImport(arrayInt: ArrayBuffer) {
                     file.createWriter(function (fileWriter) {
 
                         fileWriter.onwriteend = function (e) {
-                            alert("Done!");
-                            window.location.reload();
-
+                            thisWindow.Dialogs.alert("Done!").then(function(){
+                                window.location.reload();                                
+                            });
                         };
 
                         fileWriter.onerror = function (e) {
-                            alert("Couldn't write to the file - 2.");
-                            window.location.reload();
-
+                            thisWindow.Dialogs.alert("Couldn't write to the file - 2.").then(function(){
+                                window.location.reload();
+                            });
                         };
 
 
                         fileWriter.write(blob);
 
                     }, (err: Error) => {
-                        alert("Couldn't write to the file.");
-                        window.location.reload();
-
+                        thisWindow.Dialogs.alert("Couldn't write to the file.").then(function(){
+                            window.location.reload();
+                        });
                     });
 
 
                 }, function (error: Error) {
-                    alert("Error opening the database file.");
-
-                    window.location.reload();
-
-
-
+                    thisWindow.Dialogs.alert("Error opening the database file.").then(function(){
+                        window.location.reload();
+                    });
                 });
 
             }, function (error: Error) {
-                alert("Error opening the database folder.");
-                window.location.reload();
-
+                thisWindow.Dialogs.alert("Error opening the database folder.").then(function(){
+                    window.location.reload();
+                });
             });
         }, function (error: Error) {
-            alert("Error closing the database.");
-            window.location.reload();
-
+            thisWindow.Dialogs.alert("Error closing the database.").then(function(){
+                window.location.reload();
+            });
         });
     } catch (err) {
-        alert("Error getting the database variable.");
-        window.location.reload();
-
+        thisWindow.Dialogs.alert("Error getting the database variable.").then(() => {
+            window.location.reload();
+        });
     }
-
 }
 
 function saveImage(arrayInt: ArrayBuffer) {
@@ -401,32 +599,30 @@ function saveImage(arrayInt: ArrayBuffer) {
 
                 fileWriter.onwriteend = function (e) {
                     thisWindow.updateImage();
-                    alert("Done!");
+                    thisWindow.Dialogs.alert("Done!");
 
                 };
 
                 fileWriter.onerror = function (e) {
-                    alert("Couldn't write to the file - 2.");
-
+                    thisWindow.Dialogs.alert("Couldn't write to the file - 2.");
                 };
 
 
                 fileWriter.write(blob);
 
             }, (err) => {
-                alert("Couldn't write to the file.");
+                thisWindow.Dialogs.alert("Couldn't write to the file.");
 
             });
 
 
         }, function (x) {
-            alert("Error opening the database file.");
+            thisWindow.Dialogs.alert("Error opening the database file.");
 
         });
 
     }, function (error: Error) {
-        alert("Error opening the database folder.");
-
+        thisWindow.Dialogs.alert("Error opening the database folder.");
     });
 }
 
@@ -597,7 +793,7 @@ function removeDirectory(url: string) {
 function executeAction(message: MessageAction, reqSource: Window) {
 
     if (message.action == 1) {
-        screen.orientation.lock(message.data).then(() => { }).catch(() => { });
+        thisWindow.screen.orientation.lock(message.data).then(() => { }).catch(() => { });
     }
     else if (message.action == 3) {
         window.location = message.data;
@@ -638,14 +834,14 @@ function executeAction(message: MessageAction, reqSource: Window) {
         }
     }
     else if (message.action == 400) {
-        screen.orientation.lock("any").then(() => { }).catch(() => { });
+        thisWindow.screen.orientation.lock("any").then(() => { }).catch(() => { });
         playerIFrame.classList.add("pop");
         mainIFrame.classList.add("mainPop");
         mainIFrame.style.display = "block";
         playerIFrame.style.display = "block";
     }
     else if (message.action == 401) {
-        screen.orientation.lock("landscape").then(() => { }).catch(() => { });
+        thisWindow.screen.orientation.lock("landscape").then(() => { }).catch(() => { });
         playerIFrame.classList.remove("pop");
         mainIFrame.classList.remove("mainPop");
         mainIFrame.style.display = "none";
@@ -846,7 +1042,7 @@ function executeAction(message: MessageAction, reqSource: Window) {
             }, 100);
 
             if (!isManga) {
-                screen.orientation.lock("landscape")
+                thisWindow.screen.orientation.lock("landscape")
                     .then(() => { })
                     .catch(() => { })
                     .finally(function () {
@@ -956,11 +1152,11 @@ function onSessionRequestSuccess(session, data) {
             castSession.media[0].addUpdateListener(castStateUpdated);
         } catch (err) {
             console.error(err);
-            alert("Could not seek");
+            thisWindow.Dialogs.alert("Could not seek");
         }
     }, (err) => {
         console.error(err);
-        alert("Could not load the video");
+        thisWindow.Dialogs.alert("Could not load the video");
     });
 }
 
@@ -1061,7 +1257,7 @@ async function onDeviceReady() {
             // @ts-ignore
             MusicControls.destroy(() => { }, () => { });
 
-            screen.orientation.lock("any").then(() => { }).catch(() => { });
+            thisWindow.screen.orientation.lock("any").then(() => { }).catch(() => { });
         } else {
             if (frameHistory.length > 1) {
                 frameHistory.pop();
@@ -1089,6 +1285,8 @@ async function onDeviceReady() {
             }
         }
     }, 120000); // 2 minutes
+
+    thisWindow.ApkUpdater.reset();
 }
 
 document.addEventListener("deviceready", onDeviceReady, false);

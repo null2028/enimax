@@ -29,7 +29,7 @@ var zoro = {
             throw err;
         }
     },
-    getAnimeInfo: async function (url) {
+    getAnimeInfo: async function (url, aniID) {
         const settled = "allSettled" in Promise;
         const id = (new URLSearchParams(`?watch=${url}`)).get("watch").split("-").pop();
         let response = {
@@ -42,11 +42,21 @@ var zoro = {
         try {
             if (settled) {
                 let anilistID;
-                try {
-                    anilistID = JSON.parse(await MakeFetch(`https://raw.githubusercontent.com/MALSync/MAL-Sync-Backup/master/data/pages/Zoro/${id}.json`)).aniId;
+                if (!isNaN(parseInt(aniID))) {
+                    anilistID = parseInt(aniID);
                 }
-                catch (err) {
-                    // anilistID will be undefined
+                if (!anilistID) {
+                    try {
+                        anilistID = JSON.parse(await MakeFetch(`https://raw.githubusercontent.com/bal-mackup/mal-backup/master/page/Zoro/${id}.json`)).aniId;
+                    }
+                    catch (err) {
+                        try {
+                            anilistID = JSON.parse(await MakeFetch(`https://api.malsync.moe/page/Zoro/${id}`)).aniId;
+                        }
+                        catch (err) {
+                            // anilistID will be undefined
+                        }
+                    }
                 }
                 if (anilistID) {
                     const promises = [
@@ -196,7 +206,7 @@ var zoro = {
             let sourceId = sourceIdArray[sourceIdArray.length - 1];
             sourceId = sourceId.split("?")[0];
             let token = localStorage.getItem("rapidToken");
-            let sourceJSON = JSON.parse((await MakeFetchZoro(`${urlHost}${baseType ? "/ajax/embed-6/getSources?id=" : "/embed-2/ajax/e-1/getSources?id="}${sourceId}&token=${token}`, {})));
+            let sourceJSON = JSON.parse((await MakeFetchZoro(`${urlHost}${baseType ? "/ajax/embed-6-v2/getSources?id=" : "/embed-2/ajax/e-1/getSources?id="}${sourceId}&token=${token}`, {})));
             if (sourceJSON.status === false) {
                 shouldThrow = true;
             }
@@ -216,7 +226,28 @@ var zoro = {
                     let decryptKey, tempFile;
                     try {
                         decryptKey = await extractKey(baseType ? 0 : 6, null, true);
-                        sourceJSON.sources = JSON.parse(CryptoJS.AES.decrypt(encryptedURL, decryptKey).toString(CryptoJS.enc.Utf8));
+                        try {
+                            decryptKey = JSON.parse(decryptKey);
+                        }
+                        catch (err) {
+                        }
+                        console.log(decryptKey);
+                        if (typeof decryptKey === "string") {
+                            sourceJSON.sources = JSON.parse(CryptoJS.AES.decrypt(encryptedURL, decryptKey).toString(CryptoJS.enc.Utf8));
+                        }
+                        else {
+                            const encryptedURLTemp = encryptedURL.split("");
+                            let key = "";
+                            for (const index of decryptKey) {
+                                for (let i = index[0]; i < index[1]; i++) {
+                                    key += encryptedURLTemp[i];
+                                    encryptedURLTemp[i] = null;
+                                }
+                            }
+                            decryptKey = key;
+                            encryptedURL = encryptedURLTemp.filter((x) => x !== null).join("");
+                            sourceJSON.sources = JSON.parse(CryptoJS.AES.decrypt(encryptedURL, decryptKey).toString(CryptoJS.enc.Utf8));
+                        }
                     }
                     catch (err) {
                         if (err.message == "Malformed UTF-8 data") {
@@ -376,7 +407,7 @@ var zoro = {
         await getWebviewHTML("https://rapid-cloud.co/", false, 15000, `let resultInApp={'status':200,'data':localStorage.setItem("v1.1_getSourcesCount", "40")};webkit.messageHandlers.cordova_iab.postMessage(JSON.stringify(resultInApp));`);
         await new Promise(r => setTimeout(r, 500));
         try {
-            alert("Close the inAppBrowser when the video has started playing.");
+            await thisWindow.Dialogs.alert("Close the inAppBrowser when the video has started playing.");
             await getWebviewHTML("https://zoro.to/watch/eighty-six-2nd-season-17760?ep=84960", false, 120000, '');
         }
         catch (err) {
@@ -385,10 +416,10 @@ var zoro = {
         try {
             const token = await getWebviewHTML("https://rapid-cloud.co/", false, 15000, `let resultInApp={'status':200,'data':localStorage.getItem("v1.1_token")};webkit.messageHandlers.cordova_iab.postMessage(JSON.stringify(resultInApp));`);
             localStorage.setItem("rapidToken", token.data.data);
-            alert("Token extracted. You can now refresh the page.");
+            await thisWindow.Dialogs.alert("Token extracted. You can now refresh the page.");
         }
         catch (err) {
-            alert("Could not extract the token. Try again or Contact the developer.");
+            await thisWindow.Dialogs.alert("Could not extract the token. Try again or Contact the developer.");
         }
     },
     getMetaData: async function (search) {

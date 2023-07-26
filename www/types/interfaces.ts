@@ -34,7 +34,9 @@ interface createElementConfig {
     innerText?: string,
     innerHTML?: string,
     children?: createElementConfig[]
-    listeners?: { [key: string]: Function }
+    listeners?: { [key: string]: Function },
+    obj?: Object,
+    key?: string
 }
 
 interface menuItemConfig {
@@ -145,7 +147,20 @@ interface cordovaServerRequest {
     query: string,
 }
 interface cordovaWindow extends Window {
+    ApkUpdater: any,
+    openWebview: typeof openWebview;
+    getCachedAvatar: typeof getCachedAvatar;
+    resetCachedAvatar: typeof resetCachedAvatar;
+    checkForUpdate: typeof checkForUpdate;
+    AnilistHelperFunctions: typeof AnilistHelperFunctions;
+    anilistToMal: typeof anilistToMal;
     fixTitle(title: string, extension?: extension): string,
+    Dialogs: {
+        confirm: typeof DialogsClass.confirm
+        alert: typeof DialogsClass.alert,
+        prompt: typeof DialogsClass.prompt
+    },
+    screen: any,
     getEstimatedState: Function,
     handleUpperBar: Function,
     toggleCastState: Function,
@@ -160,10 +175,7 @@ interface cordovaWindow extends Window {
     cordova: any,
     handleFullscreen: () => void;
     returnAnilistStatus: () => anilistStatus[],
-    updateAnilistStatus: Function,
     addRoom: Function,
-    getUserData: Function,
-    changeShowStatus: (anilistID: any, status: anilistStatus) => Promise<void>,
     anilist: extension,
     makeLocalRequest: Function,
     normalise: Function,
@@ -171,22 +183,19 @@ interface cordovaWindow extends Window {
     returnExtensionList: Function,
     XMLHttpRequest: any,
     returnExtensionNames: Function,
-    getAllItems: Function,
-    deleteAnilistShow: Function,
     returnDownloadQueue: Function,
     returnExtensionDisabled: Function,
     returnExtensionTypes: Function,
     getAnilistTrending: Function,
     listDir: Function,
-    updateEpWatched: Function,
-    getWebviewHTML: Function,
+    getWebviewHTML: typeof getWebviewHTML,
     back: Function,
     sendBatchReqs: Function,
     secondsToHuman: Function,
     removeDirectory: Function,
     extractKey: Function,
     saveAsImport: Function,
-    saveImage: Function,
+    saveImage: typeof saveImage,
     plugins: any,
     updateImage: Function,
     getMetaByAniID: Function,
@@ -238,7 +247,7 @@ interface extension {
     type: "manga" | "anime" | "tv" | "others",
     name: string,
     searchApi: (query: string, params?: { [key: string]: any }) => Promise<extensionSearch>;
-    getAnimeInfo: (url: string) => Promise<extensionInfo>;
+    getAnimeInfo: (url: string, aniID?: string) => Promise<extensionInfo>;
     getLinkFromUrl: (url: any) => Promise<extensionVidSource | extensionMangaSource>;
     discover?: () => Promise<Array<extensionDiscoverData>>;
     fixTitle?: (title: string) => string;

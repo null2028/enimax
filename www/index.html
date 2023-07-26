@@ -14,6 +14,7 @@
 <script type="text/javascript" src="assets/libs/crypto.js"></script>
 <script type="text/javascript" src="assets/js/config.js"></script>
 <script type="text/javascript" src="assets/js/downloadQueue.js"></script>
+<script type="text/javascript" src="assets/js/dialogs.js"></script>
 <script type="text/javascript" src="extensions/index.js"></script>
 <script type="text/javascript" src="assets/libs/dexie.js"></script>
 <script type="text/javascript" src="assets/libs/dexie-export-import.js"></script>
@@ -79,9 +80,9 @@
         display: none;
         align-items: center;
         justify-content: center;
-    }  
-    
-    #anonMode.active{
+    }
+
+    #anonMode.active {
         display: flexI;
     }
 
@@ -123,6 +124,97 @@
         height: 200px !important;
 
     }
+
+    dialog {
+        padding: 0;
+        border-radius: 10px;
+        background: #27141b;
+        border: none;
+        color: white;
+        font-size: 14px;
+        font-family: 'Montserrat';
+        max-width: calc(100% - 20px);
+        width: 350px;
+        user-select: none;
+    }
+
+    dialog.releaseNotes{
+        text-align: left !important;
+        white-space: pre-wrap !important;
+    }
+    
+    dialog.releaseNotes .mainDialogBody{
+        text-align: left !important;
+    }
+
+    dialog input, dialog select {
+        margin-bottom: 10px;
+        padding: 7px 10px;
+        border-radius: 15px;
+        background: #322f2f;
+        box-sizing: border-box;
+        color: white;
+        border: 2px solid white;
+        font-family: 'Montserrat';
+    }
+
+    dialog select{
+        min-width: 130px;
+    }
+
+    dialog form {
+        margin: 0;
+        padding: 20px;
+    }
+
+    dialog button {
+        border: 0;
+        padding: 7px 10px;
+        background-color: white;
+        color: black;
+        border-radius: 20px;
+        margin: 5px;
+        font-family: 'Montserrat', sans-serif;
+        font-weight: bold;
+    }
+
+    dialog::backdrop {
+        backdrop-filter: blur(5px);
+        background-color: rgba(0, 0, 0, 0.6);
+    }
+
+    /* dialog[open]::backdrop {
+        animation: show-backdrop 0.2s ease 0.2s normal;
+        animation-fill-mode: forwards;
+    }
+
+    dialog[open]{
+        animation: show-dialog 0.2s ease 0.2s normal;
+        animation-fill-mode: forwards;
+    }
+
+    dialog.hide::backdrop {
+        animation: hide-backdrop 0.2s ease 0.2s normal;
+    }
+
+    @keyframes show-backdrop {
+        from {
+            backdrop-filter: blur(0);
+            background-color: rgba(0, 0, 0, 0);
+        }
+
+        to {
+            backdrop-filter: blur(5px);
+            background-color: rgba(0, 0, 0, 0.6);
+        }
+    }
+
+    @keyframes hide-backdrop {
+        to {
+            backdrop-filter: blur(0);
+            background-color: rgba(0, 0, 0, 0);
+        }
+    } */
 </style>
 
 
@@ -137,6 +229,7 @@
     <iframe src="fallback.html" id="player"></iframe>
 
 
+    <div id="dialogs"></div>
 
     <script type="text/javascript" src="cordova.js"></script>
     <script type="text/javascript" src="assets/js/bridge.js"></script>

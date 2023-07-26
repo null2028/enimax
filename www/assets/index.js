@@ -1,3 +1,4 @@
+// @ts-ignore
 function createElement(config) {
     if (config.shouldAdd === false) {
         return;
@@ -13,7 +14,7 @@ function createElement(config) {
     for (let value in attributes) {
         temp.setAttribute(value, attributes[value]);
     }
-    // temp.setAttribute("tabindex", "0");
+    temp.setAttribute("tabindex", "0");
     for (let value in config.style) {
         temp.style[value] = config.style[value];
     }
@@ -43,6 +44,9 @@ function createElement(config) {
             }
         }
     }
+    if (config.obj) {
+        config.obj[config.key] = temp;
+    }
     return temp;
 }
 try {
@@ -67,8 +71,8 @@ function applyTheme() {
         document.documentElement.style.setProperty('--theme-color', "#4b4bc2");
     }
 }
-function changeTheme() {
-    let promptT = prompt("Enter the theme color", "#4b4bc2");
+async function changeTheme() {
+    let promptT = await window.parent.Dialogs.prompt("Enter the theme color", "#4b4bc2");
     if (promptT.trim() != "" && promptT != null && promptT != undefined) {
         localStorage.setItem("themecolor", promptT);
         applyTheme();
@@ -245,6 +249,7 @@ function constructErrorPage(errorCon, message, config) {
     errorCon.append(container);
     return container;
 }
+// @ts-ignore
 function openWebview(url) {
     if (config.chrome) {
         window.open(url, "_blank");
@@ -350,11 +355,20 @@ async function fetchMapping(id, type) {
         type = "anime";
     }
     try {
-        const pages = JSON.parse(await window.parent.MakeFetch(`https://raw.githubusercontent.com/MALSync/MAL-Sync-Backup/master/data/anilist/${type}/${id}.json`));
+        let pageKey = "Sites";
+        let pages;
+        try {
+            pages = JSON.parse(await window.parent.MakeFetch(`https://raw.githubusercontent.com/bal-mackup/mal-backup/master/anilist/${type}/${id}.json`));
+        }
+        catch (err) {
+            pageKey = "Sites";
+            const malId = await window.parent.anilistToMal(id, type.toUpperCase());
+            pages = JSON.parse(await window.parent.MakeFetch(`https://api.malsync.moe/mal/${type}/${malId}`));
+        }
         noti.remove();
         sourceChoiceDOM.style.display = "flex";
         for (let i = 0; i < sourcesToCheck.length; i++) {
-            const sourcePages = pages.Pages[sourcesToCheck[i]];
+            const sourcePages = pages[pageKey][sourcesToCheck[i]];
             sourcesURL[sourcesToCheck[i]] = [];
             const sourceDOM = sourceChoiceDOM.getElementsByClassName(`${sourcesToCheck[i]}`)[0];
             if (sourceDOM) {
@@ -367,6 +381,7 @@ async function fetchMapping(id, type) {
         }
     }
     catch (err) {
+        console.log(err);
         noti.remove();
         sendNoti([0, "red", "Alert", "Anime not found."]);
         for (let i = 0; i < sourcesToCheck.length; i++) {

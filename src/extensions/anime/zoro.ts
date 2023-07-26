@@ -31,7 +31,7 @@ var zoro: extension = {
             throw err;
         }
     },
-    getAnimeInfo: async function (url): Promise<extensionInfo> {
+    getAnimeInfo: async function (url, aniID): Promise<extensionInfo> {
         const settled = "allSettled" in Promise;
         const id = (new URLSearchParams(`?watch=${url}`)).get("watch").split("-").pop();
 
@@ -47,10 +47,20 @@ var zoro: extension = {
             if (settled) {
                 let anilistID: number;
 
-                try {
-                    anilistID = JSON.parse(await MakeFetch(`https://raw.githubusercontent.com/MALSync/MAL-Sync-Backup/master/data/pages/Zoro/${id}.json`)).aniId;
-                } catch (err) {
-                    // anilistID will be undefined
+                if (!isNaN(parseInt(aniID))) {
+                    anilistID = parseInt(aniID);
+                }
+
+                if (!anilistID) {
+                    try {
+                        anilistID = JSON.parse(await MakeFetch(`https://raw.githubusercontent.com/bal-mackup/mal-backup/master/page/Zoro/${id}.json`)).aniId;
+                    } catch (err) {
+                        try {
+                            anilistID = JSON.parse(await MakeFetch(`https://api.malsync.moe/page/Zoro/${id}`)).aniId;
+                        } catch (err) {
+                            // anilistID will be undefined
+                        }
+                    }
                 }
 
                 if (anilistID) {
@@ -222,7 +232,7 @@ var zoro: extension = {
 
             let token = localStorage.getItem("rapidToken");
 
-            let sourceJSON = JSON.parse((await MakeFetchZoro(`${urlHost}${baseType ? "/ajax/embed-6/getSources?id=" : "/embed-2/ajax/e-1/getSources?id="}${sourceId}&token=${token}`, {})));
+            let sourceJSON = JSON.parse((await MakeFetchZoro(`${urlHost}${baseType ? "/ajax/embed-6-v2/getSources?id=" : "/embed-2/ajax/e-1/getSources?id="}${sourceId}&token=${token}`, {})));
             if (sourceJSON.status === false) {
                 shouldThrow = true;
             }
@@ -242,7 +252,34 @@ var zoro: extension = {
                     let decryptKey, tempFile;
                     try {
                         decryptKey = await extractKey(baseType ? 0 : 6, null, true);
-                        sourceJSON.sources = JSON.parse(CryptoJS.AES.decrypt(encryptedURL, decryptKey).toString(CryptoJS.enc.Utf8));
+                        try{
+                            decryptKey = JSON.parse(decryptKey);
+                        }catch(err){
+
+                        }
+
+                        console.log(decryptKey);
+
+                        if(typeof decryptKey === "string"){
+                            sourceJSON.sources = JSON.parse(CryptoJS.AES.decrypt(encryptedURL, decryptKey).toString(CryptoJS.enc.Utf8));
+                        }else{
+                            const encryptedURLTemp = encryptedURL.split("");
+
+                            let key = "";
+
+                            for(const index of decryptKey){
+                                for(let i = index[0]; i < index[1]; i++){
+                                    key += encryptedURLTemp[i];
+                                    encryptedURLTemp[i] = null;
+                                }
+                            }
+
+                            decryptKey = key;
+                            encryptedURL = encryptedURLTemp.filter((x) => x !== null).join("");
+
+                            sourceJSON.sources = JSON.parse(CryptoJS.AES.decrypt(encryptedURL, decryptKey).toString(CryptoJS.enc.Utf8));
+                        }
+
                     } catch (err) {
                         if (err.message == "Malformed UTF-8 data") {
                             decryptKey = await extractKey(baseType ? 0 : 6);
@@ -425,7 +462,7 @@ var zoro: extension = {
         await new Promise(r => setTimeout(r, 500));
 
         try {
-            alert("Close the inAppBrowser when the video has started playing.")
+            await thisWindow.Dialogs.alert("Close the inAppBrowser when the video has started playing.")
             await getWebviewHTML("https://zoro.to/watch/eighty-six-2nd-season-17760?ep=84960", false, 120000, '');
         } catch (err) {
 
@@ -438,9 +475,9 @@ var zoro: extension = {
 
             localStorage.setItem("rapidToken", token.data.data);
 
-            alert("Token extracted. You can now refresh the page.")
+            await thisWindow.Dialogs.alert("Token extracted. You can now refresh the page.")
         } catch (err) {
-            alert("Could not extract the token. Try again or Contact the developer.");
+            await thisWindow.Dialogs.alert("Could not extract the token. Try again or Contact the developer.");
         }
 
     },

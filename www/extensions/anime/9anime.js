@@ -33,7 +33,7 @@ var nineAnime = {
             throw err;
         }
     },
-    getAnimeInfo: async function (url) {
+    getAnimeInfo: async function (url, aniID) {
         const settled = "allSettled" in Promise;
         const id = (new URLSearchParams(`?watch=${url}`)).get("watch").split(".").pop();
         let response = {
@@ -46,11 +46,21 @@ var nineAnime = {
         try {
             if (settled) {
                 let anilistID;
-                try {
-                    anilistID = JSON.parse(await MakeFetch(`https://raw.githubusercontent.com/MALSync/MAL-Sync-Backup/master/data/pages/9anime/${id}.json`)).aniId;
+                if (!isNaN(parseInt(aniID))) {
+                    anilistID = parseInt(aniID);
                 }
-                catch (err) {
-                    // anilistID will be undefined
+                if (!anilistID) {
+                    try {
+                        anilistID = JSON.parse(await MakeFetch(`https://raw.githubusercontent.com/bal-mackup/mal-backup/master/page/9anime/${id}.json`)).aniId;
+                    }
+                    catch (err) {
+                        try {
+                            anilistID = JSON.parse(await MakeFetch(`https://api.malsync.moe/page/9anime/${id}`)).aniId;
+                        }
+                        catch (err) {
+                            // anilistID will be undefined
+                        }
+                    }
                 }
                 if (anilistID) {
                     const promises = [
@@ -449,12 +459,11 @@ var nineAnime = {
         });
         try {
             const parsedJSON = JSON.parse(source);
-            if (parsedJSON.data &&
-                parsedJSON.data.media &&
-                parsedJSON.data.media.sources &&
-                parsedJSON.data.media.sources[0] &&
-                parsedJSON.data.media.sources[0].file) {
-                return parsedJSON.data.media.sources[0].file;
+            if (parsedJSON.result &&
+                parsedJSON.result.sources &&
+                parsedJSON.result.sources[0] &&
+                parsedJSON.result.sources[0].file) {
+                return parsedJSON.result.sources[0].file;
             }
             else {
                 throw new Error("VIZCLOUD1: Received an empty URL or the URL was not found.");

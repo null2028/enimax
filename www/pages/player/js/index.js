@@ -7,6 +7,7 @@ var username = "hi";
 // @ts-ignore
 const extensionList = window.parent.returnExtensionList();
 let hls;
+let dashInstance;
 let doubleTapTime = isNaN(parseInt(localStorage.getItem("doubleTapTime"))) ? 5 : parseInt(localStorage.getItem("doubleTapTime"));
 let skipButTime = isNaN(parseInt(localStorage.getItem("skipButTime"))) ? 30 : parseInt(localStorage.getItem("skipButTime"));
 let currentVidData;
@@ -334,17 +335,6 @@ let DMenu = new dropDownMenu([
                     subtitleConfig.lineHeight = parseInt(target.value);
                     applySubtitleConfig();
                 }
-            },
-            {
-                "text": "Subtitle Margin",
-                "textBox": true,
-                "classes": ["inputItem"],
-                "value": isNaN(parseInt(localStorage.getItem("sub-margin"))) ? "0" : parseInt(localStorage.getItem("sub-margin")).toString(),
-                "onInput": function (event) {
-                    let target = event.target;
-                    localStorage.setItem("sub-margin", target.value);
-                    setSubtitleMargin(curTrack);
-                }
             }
         ]
     },
@@ -535,6 +525,7 @@ let DMenu = new dropDownMenu([
     }
 ], document.querySelector(".menuCon"));
 function setSubtitleMarginMain(track) {
+    return -2;
     let success = -1;
     try {
         let subMargin = parseInt(localStorage.getItem("sub-margin"));
@@ -633,9 +624,10 @@ function sendNoti(notiConfig) {
     });
 }
 function nextTrack() {
+    var _a;
     let curTime = vidInstance.vid.currentTime;
     let check = false;
-    for (let i = 0; i < curTrack.cues.length; i++) {
+    for (let i = 0; i < ((_a = curTrack === null || curTrack === void 0 ? void 0 : curTrack.cues) === null || _a === void 0 ? void 0 : _a.length); i++) {
         if (curTrack.cues[i].startTime > curTime) {
             nextTrackTime = curTrack.cues[i].startTime;
             check = true;
@@ -809,7 +801,7 @@ async function update(shouldCheck, altCurrentTime, altDuration) {
                 vidInstance.vid.duration > 0 &&
                 (currentTime + 120) > vidInstance.vid.duration &&
                 localStorage.getItem("anilist-last") != identifier) {
-                await window.parent.updateEpWatched(aniID, currentVidData.episode);
+                await window.parent.AnilistHelperFunctions.updateEpWatched(aniID, currentVidData.episode);
                 localStorage.setItem("anilist-last", identifier);
             }
         }
@@ -817,7 +809,7 @@ async function update(shouldCheck, altCurrentTime, altDuration) {
             console.warn(err);
         }
     }
-    window.parent.apiCall("POST", { "username": username, "action": 1, "time": currentTime, "ep": currentVidData.episode, "name": currentVidData.nameWSeason, "nameUm": currentVidData.name, "prog": currentDuration }, () => { }, [], true, false).then(function (response) {
+    window.parent.apiCall("POST", { "username": username, "action": 1, "time": currentTime, "ep": currentVidData.episode, "name": currentVidData.nameWSeason, "nameUm": localStorage.getItem("mainName"), "prog": currentDuration }, () => { }, [], true, false).then(function (response) {
         try {
             if (response.status == 200) {
                 lastUpdate = currentTime;
@@ -849,6 +841,17 @@ async function update(shouldCheck, altCurrentTime, altDuration) {
 }
 function chooseQualHls(x, type, elem) {
     hls.loadLevel = parseInt(x);
+    localStorage.setItem("hlsqual", x);
+    localStorage.setItem("hlsqualnum", parseInt(elem.innerText).toString());
+}
+function chooseQualDash(x, type, elem) {
+    if (parseInt(x) === -1) {
+        dashInstance.configure("abr.enabled", true);
+    }
+    else {
+        const tracks = dashInstance.getVariantTracks();
+        dashInstance.selectVariantTrack(tracks[parseInt(x)]);
+    }
     localStorage.setItem("hlsqual", x);
     localStorage.setItem("hlsqualnum", parseInt(elem.innerText).toString());
 }
@@ -934,7 +937,15 @@ function loadSubs(sourceName) {
         }
     }
 }
-function chooseQual(config) {
+async function destroyDash() {
+    try {
+        await dashInstance.destroy();
+    }
+    catch (error) {
+        console.error('Error code', error.code, 'object', error);
+    }
+}
+async function chooseQual(config) {
     let skipTo = 0;
     let defURL = "";
     let selectedSourceName;
@@ -962,6 +973,7 @@ function chooseQual(config) {
             if (sName == qCon[i].getAttribute("data-name")) {
                 selectedSourceName = sName;
                 defURL = currentVidData.sources[i].url;
+                config.type = currentVidData.sources[i].type;
                 if (qCon[i].getAttribute("data-intro") === "true") {
                     skipIntroInfo.start = parseInt(qCon[i].getAttribute("data-start"));
                     skipIntroInfo.end = parseInt(qCon[i].getAttribute("data-end"));
@@ -983,6 +995,9 @@ function chooseQual(config) {
     loadSubs(selectedSourceName);
     if (hls) {
         hls.destroy();
+    }
+    if (dashInstance) {
+        await dashInstance.destroy();
     }
     if (config.type == "hls") {
         //@ts-ignore
@@ -1057,6 +1072,27 @@ function chooseQual(config) {
             });
         }
     }
+    else if (config.type === "dash") {
+        // @ts-ignore
+        dashInstance = new shaka.Player(vidInstance.vid);
+        const url = !config.clicked ? defURL : config.url;
+        async function init() {
+            try {
+                dashInstance.addEventListener('loaded', () => {
+                    vidInstance.vid.currentTime = skipTo;
+                });
+                await dashInstance.load(url);
+                vidInstance.vid.play();
+                loadSubs(selectedSourceName);
+                dashInstance.configure("abr.enabled", false);
+                loadDashSource();
+            }
+            catch (error) {
+                console.error('Error code', error.code, 'object', error);
+            }
+        }
+        init();
+    }
     else {
         try {
             if (!config.clicked) {
@@ -1116,6 +1152,62 @@ function loadHLSsource() {
                 },
                 "callback": function () {
                     chooseQualHls(this.getAttribute("data-url"), this.getAttribute("data-type"), this);
+                },
+                "highlightable": true,
+                "selected": selected,
+            }, false);
+        }
+    }
+    catch (err) {
+        console.error(err);
+    }
+}
+function loadDashSource() {
+    try {
+        DMenu.getScene("quality").deleteItems();
+        DMenu.getScene("quality").addItem({
+            "text": "Quality",
+        }, true);
+        const levels = dashInstance.getVariantTracks();
+        let hlsqualnum = parseInt(localStorage.getItem("hlsqualnum"));
+        let hslLevel = -1;
+        if (isNaN(hlsqualnum)) {
+            hslLevel = -1;
+        }
+        else {
+            let differences = [];
+            for (let i = 0; i < levels.length; i++) {
+                differences.push(Math.abs(hlsqualnum - levels[i].height));
+            }
+            let min = differences[0];
+            let minIndex = 0;
+            for (let i = 0; i < differences.length; i++) {
+                if (min > differences[i]) {
+                    minIndex = i;
+                    min = differences[i];
+                }
+            }
+            hslLevel = minIndex;
+        }
+        if (hslLevel != -1) {
+            dashInstance.selectVariantTrack(levels[hslLevel]);
+        }
+        else {
+            dashInstance.configure("abr.enabled", true);
+        }
+        for (var i = -1; i < levels.length; i++) {
+            let selected = false;
+            if (i == hslLevel) {
+                selected = true;
+            }
+            DMenu.getScene("quality").addItem({
+                "text": (i == -1) ? "Auto" : levels[i].height + "p",
+                "attributes": {
+                    "data-url": i.toString(),
+                    "data-type": "hls",
+                },
+                "callback": function () {
+                    chooseQualDash(this.getAttribute("data-url"), this.getAttribute("data-type"), this);
                 },
                 "highlightable": true,
                 "selected": selected,
@@ -1189,7 +1281,7 @@ async function getEp(x = 0) {
             "username": username,
             "action": 2,
             "name": currentVidData.nameWSeason,
-            "nameUm": currentVidData.name,
+            "nameUm": localStorage.getItem("mainName"),
             "ep": currentVidData.episode,
             "cur": location.search
         }, () => { });
@@ -1320,7 +1412,7 @@ function updateEpListSelected() {
         return false;
     }
 }
-function enableRemote(time) {
+async function enableRemote(time) {
     const currentTime = time;
     const duration = 86400;
     const remoteDOM = document.querySelector("#remote");
@@ -1330,7 +1422,9 @@ function enableRemote(time) {
     if (hls) {
         hls.destroy();
     }
-    console.log(JSON.parse(JSON.stringify(currentVidData)), hasNext, hasPrev);
+    if (dashInstance) {
+        await dashInstance.destroy();
+    }
     vidInstance.vid.src = "";
     clearInterval(updateCurrentTime);
     clearInterval(remoteInterval);
@@ -1466,7 +1560,6 @@ async function startCasting(shouldDestroy = false) {
     let requiresWebServer = false;
     if (window.parent.isCasting() && shouldDestroy === false) {
         const changed = (await window.parent.destroySession());
-        console.log("DESTROY", changed);
         if (changed === true) {
             classname = "notCasting";
         }
@@ -1484,6 +1577,9 @@ async function startCasting(shouldDestroy = false) {
         if (type == "hls") {
             type = "application/x-mpegURL";
         }
+        else if (type === "dash") {
+            type = "application/dash+xml";
+        }
         else {
             type = "video/mp4";
             url = currentVidData.sources[0].castURL;
@@ -1500,7 +1596,7 @@ async function startCasting(shouldDestroy = false) {
             "username": username,
             "action": 2,
             "name": currentVidData.nameWSeason,
-            "nameUm": currentVidData.name,
+            "nameUm": localStorage.getItem("mainName"),
             "ep": currentVidData.episode,
             "cur": location.search
         }, () => { });
@@ -1597,7 +1693,7 @@ window.onmessage = async function (message) {
                     res = true;
                 }
                 else {
-                    res = confirm("Want to open the downloaded version?");
+                    res = await window.parent.Dialogs.confirm("Want to open the downloaded version?");
                 }
                 if (res) {
                     loadsLocally = true;
@@ -1717,7 +1813,7 @@ window.addEventListener("videoDurationChanged", () => {
             "username": username,
             "action": 2,
             "name": currentVidData.nameWSeason,
-            "nameUm": currentVidData.name,
+            "nameUm": localStorage.getItem("mainName"),
             "ep": currentVidData.episode,
             "duration": Math.floor(vidInstance.vid.duration),
             "cur": location.search
@@ -1823,5 +1919,5 @@ shadowOffsetYDOM = document.getElementById("shadowOffsetY");
 shadowBlurDOM = document.getElementById("shadowBlur");
 shadowOffsetXDOM.innerText = `(${(_e = localStorage.getItem("subtitle-shadowOffsetX")) !== null && _e !== void 0 ? _e : "0"})`;
 shadowOffsetYDOM.innerText = `(${(_f = localStorage.getItem("subtitle-shadowOffsetY")) !== null && _f !== void 0 ? _f : "0"})`;
-shadowBlurDOM.innerText = `(${(_g = localStorage.getItem("subtitle-shadowBlurDOM")) !== null && _g !== void 0 ? _g : "0"})`;
+shadowBlurDOM.innerText = `(${(_g = localStorage.getItem("subtitle-shadowBlur")) !== null && _g !== void 0 ? _g : "0"})`;
 updateCasting(false);

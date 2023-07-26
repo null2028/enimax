@@ -58,6 +58,7 @@ function extractKey(id: number, url = null, useCached = false): Promise<string> 
     }));
 }
 
+// @ts-ignore
 async function MakeFetch(url: string, options = {}): Promise<string> {
     return new Promise(function (resolve, reject) {
         fetch(url, options).then(response => response.text()).then((response: string) => {
@@ -179,15 +180,15 @@ function getWebviewHTML(url = "https://www.zoro.to", hidden = false, timeout: nu
             inappRef.show();
         }
 
-        inappRef.addEventListener('loadstop', (event) => {
+        inappRef.addEventListener('loadstop', async (event) => {
             if (isAnilist) {
                 if (event.url.includes("enimax-anime.github.io/anilist")) {
                     const accessToken = new URLSearchParams((new URL(event.url)).hash.substring(1)).get("access_token");
                     localStorage.setItem("anilist-token", accessToken);
                     inappRef.close();
-                    const shouldUpdate = confirm("Logged in! Do you want to import your library? if you don't want to do that right now, you can do that later by going to the menu");
+                    const shouldUpdate = await (window.parent as cordovaWindow).Dialogs.confirm("Logged in! Do you want to import your library? if you don't want to do that right now, you can do that later by going to the menu");
                     if (shouldUpdate) {
-                        getAllItems();
+                        AnilistHelper.getAllItems();
                     }
                     resolve("Done");
                 } else if ((new URL(event.url)).hostname === "anilist.co") {
@@ -397,7 +398,13 @@ const anilistQueries = {
                             }
                         }
                     }
-                }`
+                }`,
+    "anilistToMal": `query ($id: Int, $type: MediaType) {
+                        Media(id: $id, type: $type) {
+                            id
+                            idMal
+                        }
+                    }`
 };
 
 async function anilistAPI(query: string, variables = {}) {
@@ -419,8 +426,19 @@ async function anilistAPI(query: string, variables = {}) {
 }
 
 async function getAnilistInfo(type: anilistType, id: string, mediaType: "ANIME" | "MANGA" = "ANIME") {
-    const anilistID = JSON.parse(await MakeFetch(`https://raw.githubusercontent.com/MALSync/MAL-Sync-Backup/master/data/pages/${type}/${id}.json`)).aniId;
+    let anilistID;
+
+    try {
+        anilistID = JSON.parse(await MakeFetch(`https://raw.githubusercontent.com/bal-mackup/mal-backup/master/page/${type}/${id}.json`)).aniId;
+    } catch (err) {
+        anilistID = JSON.parse(await MakeFetch(`https://api.malsync.moe/page/${type}/${id}`)).aniId;
+    }
+
     return (await anilistAPI(anilistQueries.info, { id: anilistID, type: mediaType })).data.Media;
+}
+
+async function anilistToMal(anilistID: string, type: "ANIME" | "MANGA") {
+    return (await anilistAPI(anilistQueries.anilistToMal, { id: anilistID, type })).data.Media.idMal;
 }
 
 async function getMetaByAniID(anilistID: string, mediaType: "ANIME" | "MANGA" = "ANIME") {
@@ -466,7 +484,7 @@ function secondsToHuman(seconds: number, abbreviated: boolean = false) {
 
 }
 
-function batchConstructor(ids: Array<string>) {
+function batchConstructor(ids: Array<string>, isMalIdReq = false, type?: "ANIME" | "MANGA") {
     let subQueries = "";
     const batchReqs = [];
     let count = 0;
@@ -482,11 +500,20 @@ function batchConstructor(ids: Array<string>) {
         }
 
         count++;
-        subQueries += `anime${id}: Page(page: 1, perPage: 1) {
+
+        if (isMalIdReq === true) {
+            subQueries += `anime${id}: Page(page: 1, perPage: 1) {
+                media(type: ${type}, id: ${id}) {
+                    idMal
+                }
+            }`;
+        } else {
+            subQueries += `anime${id}: Page(page: 1, perPage: 1) {
                             media(type: ANIME, id: ${id}) {
                                 nextAiringEpisode { airingAt timeUntilAiring episode }
                             }
                         }`;
+        }
         if (count >= 82 || i == ids.length - 1) {
             batchReqs.push(`query{
                 ${subQueries}
@@ -513,6 +540,32 @@ async function sendBatchReqs(ids: Array<string>) {
     for (let i = 0; i < responses.length; i++) {
         for (const id in responses[i].data) {
             result[id] = responses[i]?.data[id].media[0];
+        }
+    }
+
+    return result;
+}
+
+async function getBatchMalIds(ids: Array<string>, type: "ANIME" | "MANGA") {
+    const queries = batchConstructor(ids, true, type);
+    console.log(queries);
+    const promises = [];
+
+    for (const query of queries) {
+        promises.push(anilistAPI(query));
+    }
+
+    const responses = await Promise.all(promises);
+    const result = {};
+
+    for (let i = 0; i < responses.length; i++) {
+        for (const tempId in responses[i].data) {
+            const id = tempId.replace("anime", "");
+
+            result[id] = responses[i]?.data[tempId]?.media[0]?.idMal;
+            if(isNaN(parseInt(result[id]))){
+                delete result[id];
+            }
         }
     }
 

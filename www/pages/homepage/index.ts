@@ -24,6 +24,8 @@ let errDOM: HTMLElement = document.getElementById("errorCon");
 let firstLoad = true;
 let states: string = "";
 const hasAnilistToken = !!localStorage.getItem("anilist-token");
+// @ts-ignore
+const thisWindow = window.parent as cordovaWindow;
 
 // @ts-ignore
 const backdrop = document.getElementsByClassName("backdrop")[0] as HTMLImageElement;
@@ -82,6 +84,7 @@ function addState(id: string) {
     }
 }
 
+// @ts-ignore
 function checkIfExists(localURL: string): Promise<string> {
     return (new Promise(function (resolve, reject) {
 
@@ -100,6 +103,7 @@ function checkIfExists(localURL: string): Promise<string> {
     }));
 }
 
+// @ts-ignore
 function normalise(url: string) {
     let engine = 0;
 
@@ -208,6 +212,10 @@ async function testKey(): Promise<void> {
 
 if (localStorage.getItem("devmode") === "true") {
     document.getElementById("testExtensions").style.display = "block";
+    document.getElementById("9animeApiKey").style.display = "table-row";
+    document.getElementById("9animeApiURL").style.display = "table-row";
+    document.getElementById("9animeApiKeyText").style.display = "table-row";
+    document.getElementById("9animeApiURLText").style.display = "table-row";
 
     document.getElementById("testExtensions").onclick = function () {
         testIt();
@@ -221,15 +229,17 @@ if (localStorage.getItem("devmode") === "true") {
 if (isSnapSupported) {
     document.getElementById("custom_rooms").className = "snappedCustomRooms";
 }
-function resetOfflineQual() {
-    let qual = [360, 480, 720, 1080];
+async function resetOfflineQual() {
+    let qual = [{value: "360", realValue: "360"}, {value: "480", realValue: "480"}, {value: "720", realValue: "720"}, {value: "1080", realValue: "1080"}];
     while (true) {
-        let choice = parseInt(prompt(`What quality do you want the downloaded videos to be of? \n1. 360 \n2. 480\n3. 720 \n4. 1080`));
-        if (!isNaN(choice) && choice >= 1 && choice <= 4) {
-            localStorage.setItem("offlineQual", qual[choice - 1].toString());
+        let choice = parseInt(await (window.parent as cordovaWindow).Dialogs.prompt(`What quality do you want the downloaded videos to be of?`, "1080", "select", qual));
+        if (!isNaN(choice)) {
+            localStorage.setItem("offlineQual", choice.toString());
             break;
         } else {
-            alert("Enter a number between 1 and 4");
+            await thisWindow.Dialogs.alert("Nothing was selected. Defaulting to 1080.");
+            localStorage.setItem("offlineQual", "1080");
+            break;
         }
     }
 }
@@ -256,8 +266,8 @@ function exportDataSQL() {
         files: [(<cordovaWindow>window.parent).cordova.file.applicationStorageDirectory + "databases/data4.db"],
     };
 
-    (<cordovaWindow>window.parent).plugins.socialsharing.shareWithOptions(options, () => { }, () => {
-        alert("Something went wrong");
+    (<cordovaWindow>window.parent).plugins.socialsharing.shareWithOptions(options, () => { }, async () => {
+        thisWindow.Dialogs.alert("Something went wrong");
     });
 
 }
@@ -276,15 +286,18 @@ document.getElementById("importFile").onchange = async function (event) {
             let result = await readImage(fileList[0]);
             (<cordovaWindow>window.parent).saveAsImport(result);
         } else {
-            alert("Aborting");
+            await thisWindow.Dialogs.alert("Aborting");
         }
 
 
     } catch (err) {
-        alert("Error reading the file.");
+        await thisWindow.Dialogs.alert("Error reading the file.");
     }
 }
 
+document.getElementById("checkUpdate").onclick = function(){
+    (<cordovaWindow>window.parent).checkForUpdate(true);
+};
 
 document.getElementById("getImage").onchange = async function (event) {
     try {
@@ -292,7 +305,9 @@ document.getElementById("getImage").onchange = async function (event) {
         let result = await readImage(fileList[0]);
         (<cordovaWindow>window.parent).saveImage(result);
     } catch (err) {
-        alert("Error reading the file.");
+        console.log(err);
+        alert(err.toString());
+        await thisWindow.Dialogs.alert("Error reading the file.");
     }
 
 }
@@ -352,6 +367,7 @@ document.getElementById("errorRemove").onclick = function () {
 
 if (config.chrome) {
     document.getElementById("queueOpen").style.display = "none";
+    document.getElementById("changeUpdateChannel").style.display = "none";
     document.getElementById("restoreData").style.display = "none";
 }
 
@@ -512,6 +528,48 @@ function reloadQueue(mode = 0) {
 
 }
 
+async function loginAni() {
+    (window.parent as cordovaWindow).resetCachedAvatar();
+
+    if(hasAnilistToken){
+        localStorage.removeItem("anilist-token");
+        window.location.reload();
+        return;
+    }
+
+    if (config.chrome) {
+        try {
+            await thisWindow.Dialogs.alert("A new tab will open asking you to log in, and then you will be redirected to a new page. Copy the URL of the new page and paste it when prompted");
+            window.open("https://anilist.co/api/v2/oauth/authorize?client_id=13095&response_type=token", '_blank', 'location=yes,height=570,width=520,scrollbars=yes,status=yes');
+            let url = undefined;
+
+            while (!url) {
+                try {
+                    url = await thisWindow.Dialogs.prompt("Enter the copied URL here");
+                    const accessToken = new URLSearchParams((new URL(url)).hash.substring(1)).get("access_token");
+                    localStorage.setItem("anilist-token", accessToken);
+                    updateAvatar();
+                    if (accessToken) {
+                        const shouldUpdate = await (window.parent as cordovaWindow).Dialogs.confirm("Logged in! Do you want to import your library? if you don't want to do that right now, you can do that later by going to the menu.");
+                        if (shouldUpdate) {
+                            (window.parent as cordovaWindow).AnilistHelperFunctions.getAllItems();
+                        }
+                    } else {
+                        await thisWindow.Dialogs.alert("Seems like something went wrong.");
+                    }
+                } catch (err) {
+                    await thisWindow.Dialogs.alert(err + "\n" + "Try again.");
+                }
+            }
+        } catch (err) {
+            await thisWindow.Dialogs.alert(err);
+        }
+    } else {
+        await (window.parent as cordovaWindow).getWebviewHTML("https://anilist.co/api/v2/oauth/authorize?client_id=13095&response_type=token", false, null, "console.log()", true);
+        updateAvatar();
+    }
+}
+
 
 
 
@@ -548,26 +606,30 @@ if (localStorage.getItem("offline") === 'true') {
 
 }
 
-document.getElementById("resetSource").onclick = function () {
+document.getElementById("resetSource").onclick = async function () {
     const extensionNames = (<cordovaWindow>window.parent).returnExtensionNames();
-    let message = `What extension's source do you want to reset?\n`;
+    let message = `What extension's source preference do you want to reset?`;
+    const promptConfig = [];
+
     for (let i = 0; i < extensionNames.length; i++) {
-        message += `${i}. ${extensionNames[i]}\n`;
+        promptConfig.push({
+            value: extensionNames[i],
+            realValue: i
+        });
     }
 
-    while (true) {
-        let res = parseInt(prompt(message));
-        if (res >= 0 && res < extensionNames.length) {
-            localStorage.removeItem(`${res}-downloadSource`);
-            break;
-        }
+    let res = await (window.parent as cordovaWindow).Dialogs.prompt(message, extensionNames[0], "select", promptConfig);
+    if (res) {
+        localStorage.removeItem(`${res}-downloadSource`);
+    }else{
+        await (window.parent as cordovaWindow).Dialogs.alert("Nothing was selected. Aborting.");
     }
 }
 
 
 let offlineDOM = document.getElementById("offline");
 
-offlineDOM.onchange = function () {
+offlineDOM.onchange = async function () {
     let val = (offlineDOM as HTMLInputElement).checked.toString();
 
     if (val == "false") {
@@ -575,7 +637,7 @@ offlineDOM.onchange = function () {
         window.parent.postMessage({ "action": 500, data: "pages/homepage/index.html" }, "*");
     } else {
         if (isNaN(parseInt(localStorage.getItem("offlineQual")))) {
-            resetOfflineQual();
+            await resetOfflineQual();
         }
         localStorage.setItem("offline", "true");
         window.parent.postMessage({ "action": 500, data: "pages/homepage/index.html" }, "*");
@@ -730,6 +792,10 @@ document.getElementById("anonModeToggle").onchange = function (){
     (window.parent as cordovaWindow).handleUpperBar();
 };
 
+document.getElementById("autoAniToggle").onchange = function (){
+    localStorage.setItem("anilist-auto", (this as HTMLInputElement).checked.toString());
+};
+
 document.getElementById("9animeHelper").oninput = function () {
     localStorage.setItem("9anime", (this as HTMLInputElement).value);
 }
@@ -760,47 +826,10 @@ document.getElementById("rangeCon").addEventListener("touchmove", function (even
     event.stopPropagation();
 });
 
-document.getElementById("anilistLogin").addEventListener("click", function (event) {
-    if(hasAnilistToken){
-        localStorage.removeItem("anilist-token");
-        window.location.reload();
-        return;
-    }
-
-    if (config.chrome) {
-        try {
-            alert("A new tab will open asking you to log in, and then you will be redirected to a new page. Copy the URL of the new page and paste it when prompted");
-            window.open("https://anilist.co/api/v2/oauth/authorize?client_id=13095&response_type=token", '_blank', 'location=yes,height=570,width=520,scrollbars=yes,status=yes');
-            let url = undefined;
-
-            while (!url) {
-                try {
-                    url = prompt("Enter the copied URL here");
-                    const accessToken = new URLSearchParams((new URL(url)).hash.substring(1)).get("access_token");
-                    localStorage.setItem("anilist-token", accessToken);
-
-                    if (accessToken) {
-                        const shouldUpdate = confirm("Logged in! Do you want to import your library? if you don't want to do that right now, you can do that later by going to the menu.");
-                        if (shouldUpdate) {
-                            (window.parent as cordovaWindow).getAllItems();
-                        }
-                    } else {
-                        alert("Seems like something went wrong.");
-                    }
-                } catch (err) {
-                    alert(err + "\n" + "Try again.");
-                }
-            }
-        } catch (err) {
-            alert(err);
-        }
-    } else {
-        (window.parent as cordovaWindow).getWebviewHTML("https://anilist.co/api/v2/oauth/authorize?client_id=13095&response_type=token", false, null, "console.log()", true);
-    }
-});
+document.getElementById("anilistLogin").addEventListener("click", loginAni);
 
 document.getElementById("anilistImport").addEventListener("click", function (event) {
-    (window.parent as cordovaWindow).getAllItems();
+    (window.parent as cordovaWindow).AnilistHelperFunctions.getAllItems();
 });
 
 (document.getElementById("outlineColor") as HTMLInputElement).value = localStorage.getItem("outlineColor");
@@ -821,6 +850,7 @@ document.getElementById("anilistImport").addEventListener("click", function (eve
 (document.getElementById("useImageBack") as HTMLInputElement).checked = localStorage.getItem("useImageBack") === "true";
 (document.getElementById("anonModeToggle") as HTMLInputElement).checked = localStorage.getItem("anon-anilist") === "true";
 (document.getElementById("offline") as HTMLInputElement).checked = (localStorage.getItem("offline") === 'true');
+(document.getElementById("autoAniToggle") as HTMLInputElement).checked = (localStorage.getItem("anilist-auto") === 'true');
 
 
 
@@ -1045,8 +1075,9 @@ function updateRoomAdd() {
     }
 }
 
-
+// @ts-ignore
 let scrollLastIndex;
+// @ts-ignore
 let cusRoomDOM = document.getElementById("custom_rooms");
 
 function cusRoomScroll(forced = false) {
@@ -1187,7 +1218,7 @@ function makeDiscoverCard(data: DiscoverData) {
         "listeners": {
             "click": async function () {
                 openCon(sourceChoiceDOM, "flex");
-                fetchMapping(this.getAttribute("data-id"));
+                fetchMapping(this.getAttribute("data-id"), "ANIME");
             }
         }
     });
@@ -1294,76 +1325,76 @@ async function populateDiscover() {
         const type = types[i];
         const currentTrending = await (window.parent as cordovaWindow).getAnilistTrending(type);
 
-        if (!addedBanner && false) {
-            const node = currentTrending[0];
-            const id = node.id;
+        // if (!addedBanner && false) {
+        //     const node = currentTrending[0];
+        //     const id = node.id;
 
-            addedBanner = true;
-            const bannerCon = createElement({
-                "class": "bannerCon hasBackground",
-                "style": {
-                    "backgroundImage": `url("${node.bannerImage}")`
-                }
-            });
+        //     addedBanner = true;
+        //     const bannerCon = createElement({
+        //         "class": "bannerCon hasBackground",
+        //         "style": {
+        //             "backgroundImage": `url("${node.bannerImage}")`
+        //         }
+        //     });
 
-            const bannerMainContent = createElement({
-                "style": {
-                    "position": "relative"
-                }
-            });
+        //     const bannerMainContent = createElement({
+        //         "style": {
+        //             "position": "relative"
+        //         }
+        //     });
 
-            bannerCon.append(createElement({
-                "class": "bannerBackdrop"
-            }));
+        //     bannerCon.append(createElement({
+        //         "class": "bannerBackdrop"
+        //     }));
 
-            bannerMainContent.append(createElement({
-                "class": "bannerDescription",
-                "innerText": node.description,
-                "listeners": {
-                    "click": function () {
-                        this.classList.toggle("open");
-                    }
-                }
-            }));
+        //     bannerMainContent.append(createElement({
+        //         "class": "bannerDescription",
+        //         "innerText": node.description,
+        //         "listeners": {
+        //             "click": function () {
+        //                 this.classList.toggle("open");
+        //             }
+        //         }
+        //     }));
 
-            if (node?.genres?.length > 0) {
-                const genreCon = createElement({
-                    style: {
-                        marginTop: "10px"
-                    }
-                });
+        //     if (node?.genres?.length > 0) {
+        //         const genreCon = createElement({
+        //             style: {
+        //                 marginTop: "10px"
+        //             }
+        //         });
 
-                for (let i = 0; i < node.genres.length; i++) {
-                    genreCon.append(createElement({
-                        class: "card_title_extension",
-                        style: {
-                            margin: "5px",
-                            fontWeight: "500",
-                            position: "static"
-                        },
-                        innerText: node.genres[i]
-                    }));
-                }
+        //         for (let i = 0; i < node.genres.length; i++) {
+        //             genreCon.append(createElement({
+        //                 class: "card_title_extension",
+        //                 style: {
+        //                     margin: "5px",
+        //                     fontWeight: "500",
+        //                     position: "static"
+        //                 },
+        //                 innerText: node.genres[i]
+        //             }));
+        //         }
 
-                bannerMainContent.append(genreCon);
-            }
+        //         bannerMainContent.append(genreCon);
+        //     }
 
-            bannerMainContent.append(createElement({
-                "class": "bannerTitle",
-                "innerText": node.title.english ? node.title.english : node.title.native,
-                "listeners": {
-                    "click": function () {
-                        openCon(sourceChoiceDOM, "flex");
-                        fetchMapping(id);
-                    }
-                }
-            }));
+        //     bannerMainContent.append(createElement({
+        //         "class": "bannerTitle",
+        //         "innerText": node.title.english ? node.title.english : node.title.native,
+        //         "listeners": {
+        //             "click": function () {
+        //                 openCon(sourceChoiceDOM, "flex");
+        //                 fetchMapping(id);
+        //             }
+        //         }
+        //     }));
 
-            bannerCon.append(bannerMainContent);
-            disCon.append(bannerCon);
+        //     bannerCon.append(bannerMainContent);
+        //     disCon.append(bannerCon);
 
-            currentTrending.shift();
-        }
+        //     currentTrending.shift();
+        // }
 
         const title = createElement({
             "style": {
@@ -1551,47 +1582,37 @@ function sendNoti(x) {
     });
 }
 
+async function hide_dom2(x) {
+    if (last_order != getCurrentOrder()) {
+        if (await (window.parent as cordovaWindow).Dialogs.confirm("Are you sure you want to close without saving?")) {
+            x.parentElement.style.display = "none";
+        }
+    } else {
+        x.parentElement.style.display = "none";
+    }
+}
+
+
+function getCurrentOrder(): string {
+    let elems = document.getElementById("room_dis_child").getElementsByClassName("room_card_con");
+    let room_temp = [];
+
+    for (var i = 0; i < elems.length; i++) {
+        room_temp.push(parseInt(elems[i].getAttribute("data-roomid")));
+    }
+    return room_temp.join(',');
+}
+
+
 if (true) {
     var a = document.getElementsByClassName("card_con") as HTMLCollectionOf<HTMLElement>;
     for (let i = 0; i < a.length; i++) {
         a[i].style.display = "block";
     }
 
-
     function hide_dom(x) {
         x.parentElement.style.display = "none";
     }
-
-
-
-    function hide_dom2(x) {
-        if (last_order != getCurrentOrder()) {
-            if (confirm("Are you sure you want to close without saving?")) {
-                x.parentElement.style.display = "none";
-
-
-            }
-        } else {
-            x.parentElement.style.display = "none";
-
-
-        }
-    }
-
-
-
-
-    function getCurrentOrder(): string {
-        let elems = document.getElementById("room_dis_child").getElementsByClassName("room_card_con");
-        let room_temp = [];
-
-        for (var i = 0; i < elems.length; i++) {
-            room_temp.push(parseInt(elems[i].getAttribute("data-roomid")));
-        }
-        return room_temp.join(',');
-    }
-
-
 
     function add_room_open() {
         document.getElementById("room_con").style.display = "flex";
@@ -1618,8 +1639,8 @@ if (true) {
             (<cordovaWindow>window.parent).apiCall("POST", { "action": 10, "username": username, "room": data_in }, getUserInfo);
         },
 
-        delete_room: (domelem) => {
-            if (confirm("Are you sure you want to delete this card?")) {
+        delete_room: async (domelem) => {
+            if (await (window.parent as cordovaWindow).Dialogs.confirm("Are you sure you want to delete this category?")) {
                 let room_id = domelem.getAttribute("data-roomid");
                 (<cordovaWindow>window.parent).apiCall("POST", { "username": username, "action": 12, "id": room_id }, getUserInfo);
 
@@ -1642,11 +1663,11 @@ if (true) {
             document.getElementById("room_add_show").style.display = "none";
         },
 
-        change_image_card: (name, domelem) => {
+        change_image_card: async (name, domelem) => {
 
 
-            var img_url_prompt = prompt("Enter the URL of the image", domelem.getAttribute("data-bg1"));
-            var main_url_prompt = prompt("Enter the URL of the page", domelem.getAttribute("data-main-link"));
+            var img_url_prompt = await (window.parent as cordovaWindow).Dialogs.prompt("Enter the URL of the image", domelem.getAttribute("data-bg1"));
+            var main_url_prompt = await (window.parent as cordovaWindow).Dialogs.prompt("Enter the URL of the page", domelem.getAttribute("data-main-link"));
 
             if (img_url_prompt != "" && img_url_prompt != null && img_url_prompt != undefined) {
                 img_url_prompt = img_url_prompt;
@@ -1674,8 +1695,8 @@ if (true) {
 
         },
 
-        delete_card: (x, domelem, isManga = false) => {
-            if (confirm("Are you sure you want to delete this show from your watched list?")) {
+        delete_card: async (x, domelem, isManga = false) => {
+            if (await (<cordovaWindow>window.parent).Dialogs.confirm("Are you sure you want to delete this show from your watched list?")) {
                 (<cordovaWindow>window.parent).apiCall("POST", { "username": username, "action": 6, "name": x, isManga }, delete_card_callback, [domelem]);
             }
 
@@ -1889,14 +1910,14 @@ if (true) {
 
             }
         } catch (err) {
-            alert("Couldn't update the library");
+            await thisWindow.Dialogs.alert("Couldn't update the library");
             console.error(err);
             console.error("Error 342");
         }
     }
 
     function helpUpdateLib() {
-        alert("Outlines the shows that have new unwatched episodes. This is automatically updated twice a day, but you can manually do it by clicking on \"Update Library\". This may take tens of seconds.");
+        thisWindow.Dialogs.alert("Outlines the shows that have new unwatched episodes. This is automatically updated twice a day, but you can manually do it by clicking on \"Update Library\". This may take tens of seconds.");
     }
 
     async function updateNextEp(flaggedShow: Array<flaggedShows>) {
@@ -1932,7 +1953,7 @@ if (true) {
                     class: "next_ep_new",
                     listeners: {
                         click: function () {
-                            alert("When the next episode will air.");
+                            thisWindow.Dialogs.alert("When the next episode will air.");
                         }
                     }
                 }));
@@ -2174,16 +2195,16 @@ if (true) {
                                             "data-showname": data[i][0],
                                             "data-href": data[i][5]
                                         }, "listeners": {
-                                            "click": function (event) {
+                                            "click": async function (event) {
                                                 event.stopPropagation();
 
                                                 let isManga = false;
                                                 try {
                                                     isManga = new URLSearchParams(this.getAttribute("data-href")).get("isManga") === "true";
                                                     if (!isNaN(aniID) && hasAnilistToken) {
-                                                        const shouldDelete = confirm("Do you want to delete this show from your anilist account?");
+                                                        const shouldDelete = await (window.parent as cordovaWindow).Dialogs.confirm("Do you want to delete this show from your anilist account?");
                                                         if (shouldDelete) {
-                                                            (window.parent as cordovaWindow).deleteAnilistShow(aniID);
+                                                            (window.parent as cordovaWindow).AnilistHelperFunctions.deleteAnilistShow(aniID);
                                                         }
                                                     }
                                                 } catch (err) {
@@ -2224,15 +2245,7 @@ if (true) {
                                         "listeners": {
                                             "click": async function (event) {
                                                 event.stopPropagation();
-
-                                                (window.parent as cordovaWindow).updateAnilistStatus(aniID);
-
-                                                // if (!isNaN(aniID) && hasAnilistToken) {
-                                                //     const shouldDelete = confirm("Do you want to delete this show from your anilist account?");
-                                                //     if (shouldDelete) {
-                                                //         (window.parent as cordovaWindow).deleteAnilistShow(aniID);
-                                                //     }
-                                                // }
+                                                (window.parent as cordovaWindow).AnilistHelperFunctions.updateAnilistStatus(aniID);
                                             }
                                         }
                                     }
@@ -2266,7 +2279,7 @@ if (true) {
                                         listeners: {
                                             click: function (event) {
                                                 event.stopPropagation();
-                                                alert("The episode number.");
+                                                thisWindow.Dialogs.alert("The episode number.");
                                             },
                                             "pointerdown": function (event: PointerEvent) {
                                                 event.preventDefault();
@@ -2378,12 +2391,12 @@ if (true) {
                                     "listeners": {
                                         "click": async function () {
                                             try {
-                                                if (confirm("Are you sure you want to delete this show?")) {
+                                                if (await (window.parent as cordovaWindow).Dialogs.confirm("Are you sure you want to delete this show?")) {
                                                     await (<cordovaWindow>window.parent).removeDirectory(`${isManga ? "manga/" : ""}${showname}`);
                                                     cardImage.remove();
                                                 }
                                             } catch (err) {
-                                                alert("Could not delete the files. You have to manually delete it by going to the show's page.");
+                                                await thisWindow.Dialogs.alert("Could not delete the files. You have to manually delete it by going to the show's page.");
                                             }
                                         }
                                     }
@@ -2453,6 +2466,11 @@ if (true) {
 
         } else if ((curTime - parseInt(localStorage.getItem("lastupdatelib"))) > 43200) {
             updateNewEp();
+            
+            if(localStorage.getItem("anilist-auto") === "true"){
+                (window.parent as cordovaWindow).AnilistHelperFunctions.getAllItems(true);
+            }
+
             localStorage.setItem("lastupdatelib", curTime.toString());
         } else {
             updateNewEpCached();
@@ -2485,35 +2503,36 @@ if (true) {
     });
 
 
-    let verURL = "https://raw.githubusercontent.com/enimax-anime/enimax/main/version.json";
+    let verURL = undefined;
 
     if (config.firefox) {
         verURL = "https://raw.githubusercontent.com/enimax-anime/enimax-firefox-extension/main/version.json";
     } else if (config.chrome) {
         verURL = "https://raw.githubusercontent.com/enimax-anime/enimax-chrome-extension/main/version.json";
-
     }
 
-    fetch(verURL)
-        .then((x) => x.json())
-        .then(function (x) {
-            let curTime = Math.floor((new Date()).getTime() / 1000);
-            let lastUpdate = parseInt(localStorage.getItem("lastUpdate"));
+    if(verURL && (config.chrome || config.firefox)){
+        fetch(verURL)
+            .then((x) => x.json())
+            .then(function (x) {
+                let curTime = Math.floor((new Date()).getTime() / 1000);
+                let lastUpdate = parseInt(localStorage.getItem("lastUpdate"));
 
-            let bool: boolean;
-            if (isNaN(lastUpdate)) {
-                bool = true;
-            } else {
-                bool = (curTime - lastUpdate) > 86400;   // 1 day
-            }
+                let bool: boolean;
+                if (isNaN(lastUpdate)) {
+                    bool = true;
+                } else {
+                    bool = (curTime - lastUpdate) > 86400;   // 1 day
+                }
 
-            if (x.version != localStorage.getItem("version") && bool) {
-                sendNoti([0, "", "New update!", x.message]);
-                localStorage.setItem("lastUpdate", curTime.toString());
-            }
-        }).catch((err) => {
-            console.error(err);
-        });
+                if (x.version != localStorage.getItem("version") && bool) {
+                    sendNoti([0, "", "New update!", x.message]);
+                    localStorage.setItem("lastUpdate", curTime.toString());
+                }
+            }).catch((err) => {
+                console.error(err);
+            });
+    }
 
 }
 
@@ -2601,6 +2620,7 @@ if (!!localStorage.getItem("anilist-token")) {
 // }
 
 (window.parent as cordovaWindow).handleFullscreen();
+(window.parent as cordovaWindow).checkForUpdate();
 
 
 for (const div of document.querySelectorAll("div")) {
@@ -2618,3 +2638,38 @@ if(hasAnilistToken){
         anilistMenuItem.textContent = "Anilist Log out";
     }
 }
+
+document.getElementById("changeUpdateChannel").onclick = function(){
+    const currentChannel = localStorage.getItem("updateChannel");
+    localStorage.removeItem("updateChannel");
+    localStorage.removeItem("updateTimeSnoozed");
+    localStorage.setItem("lastUpdateChannel", currentChannel);
+    (window.parent as cordovaWindow).checkForUpdate();
+};
+
+async function updateAvatar(){
+    try{
+        document.getElementById("topBarLogo").onclick = async function (){
+            const shouldLogin = await (window.parent as cordovaWindow).Dialogs.confirm("Do you want to log in to anilist?");
+            
+            if(shouldLogin){
+                (window.parent as cordovaWindow).resetCachedAvatar();
+                loginAni();
+            }
+        };
+
+        const avatarURL = await (window.parent as cordovaWindow).getCachedAvatar();
+        
+        if(avatarURL && typeof avatarURL === "string"){
+            document.getElementById("topBarLogo").style.backgroundImage = `url("${avatarURL}")`;
+
+            document.getElementById("topBarLogo").onclick = function (){
+                (window.parent as cordovaWindow).openWebview("https://anilist.co/home");
+            };
+        }
+    }catch(err){
+        console.warn(err);
+    }
+};
+
+updateAvatar();

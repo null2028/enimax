@@ -458,13 +458,35 @@ var fmovies: extension = {
 
             let sourceJSON = parallelReqs[0];
             let encryptedURL = sourceJSON.sources;
-            let decryptKey: string;
+            let decryptKey: any;
 
             if (typeof encryptedURL == "string") {
                 try {
                     decryptKey = await extractKey(4, null, true);
-                    sourceJSON.sources = JSON.parse(CryptoJS.AES.decrypt(encryptedURL, decryptKey).toString(CryptoJS.enc.Utf8));
+                    try {
+                        decryptKey = JSON.parse(decryptKey);
+                    } catch (err) {
 
+                    }
+
+                    if (typeof decryptKey === "string") {
+                        sourceJSON.sources = JSON.parse(CryptoJS.AES.decrypt(encryptedURL, decryptKey).toString(CryptoJS.enc.Utf8));
+                    } else {
+                        const encryptedURLTemp = encryptedURL.split("");
+                        let key = "";
+
+                        for (const index of decryptKey) {
+                            for (let i = index[0]; i < index[1]; i++) {
+                                key += encryptedURLTemp[i];
+                                encryptedURLTemp[i] = null;
+                            }
+                        }
+
+                        decryptKey = key;
+                        encryptedURL = encryptedURLTemp.filter((x) => x !== null).join("");
+                        console.log(encryptedURL, decryptKey);
+                        sourceJSON.sources = JSON.parse(CryptoJS.AES.decrypt(encryptedURL, decryptKey).toString(CryptoJS.enc.Utf8));
+                    }
                 } catch (err) {
                     if (err.message == "Malformed UTF-8 data") {
                         decryptKey = await extractKey(4);
@@ -508,7 +530,7 @@ var fmovies: extension = {
 
             data.subtitles = sourceJSON.tracks;
 
-            if(parseFloat(data.episode) === 0){
+            if (parseFloat(data.episode) === 0) {
                 data.episode = "0.1";
             }
 

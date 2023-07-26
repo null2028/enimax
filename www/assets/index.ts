@@ -1,3 +1,4 @@
+// @ts-ignore
 function createElement(config: createElementConfig): HTMLElement {
 
     if (config.shouldAdd === false) {
@@ -17,7 +18,7 @@ function createElement(config: createElementConfig): HTMLElement {
         temp.setAttribute(value, attributes[value]);
     }
 
-    // temp.setAttribute("tabindex", "0");
+    temp.setAttribute("tabindex", "0");
 
     for (let value in config.style) {
 
@@ -57,6 +58,10 @@ function createElement(config: createElementConfig): HTMLElement {
         }
     }
 
+    if(config.obj){
+        config.obj[config.key] = temp;
+    }
+
     return temp;
 }
 
@@ -83,8 +88,8 @@ function applyTheme() {
     }
 }
 
-function changeTheme() {
-    let promptT = prompt("Enter the theme color", "#4b4bc2");
+async function changeTheme() {
+    let promptT = await (window.parent as cordovaWindow).Dialogs.prompt("Enter the theme color", "#4b4bc2");
     if (promptT.trim() != "" && promptT != null && promptT != undefined) {
         localStorage.setItem("themecolor", promptT);
         applyTheme()
@@ -294,7 +299,7 @@ function constructErrorPage(errorCon: HTMLElement, message: string, config: Erro
     return container;
 }
 
-
+// @ts-ignore
 function openWebview(url: string) {
     if (config.chrome) {
         window.open(url, "_blank");
@@ -419,12 +424,22 @@ async function fetchMapping(id: string, type: string | null) {
     }
 
     try {
-        const pages = JSON.parse(await (window.parent as cordovaWindow).MakeFetch(`https://raw.githubusercontent.com/MALSync/MAL-Sync-Backup/master/data/anilist/${type}/${id}.json`));
+        let pageKey = "Sites";
+        let pages;
+
+        try{
+            pages = JSON.parse(await (window.parent as cordovaWindow).MakeFetch(`https://raw.githubusercontent.com/bal-mackup/mal-backup/master/anilist/${type}/${id}.json`));
+        }catch(err){
+            pageKey = "Sites";
+            const malId = await (window.parent as cordovaWindow).anilistToMal(id, type.toUpperCase() as "ANIME" | "MANGA");
+            pages = JSON.parse(await (window.parent as cordovaWindow).MakeFetch(`https://api.malsync.moe/mal/${type}/${malId}`));
+        }
+
         noti.remove();
         sourceChoiceDOM.style.display = "flex";
 
         for (let i = 0; i < sourcesToCheck.length; i++) {
-            const sourcePages = pages.Pages[sourcesToCheck[i]];
+            const sourcePages = pages[pageKey][sourcesToCheck[i]];
             sourcesURL[sourcesToCheck[i]] = [];
             const sourceDOM = (sourceChoiceDOM.getElementsByClassName(`${sourcesToCheck[i]}`)[0] as HTMLElement);
             if (sourceDOM) {
@@ -437,6 +452,7 @@ async function fetchMapping(id: string, type: string | null) {
             }
         }
     } catch (err) {
+        console.log(err);
         noti.remove();
         sendNoti([0, "red", "Alert", "Anime not found."]);
 

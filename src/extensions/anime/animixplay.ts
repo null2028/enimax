@@ -8,12 +8,12 @@ var animixplay: extension = {
     shortenedName: "Animix",
     searchApi: async function (query: string) {
         const response: Array<extensionSearchData> = [];
-        alert("Animixplay has been shut down.");
+        thisWindow.Dialogs.alert("Animixplay has been shut down.");
         return { status: 400, data: response } as extensionSearch;
     },
 
     getAnimeInfo: async function (url) {
-        alert("Animixplay has been shut down.");
+        thisWindow.Dialogs.alert("Animixplay has been shut down.");
         return {
             "name": "",
             "image": "",
@@ -23,7 +23,7 @@ var animixplay: extension = {
         };
     },
     getLinkFromUrl:async function (url) {
-        alert("Animixplay has been shut down.");
+        thisWindow.Dialogs.alert("Animixplay has been shut down.");
         return {
             sources: [],
             name: "",

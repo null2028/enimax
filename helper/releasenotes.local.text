@@ -1,19 +1,18 @@
 New features:
-1. Added Anna's archive (for light novels).
-2. Added casting! Not all sources will work because of some technicalities. However, you can cast any video if you have already downloaded it.
-3. Anilist anonymous mode. Can be enabled by going to the settings. When enabled, it won't sync up progress with your anilist account.
-4. Sped up Anilist importing.
-5. An option to automatically skip filler episodes.
+1. Added in-app updates! You can update to a new version from the app itself. There are three update channels: `dev`, `beta` and `stable`. You will be prompted to select one of these, and you can change the update channel you're on any time by opening the menu and clicking on `Change update channel`.
+2. Added kickassanime (high quality sources, many are from crunchyroll).
+3. Option to manually set anilist ID.
+4. Replaced alert and dialog boxes with a custom implementation.
+5. Added automatic anilist syncing (happens every 12 hours and can be enabled by going to the settings), and sped up anilist syncing SIGNIFICANLTY, after the first sync.
 
 Minor changes:
-1. Added a button to log out from Anilist.
-2. Shows can be directly added to "Recently Watched" and "Ongoing" from the info page.
-3. Added the option to change subtitle's shadow.
+1. Homepage UI changes
 
 Backend changes and bug fixes:
-1. Switched away from Consumet for 9anime and Fmovies.
-2. Fixed the new episode bug.
-3. Fixed a chrome storage bug.
-4. Fixed a bug where the discover page would show the wrong month.
-5. Many minor UI bug fixes.
-6. Fixed Zoro.
+1. Fixed malsync issues.
+2. Fixed zoro and flixhq.
+3. Fixed a kickass issue.
+4. Items in 'Watching' are imported to the 'Ongoing' category
+5. Downloading: fixed some edge cases.
+6. Fixed resetting source preference
+7. Fixed play button on info page not working

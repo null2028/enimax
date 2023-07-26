@@ -406,7 +406,7 @@ async function ini() {
                     res = true;
                 }
                 else {
-                    res = confirm("Want to open the downloaded version?");
+                    res = await window.parent.Dialogs.confirm("Want to open the downloaded version?");
                 }
                 if (res) {
                     let vidString = (await window.parent.makeLocalRequest("GET", `/manga/${rootDirCheck}/viddata.json`));
@@ -628,7 +628,7 @@ async function ini() {
                                 totalPages - 1 > 0 &&
                                 (pageIndex + 3) > totalPages - 1 &&
                                 localStorage.getItem("anilist-last") != identifier) {
-                                await window.parent.updateEpWatched(aniID, currentMangaData.chapter);
+                                await window.parent.AnilistHelperFunctions.updateEpWatched(aniID, currentMangaData.chapter);
                                 localStorage.setItem("anilist-last", identifier);
                             }
                         }
