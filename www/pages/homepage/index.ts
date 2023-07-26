@@ -212,6 +212,10 @@ async function testKey(): Promise<void> {
 
 if (localStorage.getItem("devmode") === "true") {
     document.getElementById("testExtensions").style.display = "block";
+    document.getElementById("9animeApiKey").style.display = "table-row";
+    document.getElementById("9animeApiURL").style.display = "table-row";
+    document.getElementById("9animeApiKeyText").style.display = "table-row";
+    document.getElementById("9animeApiURLText").style.display = "table-row";
 
     document.getElementById("testExtensions").onclick = function () {
         testIt();
