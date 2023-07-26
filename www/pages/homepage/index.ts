@@ -295,6 +295,9 @@ document.getElementById("importFile").onchange = async function (event) {
     }
 }
 
+document.getElementById("checkUpdate").onclick = function(){
+    (<cordovaWindow>window.parent).checkForUpdate(true);
+};
 
 document.getElementById("getImage").onchange = async function (event) {
     try {

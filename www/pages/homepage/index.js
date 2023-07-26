@@ -252,6 +252,9 @@ document.getElementById("importFile").onchange = async function (event) {
         await thisWindow.Dialogs.alert("Error reading the file.");
     }
 };
+document.getElementById("checkUpdate").onclick = function () {
+    window.parent.checkForUpdate(true);
+};
 document.getElementById("getImage").onchange = async function (event) {
     try {
         const fileList = event.target.files;

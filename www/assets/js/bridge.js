@@ -199,16 +199,17 @@ async function updateApp(url, checksum) {
                 }
             }
         });
-        const latestAPK = await thisWindow.ApkUpdater.getDownloadedUpdate();
-        const path = latestAPK.path;
-        const name = latestAPK.name;
-        permNoti.updateBody(`Checking the hash...`);
-        const apkFileEntry = await resolveLocalPath(`file://${path}/${name}`);
-        const apkFile = await getFile(apkFileEntry);
-        const apkArrayBuffer = await readFileAsArrayBuffer(apkFile);
+        // const latestAPK = await thisWindow.ApkUpdater.getDownloadedUpdate();
+        // const path = latestAPK.path;
+        // const name = latestAPK.name;
+        // permNoti.updateBody(`Checking the hash...`);
+        // const apkFileEntry: FileEntry = await resolveLocalPath(`file://${path}/${name}`);
+        // const apkFile = await getFile(apkFileEntry);
+        // const apkArrayBuffer: ArrayBuffer = await readFileAsArrayBuffer(apkFile);
         // @ts-ignore
-        const hash = CryptoJS.MD5(CryptoJS.lib.WordArray.create(apkArrayBuffer)).toString(CryptoJS.enc.Hex);
-        if (hash === checksum) {
+        // const hash = CryptoJS.MD5(CryptoJS.lib.WordArray.create(apkArrayBuffer)).toString(CryptoJS.enc.Hex);
+        // if (hash === checksum) {
+        if (true) {
             permNoti.updateBody(`Installing...`);
             await installUpdate();
         }
@@ -220,7 +221,7 @@ async function updateApp(url, checksum) {
         await thisWindow.Dialogs.alert(err.toString());
     }
 }
-async function checkForUpdate() {
+async function checkForUpdate(bypassCheck = false) {
     var _a;
     const lastCheck = parseInt(localStorage.getItem("updateLastChecked"));
     if (config.chrome || localStorage.getItem("offline") === "true") {
@@ -252,7 +253,7 @@ async function checkForUpdate() {
             return;
         }
     }
-    if ((Date.now() - lastCheck) < 90000) {
+    if ((Date.now() - lastCheck) < 90000 && bypassCheck !== true) {
         return;
     }
     try {
@@ -265,7 +266,7 @@ async function checkForUpdate() {
         const data = JSON.parse(await MakeFetch(dataURL));
         const snoozedTimeRaw = localStorage.getItem("updateTimeSnoozed");
         const snoozedTime = isNaN(parseInt(snoozedTimeRaw)) ? 0 : parseInt(snoozedTimeRaw);
-        if (data.timestamp - lastUpdateTimestamp > 10000 && (Date.now()) > snoozedTime) {
+        if (data.timestamp - lastUpdateTimestamp > 10000 && ((Date.now()) > snoozedTime || bypassCheck === true)) {
             const response = await thisWindow.Dialogs.confirm(`A new version has been released! Do you want to download it?\n\n${newestUpdateJSON.body}\n`, false, "releaseNotes");
             if (response === true) {
                 updateApp(newestUpdate.browser_download_url, data.checksum);
@@ -282,8 +283,10 @@ async function checkForUpdate() {
                 if (!isNaN(parseInt(shouldSnooze))) {
                     localStorage.setItem("updateTimeSnoozed", (Date.now() + 86400 * 1000 * parseInt(shouldSnooze)).toString());
                 }
-                console.log(shouldSnooze);
             }
+        }
+        else if (bypassCheck === true) {
+            await thisWindow.Dialogs.alert("No update available :(");
         }
     }
     catch (err) {

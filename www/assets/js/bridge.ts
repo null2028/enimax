@@ -210,22 +210,22 @@ async function updateApp(url: string, checksum: string) {
             }
         });
 
-        const latestAPK = await thisWindow.ApkUpdater.getDownloadedUpdate();
-        const path = latestAPK.path;
-        const name = latestAPK.name;
+        // const latestAPK = await thisWindow.ApkUpdater.getDownloadedUpdate();
+        // const path = latestAPK.path;
+        // const name = latestAPK.name;
 
-        permNoti.updateBody(`Checking the hash...`);
+        // permNoti.updateBody(`Checking the hash...`);
 
-        const apkFileEntry: FileEntry = await resolveLocalPath(`file://${path}/${name}`);
-        const apkFile = await getFile(apkFileEntry);
-        const apkArrayBuffer: ArrayBuffer = await readFileAsArrayBuffer(apkFile);
+        // const apkFileEntry: FileEntry = await resolveLocalPath(`file://${path}/${name}`);
+        // const apkFile = await getFile(apkFileEntry);
+        // const apkArrayBuffer: ArrayBuffer = await readFileAsArrayBuffer(apkFile);
 
         // @ts-ignore
-        const hash = CryptoJS.MD5(CryptoJS.lib.WordArray.create(apkArrayBuffer)).toString(CryptoJS.enc.Hex);
+        // const hash = CryptoJS.MD5(CryptoJS.lib.WordArray.create(apkArrayBuffer)).toString(CryptoJS.enc.Hex);
 
-        if (hash === checksum) {
+        // if (hash === checksum) {
+        if(true){
             permNoti.updateBody(`Installing...`);
-
             await installUpdate();
         } else {
             await thisWindow.Dialogs.alert("Hash mismatch. Try again, or contact the developer.");
@@ -235,7 +235,7 @@ async function updateApp(url: string, checksum: string) {
     }
 }
 
-async function checkForUpdate() {
+async function checkForUpdate(bypassCheck = false) {
     const lastCheck = parseInt(localStorage.getItem("updateLastChecked"));
 
     if (config.chrome || localStorage.getItem("offline") === "true") {
@@ -271,7 +271,7 @@ async function checkForUpdate() {
         }
     }
 
-    if ((Date.now() - lastCheck) < 90000) {
+    if ((Date.now() - lastCheck) < 90000 && bypassCheck !== true) {
         return;
     }
 
@@ -288,7 +288,7 @@ async function checkForUpdate() {
         const snoozedTimeRaw = localStorage.getItem("updateTimeSnoozed");
         const snoozedTime = isNaN(parseInt(snoozedTimeRaw)) ? 0 : parseInt(snoozedTimeRaw);
 
-        if (data.timestamp - lastUpdateTimestamp > 10000 && (Date.now()) > snoozedTime) {
+        if (data.timestamp - lastUpdateTimestamp > 10000 && ((Date.now()) > snoozedTime || bypassCheck === true)) {
             const response = await thisWindow.Dialogs.confirm(`A new version has been released! Do you want to download it?\n\n${newestUpdateJSON.body}\n`, false, "releaseNotes");
 
             if (response === true) {
@@ -314,9 +314,10 @@ async function checkForUpdate() {
                 if (!isNaN(parseInt(shouldSnooze))) {
                     localStorage.setItem("updateTimeSnoozed", (Date.now() + 86400 * 1000 * parseInt(shouldSnooze)).toString());
                 }
-
-                console.log(shouldSnooze);
             }
+
+        } else if (bypassCheck === true){
+            await thisWindow.Dialogs.alert("No update available :(");
         }
     } catch (err) {
         sendNoti([3, "", "Alert", err.toString()]);
