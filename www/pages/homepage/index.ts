@@ -1605,7 +1605,6 @@ if (true) {
         a[i].style.display = "block";
     }
 
-
     function hide_dom(x) {
         x.parentElement.style.display = "none";
     }
