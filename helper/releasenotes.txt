@@ -1,6 +1,0 @@
-1. Fixed zoro and flixhq.
-2. Fixed a kickass issue.
-3. Items in 'Watching' are imported to the 'Ongoing' category
-4. Downloading: fixed some edge cases.
-5. Fixed resetting source preference
-6. Fixed play button on info page not working

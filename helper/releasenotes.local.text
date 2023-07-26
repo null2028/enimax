@@ -10,3 +10,9 @@ Minor changes:
 
 Backend changes and bug fixes:
 1. Fixed malsync issues.
+2. Fixed zoro and flixhq.
+3. Fixed a kickass issue.
+4. Items in 'Watching' are imported to the 'Ongoing' category
+5. Downloading: fixed some edge cases.
+6. Fixed resetting source preference
+7. Fixed play button on info page not working
