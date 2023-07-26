@@ -1577,6 +1577,28 @@ function sendNoti(x) {
     });
 }
 
+async function hide_dom2(x) {
+    if (last_order != getCurrentOrder()) {
+        if (await (window.parent as cordovaWindow).Dialogs.confirm("Are you sure you want to close without saving?")) {
+            x.parentElement.style.display = "none";
+        }
+    } else {
+        x.parentElement.style.display = "none";
+    }
+}
+
+
+function getCurrentOrder(): string {
+    let elems = document.getElementById("room_dis_child").getElementsByClassName("room_card_con");
+    let room_temp = [];
+
+    for (var i = 0; i < elems.length; i++) {
+        room_temp.push(parseInt(elems[i].getAttribute("data-roomid")));
+    }
+    return room_temp.join(',');
+}
+
+
 if (true) {
     var a = document.getElementsByClassName("card_con") as HTMLCollectionOf<HTMLElement>;
     for (let i = 0; i < a.length; i++) {
@@ -1587,37 +1609,6 @@ if (true) {
     function hide_dom(x) {
         x.parentElement.style.display = "none";
     }
-
-
-
-    async function hide_dom2(x) {
-        if (last_order != getCurrentOrder()) {
-            if (await (window.parent as cordovaWindow).Dialogs.confirm("Are you sure you want to close without saving?")) {
-                x.parentElement.style.display = "none";
-
-
-            }
-        } else {
-            x.parentElement.style.display = "none";
-
-
-        }
-    }
-
-
-
-
-    function getCurrentOrder(): string {
-        let elems = document.getElementById("room_dis_child").getElementsByClassName("room_card_con");
-        let room_temp = [];
-
-        for (var i = 0; i < elems.length; i++) {
-            room_temp.push(parseInt(elems[i].getAttribute("data-roomid")));
-        }
-        return room_temp.join(',');
-    }
-
-
 
     function add_room_open() {
         document.getElementById("room_con").style.display = "flex";
