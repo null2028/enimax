@@ -422,7 +422,17 @@ var fmoviesto = {
         if (fallbackAPI) {
             reqURL = `https://${nineAnimeURL}?query=${encodeURIComponent(query)}&action=${isViz ? "vizcloud" : "mcloud"}`;
         }
-        const rawSource = JSON.parse(await MakeFetch(reqURL)).rawURL;
+        const futoken = await MakeFetch("https://vidstream.pro/futoken");
+        const rawSource = JSON.parse(await MakeFetch(reqURL, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded"
+            },
+            body: new URLSearchParams({
+                query,
+                futoken
+            })
+        })).rawURL;
         const fetchFunc = config.chrome ? MakeFetch : MakeCusReq;
         const source = await fetchFunc(rawSource, {
             headers: {
