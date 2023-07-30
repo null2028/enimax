@@ -1,5 +1,5 @@
 var nineAnime: extension = {
-    baseURL: "https://9anime.to",
+    baseURL: "https://9anime.ph",
     type: "anime",
     supportsMalsync: true,
     disableAutoDownload: false,
@@ -11,7 +11,7 @@ var nineAnime: extension = {
 
         try {
             const vrf = await this.getVRF(query, "9anime-search");
-            const searchHTML = await MakeFetchZoro(`https://9anime.to/filter?keyword=${encodeURIComponent(query)}&${vrf[1]}=${vrf[0]}`);
+            const searchHTML = await MakeFetchZoro(`${this.baseURL}/filter?keyword=${encodeURIComponent(query)}&${vrf[1]}=${vrf[0]}`);
             searchDOM.innerHTML = DOMPurify.sanitize(searchHTML);
             const searchElem = searchDOM.document.querySelector("#list-items");
             const searchItems = searchElem.querySelectorAll(".item");
@@ -131,12 +131,12 @@ var nineAnime: extension = {
         };
 
         let id = url.replace("?watch=/", "");
-        const rawURL = `https://9anime.to/watch/${id}`;
+        const rawURL = `${this.baseURL}/watch/${id}`;
         const episodesDOM = new DOMHandler();
         const infoDOM = new DOMHandler();
 
         try {
-            let infoHTML = await MakeFetchZoro(`https://9anime.to/watch/${id}`);
+            let infoHTML = await MakeFetchZoro(`${this.baseURL}/watch/${id}`);
             infoDOM.innerHTML = DOMPurify.sanitize(infoHTML);
             let nineAnimeID = infoDOM.document.querySelector("#watch-main").getAttribute("data-id");
             let infoMainDOM = infoDOM.document.querySelector("#w-info").querySelector(".info");
@@ -165,7 +165,7 @@ var nineAnime: extension = {
             let episodesHTML = "";
 
             try {
-                const tempResponse = JSON.parse(await MakeFetchZoro(`https://9anime.to/ajax/episode/list/${nineAnimeID}?${IDVRF[1]}=${IDVRF[0]}`));
+                const tempResponse = JSON.parse(await MakeFetchZoro(`${this.baseURL}/ajax/episode/list/${nineAnimeID}?${IDVRF[1]}=${IDVRF[0]}`));
 
                 if (tempResponse.result) {
                     episodesHTML = tempResponse.result;
@@ -207,6 +207,7 @@ var nineAnime: extension = {
         }
     },
     getLinkFromUrl: async function (url: string) {
+        const self = this;
         url = "watch=" + url;
         const response: extensionVidSource = {
             sources: [],
@@ -229,7 +230,7 @@ var nineAnime: extension = {
             const sourceEpVRF = await this.getVRF(sourceEp, "ajax-server-list");
             const promises: Array<Promise<any>> = [];
 
-            const serverHTML = JSON.parse(await MakeFetchZoro(`https://9anime.to/ajax/server/list/${sourceEp}?${sourceEpVRF[1]}=${sourceEpVRF[0]}`)).result;
+            const serverHTML = JSON.parse(await MakeFetchZoro(`${this.baseURL}/ajax/server/list/${sourceEp}?${sourceEpVRF[1]}=${sourceEpVRF[0]}`)).result;
             serverDOM.innerHTML = DOMPurify.sanitize(serverHTML);
 
             const allServers = serverDOM.document.querySelectorAll("li");
@@ -282,7 +283,7 @@ var nineAnime: extension = {
             async function addSource(ID, self, index, extractor = "vidstream") {
                 try {
                     const serverVRF = await self.getVRF(ID, "ajax-server");
-                    const serverData = JSON.parse(await MakeFetchZoro(`https://9anime.to/ajax/server/${ID}?${serverVRF[1]}=${serverVRF[0]}`)).result;
+                    const serverData = JSON.parse(await MakeFetchZoro(`${self.baseURL}/ajax/server/${ID}?${serverVRF[1]}=${serverVRF[0]}`)).result;
                     const serverURL = serverData.url;
                     const sourceDecrypted = await self.decryptSource(serverURL);
 
@@ -507,7 +508,7 @@ var nineAnime: extension = {
                 })
             })
         ).rawURL;
-        
+
         const fetchFunc: any = config.chrome ? MakeFetch : MakeCusReq;
 
         const source = await fetchFunc(
@@ -592,7 +593,7 @@ var nineAnime: extension = {
     },
     discover: async function (): Promise<Array<extensionDiscoverData>> {
         let temp: any = new DOMHandler();
-        temp.innerHTML = DOMPurify.sanitize(await MakeFetchZoro(`https://9anime.to/home`, {}));
+        temp.innerHTML = DOMPurify.sanitize(await MakeFetchZoro(`${this.baseURL}/home`, {}));
         temp = temp.document.querySelector(".ani.items");
         let data = [];
         for (const elem of temp.document.querySelectorAll(".item")) {
@@ -614,7 +615,7 @@ var nineAnime: extension = {
         return data;
     },
     config: {
-        "referer": "https://9anime.to",
+        "referer": "https://9anime.ph",
     },
     getConfig: function (url: string) {
         if (url.includes("mcloud.to")) {
