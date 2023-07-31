@@ -329,11 +329,16 @@ var fmoviesto: extension = {
 
 
                     if ("skip_data" in serverData) {
-                        serverData.skip_data = JSON.parse(await self.decryptSource(serverData.skip_data));
+
+                        if(typeof serverData?.skip_data?.intro === "string"){
+                            serverData.skip_data = JSON.parse(await self.decryptSource(serverData.skip_data));
+                        }
+
                         source.skipIntro = {
                             start: serverData.skip_data.intro[0],
                             end: serverData.skip_data.intro[1]
                         };
+                        
                     }
                 } catch (err) {
                     console.warn(err);

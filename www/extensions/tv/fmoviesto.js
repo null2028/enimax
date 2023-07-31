@@ -237,6 +237,7 @@ var fmoviesto = {
             response.status = 200;
             let sources = [];
             async function addSource(ID, self, index, extractor) {
+                var _a;
                 try {
                     const serverVRF = await self.getVRF(ID, "fmovies-vrf");
                     const serverData = JSON.parse(await MakeFetchZoro(` https://fmovies.to/ajax/server/${ID}?vrf=${serverVRF[0]}`)).result;
@@ -279,7 +280,9 @@ var fmoviesto = {
                         sources.push(source);
                     }
                     if ("skip_data" in serverData) {
-                        serverData.skip_data = JSON.parse(await self.decryptSource(serverData.skip_data));
+                        if (typeof ((_a = serverData === null || serverData === void 0 ? void 0 : serverData.skip_data) === null || _a === void 0 ? void 0 : _a.intro) === "string") {
+                            serverData.skip_data = JSON.parse(await self.decryptSource(serverData.skip_data));
+                        }
                         source.skipIntro = {
                             start: serverData.skip_data.intro[0],
                             end: serverData.skip_data.intro[1]
