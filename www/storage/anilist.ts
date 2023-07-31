@@ -470,14 +470,65 @@ class AnilistHelper {
             for (let typeIndex = 0; typeIndex <= 1; typeIndex++) {
 
                 const type = typeIndex === 0 ? "manga" : "anime";
-                let currentExtension = extensionList[3];
-                let pageKey = "Zoro";
-                let numberKey = "id";
+                let currentExtension: extension;
+                let pageKey: string;
+                let numberKey: string;
 
+                const supportedMangaValues = [8, 9];
+                const supportedAnimeValues = [3, 5, 7];
+                // (9anime is unstable, so it's highly recommended to not use 9anime)
                 if (type === "manga") {
-                    currentExtension = extensionList[9];
-                    pageKey = "MangaFire";
+
+                    let selectedExtension = 9;
+                    const defaultValue = parseInt(localStorage.getItem("manga-default"));
+                    const selectedValue = supportedMangaValues.includes(defaultValue) ? 
+                                          defaultValue.toString() :
+                                          await thisWindow.Dialogs.prompt(
+                                                "Select the main source",
+                                                "9",
+                                                "select",
+                                                supportedMangaValues.map((extensionID) => {
+                                                    return {
+                                                        value: extensionList[extensionID].name,
+                                                        realValue: extensionID.toString()
+                                                    }
+                                                })
+                                           );
+                    
+                    alert(selectedValue);
+
+                    selectedExtension = !supportedMangaValues.includes(parseInt(selectedValue)) ? 9 : parseInt(selectedValue); 
+                    
+                    localStorage.setItem("manga-default", selectedExtension.toString());
+
+                    currentExtension = extensionList[selectedExtension];
+                    pageKey = currentExtension.name;
                     numberKey = "number";
+                }else {
+                    let selectedExtension = 3;
+                    const defaultValue = parseInt(localStorage.getItem("anime-default"));
+                    const selectedValue = supportedAnimeValues.includes(defaultValue) ? 
+                                          defaultValue.toString() :
+                                          await thisWindow.Dialogs.prompt(
+                                                "Select the main source",
+                                                "3",
+                                                "select",
+                                                supportedAnimeValues.map((extensionID) => {
+                                                    return {
+                                                        value: extensionList[extensionID].name,
+                                                        realValue: extensionID.toString()
+                                                    }
+                                                })
+                                           );
+
+
+                    selectedExtension = !supportedAnimeValues.includes(parseInt(selectedValue)) ? 3 : parseInt(selectedValue); 
+
+                    localStorage.setItem("anime-default", selectedExtension.toString());
+
+                    currentExtension = extensionList[selectedExtension];
+                    pageKey = currentExtension.name;
+                    numberKey = "id";
                 }
 
                 const userId = await AnilistHelper.getUserID();

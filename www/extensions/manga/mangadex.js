@@ -4,7 +4,7 @@ var mangaDex = {
     supportsMalsync: true,
     disableAutoDownload: false,
     disabled: false,
-    name: "MangaDex",
+    name: "Mangadex",
     shortenedName: "MDex",
     searchApi: async function (query) {
         var _a, _b;

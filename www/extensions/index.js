@@ -4145,7 +4145,7 @@ var gogo = {
     supportsMalsync: true,
     disableAutoDownload: false,
     disabled: false,
-    name: "GogoAnime",
+    name: "Gogoanime",
     shortenedName: "Gogo",
     keys: [
         CryptoJS.enc.Utf8.parse("37911490979715163134003223491201"),
@@ -4436,7 +4436,7 @@ var mangaDex = {
     supportsMalsync: true,
     disableAutoDownload: false,
     disabled: false,
-    name: "MangaDex",
+    name: "Mangadex",
     shortenedName: "MDex",
     searchApi: async function (query) {
         var _a, _b;

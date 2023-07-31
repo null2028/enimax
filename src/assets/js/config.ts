@@ -10,7 +10,7 @@ var config : EnimaxConfig = {
 };
 
 localStorage.setItem("version", "1.3.2");
-localStorage.setItem("updatedTime", "1690782024712");
+localStorage.setItem("updatedTime", "1690799585383");
 
 if (localStorage.getItem("lastUpdate") === null) {
     localStorage.setItem("lastUpdate", "0");

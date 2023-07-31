@@ -4,7 +4,7 @@ var mangaDex: extension = {
     supportsMalsync: true,
     disableAutoDownload: false,
     disabled: false,
-    name: "MangaDex",
+    name: "Mangadex",
     shortenedName: "MDex",
     searchApi: async function (query: string): Promise<extensionSearch> {
         try {
