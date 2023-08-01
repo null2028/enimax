@@ -700,7 +700,7 @@ function sendNoti(x) {
     });
 }
 
-async function MakeCusReq(url: string, options: RequestOption) {
+async function MakeCusReq(url: string, options: any) {
     return new Promise(function (resolve, reject) {
         (thisWindow.cordova.plugin.http as HTTP).sendRequest(url, options, function (response) {
             resolve(response.data);

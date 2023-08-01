@@ -57,9 +57,11 @@ ts:
 	cp src www -r
 	-cd src && tsc -p tsconfig.json
 	cd www/extensions/anime && printf "\n" >> index.js && cat wco.js >> ../index.js
+	cd www/extensions/anime && printf "\n" >> index.js && cat animepahe.js >> ../index.js
 	cd www/extensions/anime && printf "\n" >> index.js && cat animixplay.js >> ../index.js
 	cd www/extensions/tv && printf "\n" >> index.js && cat fmovies.js >> ../index.js
 	cd www/extensions/anime && printf "\n" >> index.js && cat zoro.js >> ../index.js
+	cd www/extensions/extractor && printf "\n" >> index.js && cat unpacker.js >> ../index.js
 	cd www/extensions/others && printf "\n" >> index.js && cat twitch.js >> ../index.js
 	cd www/extensions/others && printf "\n" >> index.js && cat anna.js >> ../index.js
 	cd www/extensions/others && printf "\n" >> index.js && cat anilist.js >> ../index.js

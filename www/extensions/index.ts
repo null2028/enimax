@@ -145,6 +145,16 @@ if (config && config.chrome) {
                         "name": "x-requested-with",
                         "value": "XMLHttpRequest"
                     });
+                } else if (details.url.includes("kwik.")) {
+                    details.requestHeaders.push({
+                        "name": "Referer",
+                        "value": "https://animepahe.ru/"
+                    });
+                } else if (details.url.includes("nextcdn.")) {
+                    details.requestHeaders.push({
+                        "name": "Referer",
+                        "value": "https://kwik.cx/e/01EKd7CWZ3Te"
+                    });
                 }
 
                 return { requestHeaders: details.requestHeaders };
@@ -434,6 +444,11 @@ async function getAnilistInfo(type: anilistType, id: string, mediaType: "ANIME" 
         anilistID = JSON.parse(await MakeFetch(`https://api.malsync.moe/page/${type}/${id}`)).aniId;
     }
 
+
+    if(typeof anilistID !== "number" && !anilistID){
+        throw new Error("Empty anilist id");
+    }
+
     return (await anilistAPI(anilistQueries.info, { id: anilistID, type: mediaType })).data.Media;
 }
 
@@ -563,7 +578,7 @@ async function getBatchMalIds(ids: Array<string>, type: "ANIME" | "MANGA") {
             const id = tempId.replace("anime", "");
 
             result[id] = responses[i]?.data[tempId]?.media[0]?.idMal;
-            if(isNaN(parseInt(result[id]))){
+            if (isNaN(parseInt(result[id]))) {
                 delete result[id];
             }
         }

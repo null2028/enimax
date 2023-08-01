@@ -476,7 +476,7 @@ class AnilistHelper {
 
                 const supportedMangaValues = [8, 9];
                 const supportedAnimeValues = [3, 5, 7];
-                // (9anime is unstable, so it's highly recommended to not use 9anime)
+
                 if (type === "manga") {
 
                     let selectedExtension = 9;
@@ -495,7 +495,6 @@ class AnilistHelper {
                                                 })
                                            );
                     
-                    alert(selectedValue);
 
                     selectedExtension = !supportedMangaValues.includes(parseInt(selectedValue)) ? 9 : parseInt(selectedValue); 
                     
@@ -510,7 +509,7 @@ class AnilistHelper {
                     const selectedValue = supportedAnimeValues.includes(defaultValue) ? 
                                           defaultValue.toString() :
                                           await thisWindow.Dialogs.prompt(
-                                                "Select the main source",
+                                                "Select the main source (9anime is unstable, so it's highly recommended to not use 9anime)",
                                                 "3",
                                                 "select",
                                                 supportedAnimeValues.map((extensionID) => {
