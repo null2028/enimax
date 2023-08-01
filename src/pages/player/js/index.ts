@@ -2068,7 +2068,7 @@ window.addEventListener("keydown", function (event) {
 		vidInstance.updateTimeout();
 	} else if (event.keyCode == 39) {
 		if (vidInstance.seekMode || config.chrome) {
-			vidInstance.vid.currentTime += 30;
+			vidInstance.vid.currentTime += doubleTapTime;
 			vidInstance.updateTime();
 			event.preventDefault();
 		} else {
@@ -2077,7 +2077,7 @@ window.addEventListener("keydown", function (event) {
 		}
 	} else if (event.keyCode == 37) {
 		if (vidInstance.seekMode || config.chrome) {
-			vidInstance.vid.currentTime -= 30;
+			vidInstance.vid.currentTime -= doubleTapTime;
 			vidInstance.updateTime();
 
 			event.preventDefault();
