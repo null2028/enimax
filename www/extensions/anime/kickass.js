@@ -287,6 +287,21 @@ var kaa = {
             throw err;
         }
     },
+    config: {
+        "Origin": "https://vidnethub.net",
+    },
+    getConfig: function (url) {
+        return this.config;
+    },
+    subConfig: {
+        "Origin": "https://vidnethub.net",
+    },
+    getSubConfig: function (url, name) {
+        if (name.includes("- vid")) {
+            return this.subConfig;
+        }
+        return null;
+    },
     fixTitle(title) {
         try {
             const titleTemp = title.split("-");

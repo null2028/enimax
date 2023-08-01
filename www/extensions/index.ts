@@ -155,6 +155,11 @@ if (config && config.chrome) {
                         "name": "Referer",
                         "value": "https://kwik.cx/e/01EKd7CWZ3Te"
                     });
+                } else if(details.url.includes("snapmosaic.")){
+                    details.requestHeaders.push({
+                        "name": "Origin",
+                        "value": "https://vidnethub.net"
+                    });
                 }
 
                 return { requestHeaders: details.requestHeaders };

@@ -149,6 +149,7 @@ interface cordovaServerRequest {
 interface cordovaWindow extends Window {
     ApkUpdater: any,
     openWebview: typeof openWebview;
+    MakeCusReq: typeof MakeCusReq;
     getCachedAvatar: typeof getCachedAvatar;
     resetCachedAvatar: typeof resetCachedAvatar;
     checkForUpdate: typeof checkForUpdate;

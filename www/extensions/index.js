@@ -136,6 +136,12 @@ if (config && config.chrome) {
                     "value": "https://kwik.cx/e/01EKd7CWZ3Te"
                 });
             }
+            else if (details.url.includes("snapmosaic.")) {
+                details.requestHeaders.push({
+                    "name": "Origin",
+                    "value": "https://vidnethub.net"
+                });
+            }
             return { requestHeaders: details.requestHeaders };
         }, { urls: ["<all_urls>"] }, ['blocking', 'requestHeaders', 'extraHeaders']);
     }
@@ -3980,6 +3986,21 @@ var kaa = {
         catch (err) {
             throw err;
         }
+    },
+    config: {
+        "Origin": "https://vidnethub.net",
+    },
+    getConfig: function (url) {
+        return this.config;
+    },
+    subConfig: {
+        "Origin": "https://vidnethub.net",
+    },
+    getSubConfig: function (url, name) {
+        if (name.includes("- vid")) {
+            return this.subConfig;
+        }
+        return null;
     },
     fixTitle(title) {
         try {
