@@ -9,7 +9,7 @@ var config = {
     "sockets": false
 };
 localStorage.setItem("version", "1.3.2");
-localStorage.setItem("updatedTime", "1690882031277");
+localStorage.setItem("updatedTime", "1690977576081");
 if (localStorage.getItem("lastUpdate") === null) {
     localStorage.setItem("lastUpdate", "0");
 }
