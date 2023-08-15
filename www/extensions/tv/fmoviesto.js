@@ -237,6 +237,7 @@ var fmoviesto = {
             response.status = 200;
             let sources = [];
             async function addSource(ID, self, index, extractor) {
+                var _a;
                 try {
                     const serverVRF = await self.getVRF(ID, "fmovies-vrf");
                     const serverData = JSON.parse(await MakeFetchZoro(` https://fmovies.to/ajax/server/${ID}?vrf=${serverVRF[0]}`)).result;
@@ -279,7 +280,9 @@ var fmoviesto = {
                         sources.push(source);
                     }
                     if ("skip_data" in serverData) {
-                        serverData.skip_data = JSON.parse(await self.decryptSource(serverData.skip_data));
+                        if (typeof ((_a = serverData === null || serverData === void 0 ? void 0 : serverData.skip_data) === null || _a === void 0 ? void 0 : _a.intro) === "string") {
+                            serverData.skip_data = JSON.parse(await self.decryptSource(serverData.skip_data));
+                        }
                         source.skipIntro = {
                             start: serverData.skip_data.intro[0],
                             end: serverData.skip_data.intro[1]
@@ -422,7 +425,17 @@ var fmoviesto = {
         if (fallbackAPI) {
             reqURL = `https://${nineAnimeURL}?query=${encodeURIComponent(query)}&action=${isViz ? "vizcloud" : "mcloud"}`;
         }
-        const rawSource = JSON.parse(await MakeFetch(reqURL)).rawURL;
+        const futoken = await MakeFetch("https://vidstream.pro/futoken");
+        const rawSource = JSON.parse(await MakeFetch(reqURL, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded"
+            },
+            body: new URLSearchParams({
+                query,
+                futoken
+            })
+        })).rawURL;
         const fetchFunc = config.chrome ? MakeFetch : MakeCusReq;
         const source = await fetchFunc(rawSource, {
             headers: {

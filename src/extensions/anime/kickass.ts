@@ -334,6 +334,22 @@ var kaa: extension = {
         }
 
     },
+    config: {
+        "Origin": "https://vidnethub.net",
+    },
+    getConfig: function (url: string) {
+        return this.config;
+    },
+    subConfig: {
+        "Origin": "https://vidnethub.net",
+    },
+    getSubConfig: function (url: string, name: string) {
+        if(name.includes("- vid")){
+            return this.subConfig;
+        }
+
+        return null;
+    },
     fixTitle(title: string) {
         try {
             const titleTemp = title.split("-");

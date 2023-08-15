@@ -15,6 +15,7 @@ let skipIntroInfo = {
     start: 0,
     end: 0
 };
+let subtitleBlobURLs = [];
 let selectedMain = null;
 let curTrack = undefined;
 let marginApplied = false;
@@ -855,7 +856,7 @@ function chooseQualDash(x, type, elem) {
     localStorage.setItem("hlsqual", x);
     localStorage.setItem("hlsqualnum", parseInt(elem.innerText).toString());
 }
-function loadSubs(sourceName) {
+async function loadSubs(sourceName) {
     let vidDom = document.getElementById("v").children;
     while (vidDom.length > 0) {
         vidDom[0].remove();
@@ -894,9 +895,31 @@ function loadSubs(sourceName) {
             "highlightable": true,
             "id": `subtitle-off`,
         });
+        for (const sub of subtitleBlobURLs) {
+            URL.revokeObjectURL(sub);
+        }
+        subtitleBlobURLs = [];
         for (var i = 0; i < currentVidData.subtitles.length; i++) {
+            let label = currentVidData.subtitles[i].label;
+            let file = currentVidData.subtitles[i].file;
+            try {
+                if ("getSubConfig" in extensionList[engine] && !config.chrome) {
+                    const headers = extensionList[engine].getSubConfig(file, label);
+                    if (headers) {
+                        const subtitle = await window.parent.MakeCusReq(file, {
+                            headers,
+                            responseType: "blob"
+                        });
+                        const subtitleBlobURL = URL.createObjectURL(subtitle);
+                        file = subtitleBlobURL;
+                        subtitleBlobURLs.push(subtitleBlobURL);
+                    }
+                }
+            }
+            catch (err) {
+            }
             DMenu.getScene("subtitles").addItem({
-                "text": currentVidData.subtitles[i].label,
+                "text": label,
                 "callback": selectFunc,
                 "attributes": {
                     "value": i.toString(),
@@ -908,10 +931,10 @@ function loadSubs(sourceName) {
                 "element": "track",
                 "attributes": {
                     "kind": "subtitles",
-                    "label": currentVidData.subtitles[i].label,
-                    "src": currentVidData.subtitles[i].file
+                    "label": label,
+                    "src": file
                 },
-                "innerText": currentVidData.subtitles[i].label
+                "innerText": label
             });
             document.getElementById("v").append(trackDOM);
         }
@@ -1776,7 +1799,7 @@ window.addEventListener("keydown", function (event) {
     }
     else if (event.keyCode == 39) {
         if (vidInstance.seekMode || config.chrome) {
-            vidInstance.vid.currentTime += 30;
+            vidInstance.vid.currentTime += doubleTapTime;
             vidInstance.updateTime();
             event.preventDefault();
         }
@@ -1786,7 +1809,7 @@ window.addEventListener("keydown", function (event) {
     }
     else if (event.keyCode == 37) {
         if (vidInstance.seekMode || config.chrome) {
-            vidInstance.vid.currentTime -= 30;
+            vidInstance.vid.currentTime -= doubleTapTime;
             vidInstance.updateTime();
             event.preventDefault();
         }

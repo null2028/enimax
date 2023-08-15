@@ -165,7 +165,7 @@ class DownloadVid {
             await actionSQLite[2]({
                 "body": {
                     "name": vidData.nameWSeason,
-                    "nameUm": vidData.name,
+                    "nameUm": data.mainName,
                     "ep": vidData.episode,
                     "cur": `?watch=${localQuery}`
                 }
@@ -174,7 +174,7 @@ class DownloadVid {
 
             await actionSQLite[14]({
                 "body": {
-                    "name": vidData.name,
+                    "name": data.mainName,
                     "url": `?watch=/${self.name}&engine=${self.engine}`,
                 }
 

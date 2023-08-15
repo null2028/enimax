@@ -1,5 +1,5 @@
 // @ts-ignore
-const extensionList: Array<extension> = [wco, animixplay, fmovies, zoro, twitch, nineAnime, fmoviesto, gogo, mangaDex, mangaFire, viewAsian, anilist, anna, kaa];
+const extensionList: Array<extension> = [wco, animixplay, fmovies, zoro, twitch, nineAnime, fmoviesto, gogo, mangaDex, mangaFire, viewAsian, anilist, anna, kaa, animepahe];
 
 // @ts-ignore   
 const extensionNames = [];

@@ -1,7 +1,7 @@
 type ExitFullscreen = typeof document.exitFullscreen
 type RequestFullscreen = typeof document.documentElement.requestFullscreen
 type TypeFunc = (res: Response) => Promise<string>
-type anilistType = "9anime" | "Zoro" | "Gogoanime" | "Mangadex" | "MangaFire"
+type anilistType = "9anime" | "Zoro" | "Gogoanime" | "Mangadex" | "MangaFire" | "animepahe"
 type anilistStatus = "CURRENT" | "PLANNING" | "COMPLETED" | "DROPPED" | "PAUSED" | "REPEATING";
 type AnilistLinks = { link: string, progress: number, aniID: number, anilistCategory: string, result?: extensionInfo }[];
 interface Document {
@@ -149,6 +149,7 @@ interface cordovaServerRequest {
 interface cordovaWindow extends Window {
     ApkUpdater: any,
     openWebview: typeof openWebview;
+    MakeCusReq: typeof MakeCusReq;
     getCachedAvatar: typeof getCachedAvatar;
     resetCachedAvatar: typeof resetCachedAvatar;
     checkForUpdate: typeof checkForUpdate;

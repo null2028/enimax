@@ -15,6 +15,7 @@ let skipIntroInfo: skipData = {
 	start: 0,
 	end: 0
 };
+let subtitleBlobURLs = [];
 let selectedMain = null;
 let curTrack: undefined | TextTrack = undefined;
 let marginApplied = false;
@@ -973,7 +974,7 @@ function chooseQualDash(x: string, type: string, elem: HTMLElement): void {
 }
 
 
-function loadSubs(sourceName: string) {
+async function loadSubs(sourceName: string) {
 	let vidDom = document.getElementById("v").children;
 
 
@@ -1022,10 +1023,41 @@ function loadSubs(sourceName: string) {
 			"id": `subtitle-off`,
 		});
 
+		for(const sub of subtitleBlobURLs){
+			URL.revokeObjectURL(sub);
+		}
+
+		subtitleBlobURLs = [];
 
 		for (var i = 0; i < currentVidData.subtitles.length; i++) {
+
+			let label = currentVidData.subtitles[i].label;
+			let file = currentVidData.subtitles[i].file;
+
+			try{
+				if("getSubConfig" in extensionList[engine] && !config.chrome){
+					const headers = extensionList[engine].getSubConfig(
+						file, 
+						label
+					);
+
+					if(headers){
+						const subtitle = await (window.parent as cordovaWindow).MakeCusReq(file, {
+							headers,
+							responseType: "blob"
+						}) as Blob;
+
+						const subtitleBlobURL = URL.createObjectURL(subtitle);
+						file = subtitleBlobURL;
+						subtitleBlobURLs.push(subtitleBlobURL);
+					}
+				}
+			}catch(err){
+
+			}
+			
 			DMenu.getScene("subtitles").addItem({
-				"text": currentVidData.subtitles[i].label,
+				"text": label,
 				"callback": selectFunc,
 				"attributes": {
 					"value": i.toString(),
@@ -1039,10 +1071,10 @@ function loadSubs(sourceName: string) {
 				"element": "track",
 				"attributes": {
 					"kind": "subtitles",
-					"label": currentVidData.subtitles[i].label,
-					"src": currentVidData.subtitles[i].file
+					"label": label,
+					"src": file
 				},
-				"innerText": currentVidData.subtitles[i].label
+				"innerText": label
 			});
 
 			document.getElementById("v").append(trackDOM);
@@ -2036,7 +2068,7 @@ window.addEventListener("keydown", function (event) {
 		vidInstance.updateTimeout();
 	} else if (event.keyCode == 39) {
 		if (vidInstance.seekMode || config.chrome) {
-			vidInstance.vid.currentTime += 30;
+			vidInstance.vid.currentTime += doubleTapTime;
 			vidInstance.updateTime();
 			event.preventDefault();
 		} else {
@@ -2045,7 +2077,7 @@ window.addEventListener("keydown", function (event) {
 		}
 	} else if (event.keyCode == 37) {
 		if (vidInstance.seekMode || config.chrome) {
-			vidInstance.vid.currentTime -= 30;
+			vidInstance.vid.currentTime -= doubleTapTime;
 			vidInstance.updateTime();
 
 			event.preventDefault();
