@@ -409,7 +409,7 @@ class AnilistHelper {
                 let pageKey;
                 let numberKey;
                 const supportedMangaValues = [8, 9];
-                const supportedAnimeValues = [3, 5, 7];
+                const supportedAnimeValues = [3, 5, 7, 14];
                 if (type === "manga") {
                     let selectedExtension = 9;
                     const defaultValue = parseInt(localStorage.getItem("manga-default"));

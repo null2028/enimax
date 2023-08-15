@@ -1,5 +1,5 @@
 var nineAnime = {
-    baseURL: "https://9anime.ph",
+    baseURL: "https://aniwave.to",
     type: "anime",
     supportsMalsync: true,
     disableAutoDownload: false,

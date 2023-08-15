@@ -475,7 +475,7 @@ class AnilistHelper {
                 let numberKey: string;
 
                 const supportedMangaValues = [8, 9];
-                const supportedAnimeValues = [3, 5, 7];
+                const supportedAnimeValues = [3, 5, 7, 14];
 
                 if (type === "manga") {
 
