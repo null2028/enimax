@@ -8,8 +8,8 @@ var config = {
     "beta": false,
     "sockets": false
 };
-localStorage.setItem("version", "1.3.2");
-localStorage.setItem("updatedTime", "1692064630066");
+localStorage.setItem("version", "1.3.3");
+localStorage.setItem("updatedTime", "1692064907098");
 if (localStorage.getItem("lastUpdate") === null) {
     localStorage.setItem("lastUpdate", "0");
 }

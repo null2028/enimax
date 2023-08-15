@@ -21,7 +21,7 @@ async function ini(token, channelID, branch) {
 
         if (process.env.RELEASE === "true") {
             await channel.send({
-                content: `${data.shouldPing ? "@everyone " : ""} https://github.com/enimax-anime/enimax/releases/latest \n A new version has been released!  : \n\n ${fs.readFileSync(path.join(__dirname, "./releasenotes.local.text"), "utf-8")}`,
+                content: `"@everyone https://github.com/enimax-anime/enimax/releases/latest \n A new version has been released!  : \n\n ${fs.readFileSync(path.join(__dirname, "./releasenotes.local.text"), "utf-8")}`,
                 files: [
                     path.join(__dirname, "../../app-release.apk"),
                 ]
